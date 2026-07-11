@@ -51,8 +51,8 @@ use servo_constellation_traits::{
     SerializableAesKeyAlgorithm, SerializableAlgorithm, SerializableCShakeParams,
     SerializableDigestAlgorithm, SerializableEcKeyAlgorithm, SerializableHmacKeyAlgorithm,
     SerializableKangarooTwelveParams, SerializableKeyAlgorithm,
-    SerializableKeyAlgorithmAndDerivatives, SerializableRsaHashedKeyAlgorithm,
-    SerializableTurboShakeParams,
+    SerializableKeyAlgorithmAndDerivatives, SerializableKmacKeyAlgorithm,
+    SerializableRsaHashedKeyAlgorithm, SerializableTurboShakeParams,
 };
 use strum::{EnumString, IntoStaticStr, VariantArray};
 use zeroize::Zeroizing;
@@ -63,8 +63,8 @@ use crate::dom::bindings::codegen::Bindings::CryptoKeyBinding::{
 };
 use crate::dom::bindings::codegen::Bindings::SubtleCryptoBinding::{
     AesKeyAlgorithm, Algorithm, AlgorithmIdentifier, EcKeyAlgorithm, EncapsulatedBits,
-    EncapsulatedKey, HmacKeyAlgorithm, JsonWebKey, KeyAlgorithm, KeyFormat, RsaHashedKeyAlgorithm,
-    RsaKeyAlgorithm, SubtleCryptoMethods,
+    EncapsulatedKey, HmacKeyAlgorithm, JsonWebKey, KeyAlgorithm, KeyFormat, KmacKeyAlgorithm,
+    RsaHashedKeyAlgorithm, RsaKeyAlgorithm, SubtleCryptoMethods,
 };
 use crate::dom::bindings::codegen::UnionTypes::{
     ArrayBufferViewOrArrayBuffer, ArrayBufferViewOrArrayBufferOrJsonWebKey, ObjectOrString,
@@ -3914,6 +3914,132 @@ impl From<&SubtleKangarooTwelveParams> for SerializableKangarooTwelveParams {
     }
 }
 
+/// <https://wicg.github.io/webcrypto-modern-algos/#dfn-KmacKeyGenParams>
+#[derive(Clone, MallocSizeOf)]
+struct SubtleKmacKeyGenParams {
+    /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
+    name: CryptoAlgorithm,
+
+    /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-KmacKeyGenParams-length>
+    length: Option<u32>,
+}
+
+impl<'a> TryFromWithCxAndName<HandleObject<'a>> for SubtleKmacKeyGenParams {
+    type Error = Error;
+
+    fn try_from_with_cx_and_name(
+        object: HandleObject,
+        cx: &mut js::context::JSContext,
+        algorithm_name: CryptoAlgorithm,
+    ) -> Result<Self, Self::Error> {
+        Ok(SubtleKmacKeyGenParams {
+            name: algorithm_name,
+            length: get_property(cx, object, c"length", ConversionBehavior::EnforceRange)?,
+        })
+    }
+}
+
+/// <https://wicg.github.io/webcrypto-modern-algos/#dfn-KmacImportParams>
+#[derive(Clone, MallocSizeOf)]
+struct SubtleKmacImportParams {
+    /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
+    name: CryptoAlgorithm,
+
+    /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-KmacImportParams-length>
+    length: Option<u32>,
+}
+
+impl<'a> TryFromWithCxAndName<HandleObject<'a>> for SubtleKmacImportParams {
+    type Error = Error;
+
+    fn try_from_with_cx_and_name(
+        object: HandleObject,
+        cx: &mut js::context::JSContext,
+        algorithm_name: CryptoAlgorithm,
+    ) -> Result<Self, Self::Error> {
+        Ok(SubtleKmacImportParams {
+            name: algorithm_name,
+            length: get_property(cx, object, c"length", ConversionBehavior::EnforceRange)?,
+        })
+    }
+}
+
+/// <https://wicg.github.io/webcrypto-modern-algos/#dfn-KmacKeyAlgorithm>
+#[derive(Clone, MallocSizeOf)]
+pub(crate) struct SubtleKmacKeyAlgorithm {
+    /// <https://w3c.github.io/webcrypto/#dom-keyalgorithm-name>
+    name: CryptoAlgorithm,
+
+    /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-KmacKeyAlgorithm-length>
+    length: u32,
+}
+
+impl SafeToJSValConvertible for SubtleKmacKeyAlgorithm {
+    fn safe_to_jsval(&self, cx: &mut js::context::JSContext, rval: MutableHandleValue) {
+        let parent = KeyAlgorithm {
+            name: self.name.as_str().into(),
+        };
+        let dictionary = KmacKeyAlgorithm {
+            parent,
+            length: self.length,
+        };
+        dictionary.safe_to_jsval(cx, rval);
+    }
+}
+
+impl TryFrom<SerializableKmacKeyAlgorithm> for SubtleKmacKeyAlgorithm {
+    type Error = ();
+
+    fn try_from(value: SerializableKmacKeyAlgorithm) -> Result<Self, Self::Error> {
+        Ok(SubtleKmacKeyAlgorithm {
+            name: CryptoAlgorithm::from_str(&value.name).map_err(|_| ())?,
+            length: value.length,
+        })
+    }
+}
+
+impl From<&SubtleKmacKeyAlgorithm> for SerializableKmacKeyAlgorithm {
+    fn from(value: &SubtleKmacKeyAlgorithm) -> Self {
+        SerializableKmacKeyAlgorithm {
+            name: value.name.as_str().into(),
+            length: value.length,
+        }
+    }
+}
+
+/// <https://wicg.github.io/webcrypto-modern-algos/#dfn-KmacParams>
+struct SubtleKmacParams {
+    /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
+    name: CryptoAlgorithm,
+
+    /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-KmacParams-outputLength>
+    output_length: u32,
+
+    /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-KmacParams-customization>
+    customization: Option<Vec<u8>>,
+}
+
+impl<'a> TryFromWithCxAndName<HandleObject<'a>> for SubtleKmacParams {
+    type Error = Error;
+
+    fn try_from_with_cx_and_name(
+        object: HandleObject<'a>,
+        cx: &mut js::context::JSContext,
+        algorithm_name: CryptoAlgorithm,
+    ) -> Result<Self, Self::Error> {
+        Ok(SubtleKmacParams {
+            name: algorithm_name,
+            output_length: get_required_parameter(
+                cx,
+                object,
+                c"outputLength",
+                ConversionBehavior::EnforceRange,
+            )?,
+            customization: get_optional_buffer_source(cx, object, c"customization")?,
+        })
+    }
+}
+
 /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-Argon2Params>
 #[derive(Clone, MallocSizeOf)]
 struct SubtleArgon2Params {
@@ -4137,6 +4263,7 @@ pub(crate) enum KeyAlgorithmAndDerivatives {
     EcKeyAlgorithm(SubtleEcKeyAlgorithm),
     AesKeyAlgorithm(SubtleAesKeyAlgorithm),
     HmacKeyAlgorithm(SubtleHmacKeyAlgorithm),
+    KmacKeyAlgorithm(SubtleKmacKeyAlgorithm),
 }
 
 impl KeyAlgorithmAndDerivatives {
@@ -4147,6 +4274,7 @@ impl KeyAlgorithmAndDerivatives {
             KeyAlgorithmAndDerivatives::EcKeyAlgorithm(algorithm) => algorithm.name,
             KeyAlgorithmAndDerivatives::AesKeyAlgorithm(algorithm) => algorithm.name,
             KeyAlgorithmAndDerivatives::HmacKeyAlgorithm(algorithm) => algorithm.name,
+            KeyAlgorithmAndDerivatives::KmacKeyAlgorithm(algorithm) => algorithm.name,
         }
     }
 }
@@ -4159,6 +4287,7 @@ impl SafeToJSValConvertible for KeyAlgorithmAndDerivatives {
             KeyAlgorithmAndDerivatives::EcKeyAlgorithm(algo) => algo.safe_to_jsval(cx, rval),
             KeyAlgorithmAndDerivatives::AesKeyAlgorithm(algo) => algo.safe_to_jsval(cx, rval),
             KeyAlgorithmAndDerivatives::HmacKeyAlgorithm(algo) => algo.safe_to_jsval(cx, rval),
+            KeyAlgorithmAndDerivatives::KmacKeyAlgorithm(algo) => algo.safe_to_jsval(cx, rval),
         }
     }
 }
@@ -4183,6 +4312,9 @@ impl TryFrom<SerializableKeyAlgorithmAndDerivatives> for KeyAlgorithmAndDerivati
             SerializableKeyAlgorithmAndDerivatives::HmacKeyAlgorithm(algorithm) => Ok(
                 KeyAlgorithmAndDerivatives::HmacKeyAlgorithm(algorithm.try_into()?),
             ),
+            SerializableKeyAlgorithmAndDerivatives::KmacKeyAlgorithm(algorithm) => Ok(
+                KeyAlgorithmAndDerivatives::KmacKeyAlgorithm(algorithm.try_into()?),
+            ),
         }
     }
 }
@@ -4204,6 +4336,9 @@ impl From<&KeyAlgorithmAndDerivatives> for SerializableKeyAlgorithmAndDerivative
             },
             KeyAlgorithmAndDerivatives::HmacKeyAlgorithm(algorithm) => {
                 SerializableKeyAlgorithmAndDerivatives::HmacKeyAlgorithm(algorithm.into())
+            },
+            KeyAlgorithmAndDerivatives::KmacKeyAlgorithm(algorithm) => {
+                SerializableKeyAlgorithmAndDerivatives::KmacKeyAlgorithm(algorithm.into())
             },
         }
     }
