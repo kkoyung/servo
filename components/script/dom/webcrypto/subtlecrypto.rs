@@ -2718,7 +2718,7 @@ pub(crate) fn check_support_for_algorithm(
                 GenerateKeyAlgorithm::AesOcb(normalized_algorithm) => {
                     matches!(normalized_algorithm.length, 128 | 192 | 256)
                 },
-                GenerateKeyAlgorithm::ChaCha20Poly1305(_) => true,
+                GenerateKeyAlgorithm::ChaCha20Poly1305(_) | GenerateKeyAlgorithm::Kmac(_) => true,
             }
         },
         "importKey" => {
@@ -5493,6 +5493,7 @@ enum GenerateKeyAlgorithm {
     MlDsa(SubtleAlgorithm),
     AesOcb(SubtleAesKeyGenParams),
     ChaCha20Poly1305(SubtleAlgorithm),
+    Kmac(SubtleKmacKeyGenParams),
 }
 
 impl NormalizedAlgorithm for GenerateKeyAlgorithm {
@@ -5558,6 +5559,9 @@ impl NormalizedAlgorithm for GenerateKeyAlgorithm {
             CryptoAlgorithm::ChaCha20Poly1305 => Ok(GenerateKeyAlgorithm::ChaCha20Poly1305(
                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
             )),
+            CryptoAlgorithm::Kmac128 | CryptoAlgorithm::Kmac256 => Ok(GenerateKeyAlgorithm::Kmac(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
             _ => Err(Error::NotSupported(Some(format!(
                 "{} does not support \"generateKey\" operation",
                 algorithm_name.as_str()
@@ -5585,6 +5589,7 @@ impl NormalizedAlgorithm for GenerateKeyAlgorithm {
             GenerateKeyAlgorithm::MlDsa(algorithm) => algorithm.name,
             GenerateKeyAlgorithm::AesOcb(algorithm) => algorithm.name,
             GenerateKeyAlgorithm::ChaCha20Poly1305(algorithm) => algorithm.name,
+            GenerateKeyAlgorithm::Kmac(algorithm) => algorithm.name,
         }
     }
 }
@@ -5674,6 +5679,10 @@ impl GenerateKeyAlgorithm {
             },
             GenerateKeyAlgorithm::ChaCha20Poly1305(_algorithm) => {
                 chacha20_poly1305_operation::generate_key(cx, global, extractable, usages)
+                    .map(CryptoKeyOrCryptoKeyPair::CryptoKey)
+            },
+            GenerateKeyAlgorithm::Kmac(algorithm) => {
+                kmac_operation::generate_key(cx, global, algorithm, extractable, usages)
                     .map(CryptoKeyOrCryptoKeyPair::CryptoKey)
             },
         }
