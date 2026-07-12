@@ -2594,7 +2594,7 @@ pub(crate) fn check_support_for_algorithm(
                 SignAlgorithm::Ed448(normalized_algorithm) => normalized_algorithm
                     .context
                     .is_none_or(|context| context.len() <= 255),
-                SignAlgorithm::Hmac(_) | SignAlgorithm::MlDsa(_) => true,
+                SignAlgorithm::Hmac(_) | SignAlgorithm::MlDsa(_) | SignAlgorithm::Kmac(_) => true,
             }
         },
         "verify" => {
@@ -2611,7 +2611,9 @@ pub(crate) fn check_support_for_algorithm(
                 VerifyAlgorithm::Ed448(normalized_algorithm) => normalized_algorithm
                     .context
                     .is_none_or(|context| context.len() <= 255),
-                VerifyAlgorithm::Hmac(_) | VerifyAlgorithm::MlDsa(_) => true,
+                VerifyAlgorithm::Hmac(_) | VerifyAlgorithm::MlDsa(_) | VerifyAlgorithm::Kmac(_) => {
+                    true
+                },
             }
         },
         "digest" => {
@@ -5008,6 +5010,7 @@ enum SignAlgorithm {
     Ed448(SubtleEd448Params),
     Hmac(SubtleAlgorithm),
     MlDsa(SubtleContextParams),
+    Kmac(SubtleKmacParams),
 }
 
 impl NormalizedAlgorithm for SignAlgorithm {
@@ -5038,6 +5041,9 @@ impl NormalizedAlgorithm for SignAlgorithm {
             CryptoAlgorithm::MlDsa44 | CryptoAlgorithm::MlDsa65 | CryptoAlgorithm::MlDsa87 => Ok(
                 SignAlgorithm::MlDsa(object.try_into_with_cx_and_name(cx, algorithm_name)?),
             ),
+            CryptoAlgorithm::Kmac128 | CryptoAlgorithm::Kmac256 => Ok(SignAlgorithm::Kmac(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
             _ => Err(Error::NotSupported(Some(format!(
                 "{} does not support \"sign\" operation",
                 algorithm_name.as_str()
@@ -5054,6 +5060,7 @@ impl NormalizedAlgorithm for SignAlgorithm {
             SignAlgorithm::Ed448(algorithm) => algorithm.name,
             SignAlgorithm::Hmac(algorithm) => algorithm.name,
             SignAlgorithm::MlDsa(algorithm) => algorithm.name,
+            SignAlgorithm::Kmac(algorithm) => algorithm.name,
         }
     }
 }
@@ -5070,6 +5077,7 @@ impl SignAlgorithm {
             SignAlgorithm::Ed448(algorithm) => ed448_operation::sign(algorithm, key, message),
             SignAlgorithm::Hmac(_algorithm) => hmac_operation::sign(key, message),
             SignAlgorithm::MlDsa(algorithm) => ml_dsa_operation::sign(algorithm, key, message),
+            SignAlgorithm::Kmac(algorithm) => kmac_operation::sign(algorithm, key, message),
         }
     }
 }
@@ -5091,6 +5099,7 @@ enum VerifyAlgorithm {
     Ed448(SubtleEd448Params),
     Hmac(SubtleAlgorithm),
     MlDsa(SubtleContextParams),
+    Kmac(SubtleKmacParams),
 }
 
 impl NormalizedAlgorithm for VerifyAlgorithm {
@@ -5121,6 +5130,9 @@ impl NormalizedAlgorithm for VerifyAlgorithm {
             CryptoAlgorithm::MlDsa44 | CryptoAlgorithm::MlDsa65 | CryptoAlgorithm::MlDsa87 => Ok(
                 VerifyAlgorithm::MlDsa(object.try_into_with_cx_and_name(cx, algorithm_name)?),
             ),
+            CryptoAlgorithm::Kmac128 | CryptoAlgorithm::Kmac256 => Ok(VerifyAlgorithm::Kmac(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
             _ => Err(Error::NotSupported(Some(format!(
                 "{} does not support \"verify\" operation",
                 algorithm_name.as_str()
@@ -5137,6 +5149,7 @@ impl NormalizedAlgorithm for VerifyAlgorithm {
             VerifyAlgorithm::Ed448(algorithm) => algorithm.name,
             VerifyAlgorithm::Hmac(algorithm) => algorithm.name,
             VerifyAlgorithm::MlDsa(algorithm) => algorithm.name,
+            VerifyAlgorithm::Kmac(algorithm) => algorithm.name,
         }
     }
 }
@@ -5162,6 +5175,9 @@ impl VerifyAlgorithm {
             VerifyAlgorithm::Hmac(_algorithm) => hmac_operation::verify(key, message, signature),
             VerifyAlgorithm::MlDsa(algorithm) => {
                 ml_dsa_operation::verify(algorithm, key, message, signature)
+            },
+            VerifyAlgorithm::Kmac(algorithm) => {
+                kmac_operation::verify(algorithm, key, message, signature)
             },
         }
     }
