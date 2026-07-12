@@ -2803,9 +2803,9 @@ pub(crate) fn check_support_for_algorithm(
                 GetKeyLengthAlgorithm::AesOcb(normalized_derived_key_algorithm) => {
                     matches!(normalized_derived_key_algorithm.length, 128 | 192 | 256)
                 },
-                GetKeyLengthAlgorithm::ChaCha20Poly1305(_) | GetKeyLengthAlgorithm::Argon2(_) => {
-                    true
-                },
+                GetKeyLengthAlgorithm::ChaCha20Poly1305(_) |
+                GetKeyLengthAlgorithm::Kmac(_) |
+                GetKeyLengthAlgorithm::Argon2(_) => true,
             }
         },
         "encapsulate" => {
@@ -6161,6 +6161,7 @@ enum GetKeyLengthAlgorithm {
     Pbkdf2(SubtleAlgorithm),
     AesOcb(SubtleAesDerivedKeyParams),
     ChaCha20Poly1305(SubtleAlgorithm),
+    Kmac(SubtleKmacImportParams),
     Argon2(SubtleAlgorithm),
 }
 
@@ -6198,6 +6199,9 @@ impl NormalizedAlgorithm for GetKeyLengthAlgorithm {
             CryptoAlgorithm::ChaCha20Poly1305 => Ok(GetKeyLengthAlgorithm::ChaCha20Poly1305(
                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
             )),
+            CryptoAlgorithm::Kmac128 | CryptoAlgorithm::Kmac256 => Ok(GetKeyLengthAlgorithm::Kmac(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
             CryptoAlgorithm::Argon2D | CryptoAlgorithm::Argon2I | CryptoAlgorithm::Argon2ID => {
                 Ok(GetKeyLengthAlgorithm::Argon2(
                     object.try_into_with_cx_and_name(cx, algorithm_name)?,
@@ -6221,6 +6225,7 @@ impl NormalizedAlgorithm for GetKeyLengthAlgorithm {
             GetKeyLengthAlgorithm::Pbkdf2(algorithm) => algorithm.name,
             GetKeyLengthAlgorithm::AesOcb(algorithm) => algorithm.name,
             GetKeyLengthAlgorithm::ChaCha20Poly1305(algorithm) => algorithm.name,
+            GetKeyLengthAlgorithm::Kmac(algorithm) => algorithm.name,
             GetKeyLengthAlgorithm::Argon2(algorithm) => algorithm.name,
         }
     }
@@ -6248,6 +6253,7 @@ impl GetKeyLengthAlgorithm {
             GetKeyLengthAlgorithm::ChaCha20Poly1305(_algorithm) => {
                 chacha20_poly1305_operation::get_key_length()
             },
+            GetKeyLengthAlgorithm::Kmac(algorithm) => kmac_operation::get_key_length(algorithm),
             GetKeyLengthAlgorithm::Argon2(_algorithm) => argon2_operation::get_key_length(),
         }
     }

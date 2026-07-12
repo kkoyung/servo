@@ -342,3 +342,32 @@ pub(crate) fn export_key(format: KeyFormat, key: &CryptoKey) -> Result<ExportedK
     // Step 5. Return result.
     Ok(result)
 }
+
+/// <https://wicg.github.io/webcrypto-modern-algos/#kmac-operations-get-key-length>
+pub(crate) fn get_key_length(
+    normalized_algorithm: &SubtleKmacImportParams,
+) -> Result<Option<u32>, Error> {
+    // Step 1.
+    // If the length member of normalizedAlgorithm is present:
+    //     Let length be equal to the length member of normalizedAlgorithm.
+    // Otherwise, if the name member of normalizedAlgorithm is a case-sensitive string match for
+    // "KMAC128":
+    //     Let length be 128.
+    // Otherwise, if the name member of normalizedAlgorithm is a case-sensitive string match for
+    // "KMAC256":
+    //     Let length be 256.
+    let length = if let Some(normalized_algorithm_length) = normalized_algorithm.length {
+        normalized_algorithm_length
+    } else if normalized_algorithm.name == CryptoAlgorithm::Kmac128 {
+        128
+    } else if normalized_algorithm.name == CryptoAlgorithm::Kmac256 {
+        256
+    } else {
+        return Err(Error::Data(Some(
+            "Unable to determine the length of KMAC key".into(),
+        )));
+    };
+
+    // Step 2. Return length.
+    Ok(Some(length))
+}
