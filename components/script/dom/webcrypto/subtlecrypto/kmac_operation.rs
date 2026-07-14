@@ -500,43 +500,53 @@ pub(crate) fn get_key_length(
     Ok(Some(length))
 }
 
-/// The right_encode function defined in Section 2.3.1 of [NIST-SP800-185], using `value` as the x
-/// input parameter.
+/// The KMAC128 function defined in Section 4 of [NIST-SP800-185], using `key` as the K input
+/// parameter, `message` as the X input parameter, `output_length` as the L input parameter, and
+/// `customization` as the S input parameter, where `key_length` is the key length in bits.
 /// <https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-185.pdf>
-fn right_encode(value: u32) -> Vec<u8> {
-    let value_in_bytes = value.to_be_bytes();
-    let leading_zero = value_in_bytes[..3]
-        .iter()
-        .take_while(|byte| **byte == 0)
-        .count();
-    let mut result = Vec::<u8>::with_capacity(5);
-    result.extend_from_slice(&value_in_bytes[leading_zero..]);
-    result.push(u8::try_from(4 - leading_zero).expect("The number must be 1..=4"));
-    result
+///
+/// Since the key is represented as a byte sequence, and the key length in bits might not be a
+/// muliple of 8, callers need to provide the actual key length in bits through the function
+/// argument `key_length`, and the excess bits at the end of the byte sequence must be zeros.
+fn kmac128(
+    key: &[u8],
+    key_length: u32,
+    message: &[u8],
+    output_length: u32,
+    customization: &[u8],
+) -> Vec<u8> {
+    kmac::<168>(key, key_length, message, output_length, customization)
 }
 
-/// The left_encode function defined in Section 2.3.1 of [NIST-SP800-185], using `value` as the x
-/// input parameter.
+/// The KMAC256 function defined in Section 4 of [NIST-SP800-185], using `key` as the K input
+/// parameter, `message` as the X input parameter, `output_length` as the L input parameter, and
+/// `customization` as the S input parameter, where `key_length` is the key length in bits.
 /// <https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-185.pdf>
-fn left_encode(value: u32) -> Vec<u8> {
-    let value_in_bytes = value.to_be_bytes();
-    let leading_zero = value_in_bytes[..3]
-        .iter()
-        .take_while(|byte| **byte == 0)
-        .count();
-    let mut result = Vec::<u8>::with_capacity(5);
-    result.push(u8::try_from(4 - leading_zero).expect("The number must be in 1..=4"));
-    result.extend_from_slice(&value_in_bytes[leading_zero..]);
-    result
+///
+/// Since the key is represented as a byte sequence, and the key length in bits might not be a
+/// muliple of 8, callers need to provide the actual key length in bits through the function
+/// argument `key_length`, and the excess bits at the end of the byte sequence must be zeros.
+fn kmac256(
+    key: &[u8],
+    key_length: u32,
+    message: &[u8],
+    output_length: u32,
+    customization: &[u8],
+) -> Vec<u8> {
+    kmac::<136>(key, key_length, message, output_length, customization)
 }
 
 /// A generic function for both the KMAC128 function and KMAC256 function defined in Section 4 of
 /// [NIST-SP800-185], using `key` as the K input parameter, `message` as the X input parameter,
 /// `output_length` as the L input parameter, and `customization` as the S input parameter, where
-/// `key_length` is the length (in bits) of `key`.
+/// `key_length` is the key length in bits.
 /// <https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-185.pdf>
 ///
-/// For KMAC128, set RATE to 168. For KMAC256, set RATE to 136.
+/// Since the key is represented as a byte sequence, and the key length in bits might not be a
+/// muliple of 8, callers need to provide the actual key length in bits through the function
+/// argument `key_length`, and the excess bits at the end of the byte sequence must be zeros.
+///
+/// Rate MUST be either 168 or 136 for KMAC128 and KMAC256 respectively.
 fn kmac<const RATE: usize>(
     key: &[u8],
     key_length: u32,
@@ -544,26 +554,32 @@ fn kmac<const RATE: usize>(
     output_length: u32,
     customization: &[u8],
 ) -> Vec<u8> {
-    // Initialize cSHAKE. Note that CShake<168> is same as CShake128, and CShake<136> is same as
-    // CShake256.
+    let mut buffer = [0u8; 5];
+    let zeros = [0u8; RATE];
+
+    // 1. newX = bytepad(encode_string(K), RATE) || X || right_encode(L).
+    // 2. return cSHAKE128(newX, L, “KMAC”, S).
+
+    // Initialize cSHAKE.
     let mut cshake = CShake::<RATE>::new_with_function_name(b"KMAC", customization);
 
-    // Hash bytepad(encode_string(K), RATE)
-    let left_encode_w = left_encode(RATE as u32);
-    let left_encode_key_length = left_encode(key_length);
-    cshake.update(&left_encode_w);
-    cshake.update(&left_encode_key_length);
-    cshake.update(key);
-    let written = left_encode_w.len() + left_encode_key_length.len() + key.len();
-    cshake.update(&vec![0u8; RATE - written % RATE]);
+    // Hash bytepad(encode_string(K), RATE).
+    let update_and_return_written = |cshake: &mut CShake<RATE>, input: &[u8]| -> usize {
+        cshake.update(input);
+        input.len()
+    };
+    let mut written = update_and_return_written(&mut cshake, left_encode(RATE as u32, &mut buffer));
+    written += update_and_return_written(&mut cshake, left_encode(key_length, &mut buffer));
+    written += update_and_return_written(&mut cshake, key);
+    cshake.update(&zeros[0..RATE - written % RATE]);
 
-    // Hash X
+    // Hash X.
     cshake.update(message);
 
-    // Hash right_encode(L)
-    cshake.update(&right_encode(output_length));
+    // Hash right_encode(L).
+    cshake.update(right_encode(output_length, &mut buffer));
 
-    // Finalize cSHAKE
+    // Finalize cSHAKE.
     let mut result = vec![0u8; output_length.div_ceil(8) as usize];
     cshake.finalize_xof_into(&mut result);
     if !output_length.is_multiple_of(8) {
@@ -577,30 +593,26 @@ fn kmac<const RATE: usize>(
     result
 }
 
-/// The KMAC128 function defined in Section 4 of [NIST-SP800-185], using `key` as the K input
-/// parameter, `message` as the X input parameter, `output_length` as the L input parameter, and
-/// `customization` as the S input parameter, where `key_length` is the length (in bits) of `key`.
-/// <https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-185.pdf>
-fn kmac128(
-    key: &[u8],
-    key_length: u32,
-    message: &[u8],
-    output_length: u32,
-    customization: &[u8],
-) -> Vec<u8> {
-    kmac::<168>(key, key_length, message, output_length, customization)
+/// The right_encode function defined in Section 2.3.1 of [NIST-SP800-185], using `value` as the x
+/// input parameter. <https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-185.pdf>
+///
+/// Callers need to provide `buffer` for internal operations. The byffer can be reused afterwards in
+/// separate calls of [`right_encode`] and [`left_encode`].
+fn right_encode(value: u32, buffer: &mut [u8; 5]) -> &[u8] {
+    buffer[0..4].copy_from_slice(&value.to_be_bytes());
+    let leading_zero = buffer[0..3].iter().take_while(|byte| **byte == 0).count();
+    buffer[4] = u8::try_from(4 - leading_zero).expect("The number must be 1..=4");
+    &buffer[leading_zero..5]
 }
 
-/// The KMAC256 function defined in Section 4 of [NIST-SP800-185], using `key` as the K input
-/// parameter, `message` as the X input parameter, `output_length` as the L input parameter, and
-/// `customization` as the S input parameter, where `key_length` is the length (in bits) of `key`.
-/// <https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-185.pdf>
-fn kmac256(
-    key: &[u8],
-    key_length: u32,
-    message: &[u8],
-    output_length: u32,
-    customization: &[u8],
-) -> Vec<u8> {
-    kmac::<136>(key, key_length, message, output_length, customization)
+/// The left_encode function defined in Section 2.3.1 of [NIST-SP800-185], using `value` as the x
+/// input parameter. <https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-185.pdf>
+///
+/// Callers need to provide `buffer` for internal operations. The byffer can be reused afterwards in
+/// separate calls of [`right_encode`] and [`left_encode`].
+fn left_encode(value: u32, buffer: &mut [u8; 5]) -> &[u8] {
+    buffer[1..5].copy_from_slice(&value.to_be_bytes());
+    let leading_zero = buffer[1..4].iter().take_while(|byte| **byte == 0).count();
+    buffer[leading_zero] = u8::try_from(4 - leading_zero).expect("The number must be 1..=4");
+    &buffer[leading_zero..5]
 }
