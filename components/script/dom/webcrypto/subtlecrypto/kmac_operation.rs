@@ -4,7 +4,7 @@
 
 use cshake::CShake;
 use cshake::digest::{ExtendableOutput, Update};
-use elliptic_curve::ctutils::CtEq;
+use ctutils::CtEq;
 use js::context::JSContext;
 use rand::TryRng;
 use zeroize::Zeroizing;
