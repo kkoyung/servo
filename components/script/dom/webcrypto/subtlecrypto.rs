@@ -2493,107 +2493,35 @@ pub(crate) fn check_support_for_algorithm(
             else {
                 return false;
             };
-            normalized_algorithm.determine_support_from_operation_steps()
+            normalized_algorithm.determine_support_from_operation_steps(length)
         },
         "decrypt" => {
             let Ok(normalized_algorithm) = normalize_algorithm::<DecryptOperation>(cx, algorithm)
             else {
                 return false;
             };
-
-            match normalized_algorithm {
-                DecryptAlgorithm::RsaOaep(_) => true,
-                DecryptAlgorithm::AesCtr(normalized_algorithm) => {
-                    normalized_algorithm.counter.len() == 16 &&
-                        normalized_algorithm.length != 0 &&
-                        normalized_algorithm.length <= 128
-                },
-                DecryptAlgorithm::AesCbc(normalized_algorithm) => {
-                    normalized_algorithm.iv.len() == 16
-                },
-                DecryptAlgorithm::AesGcm(normalized_algorithm) => {
-                    normalized_algorithm
-                        .tag_length
-                        .is_none_or(|length| matches!(length, 32 | 64 | 96 | 104 | 112 | 120 | 128)) &&
-                        normalized_algorithm.iv.len() <= u64::MAX as usize &&
-                        normalized_algorithm
-                            .additional_data
-                            .is_none_or(|additional_data| {
-                                additional_data.len() <= u64::MAX as usize
-                            })
-                },
-                DecryptAlgorithm::AesOcb(normalized_algorithm) => {
-                    normalized_algorithm.iv.len() <= 15 &&
-                        normalized_algorithm
-                            .tag_length
-                            .is_none_or(|length| matches!(length, 64 | 96 | 128))
-                },
-                DecryptAlgorithm::ChaCha20Poly1305(normalized_algorithm) => {
-                    normalized_algorithm.iv.len() == 12 &&
-                        normalized_algorithm
-                            .tag_length
-                            .is_none_or(|length| length == 128)
-                },
-            }
+            normalized_algorithm.determine_support_from_operation_steps(length)
         },
         "sign" => {
             let Ok(normalized_algorithm) = normalize_algorithm::<SignOperation>(cx, algorithm)
             else {
                 return false;
             };
-
-            match normalized_algorithm {
-                SignAlgorithm::RsassaPkcs1V1_5(_) |
-                SignAlgorithm::RsaPss(_) |
-                SignAlgorithm::Ecdsa(_) |
-                SignAlgorithm::Ed25519(_) => true,
-                SignAlgorithm::Ed448(normalized_algorithm) => normalized_algorithm
-                    .context
-                    .is_none_or(|context| context.len() <= 255),
-                SignAlgorithm::Hmac(_) => true,
-                SignAlgorithm::MlDsa(normalized_algorithm) => normalized_algorithm
-                    .context
-                    .is_none_or(|context| context.len() <= 255),
-                SignAlgorithm::Kmac(_) => true,
-            }
+            normalized_algorithm.determine_support_from_operation_steps(length)
         },
         "verify" => {
             let Ok(normalized_algorithm) = normalize_algorithm::<VerifyOperation>(cx, algorithm)
             else {
                 return false;
             };
-
-            match normalized_algorithm {
-                VerifyAlgorithm::RsassaPkcs1V1_5(_) |
-                VerifyAlgorithm::RsaPss(_) |
-                VerifyAlgorithm::Ecdsa(_) |
-                VerifyAlgorithm::Ed25519(_) => true,
-                VerifyAlgorithm::Ed448(normalized_algorithm) => normalized_algorithm
-                    .context
-                    .is_none_or(|context| context.len() <= 255),
-                VerifyAlgorithm::Hmac(_) => true,
-                VerifyAlgorithm::MlDsa(normalized_algorithm) => normalized_algorithm
-                    .context
-                    .is_none_or(|context| context.len() <= 255),
-                VerifyAlgorithm::Kmac(_) => true,
-            }
+            normalized_algorithm.determine_support_from_operation_steps(length)
         },
         "digest" => {
             let Ok(normalized_algorithm) = normalize_algorithm::<DigestOperation>(cx, algorithm)
             else {
                 return false;
             };
-
-            match normalized_algorithm {
-                DigestAlgorithm::Sha(_) |
-                DigestAlgorithm::Sha3(_) |
-                DigestAlgorithm::CShake(_) |
-                DigestAlgorithm::TurboShake(_) => true,
-                DigestAlgorithm::KangarooTwelve(normalized_algorithm) => {
-                    normalized_algorithm.output_length != 0 &&
-                        normalized_algorithm.output_length.is_multiple_of(8)
-                },
-            }
+            normalized_algorithm.determine_support_from_operation_steps(length)
         },
         "deriveBits" => {
             let Ok(normalized_algorithm) =
@@ -2601,51 +2529,7 @@ pub(crate) fn check_support_for_algorithm(
             else {
                 return false;
             };
-
-            match normalized_algorithm {
-                DeriveBitsAlgorithm::Ecdh(normalized_algorithm) => {
-                    let public_key = normalized_algorithm.public.root();
-                    let Ok(maximum_length) = ecdh_operation::maximum_length(&public_key) else {
-                        return false;
-                    };
-                    public_key.Type() == KeyType::Public &&
-                        public_key.algorithm().name() == normalized_algorithm.name &&
-                        length.is_none_or(|length| length <= maximum_length)
-                },
-                DeriveBitsAlgorithm::X25519(normalized_algorithm) => {
-                    let public_key = normalized_algorithm.public.root();
-                    public_key.Type() == KeyType::Public &&
-                        public_key.algorithm().name() == normalized_algorithm.name &&
-                        length.is_none_or(|length| length <= 256)
-                },
-                DeriveBitsAlgorithm::X448(_) => {
-                    length.is_none_or(|length| x448_operation::SECRET_LENGTH as u32 * 8 >= length)
-                },
-                DeriveBitsAlgorithm::Hkdf(normalized_algorithm) => {
-                    let hash_length = match normalized_algorithm.hash.name() {
-                        CryptoAlgorithm::Sha1 => 160,
-                        CryptoAlgorithm::Sha256 => 256,
-                        CryptoAlgorithm::Sha384 => 384,
-                        CryptoAlgorithm::Sha512 => 512,
-                        _ => return false,
-                    };
-                    length.is_some_and(|length| length % 8 == 0 && length <= 255 * hash_length)
-                },
-                DeriveBitsAlgorithm::Pbkdf2(normalized_algorithm) => {
-                    length.is_some_and(|length| length % 8 == 0) &&
-                        normalized_algorithm.iterations != 0
-                },
-                DeriveBitsAlgorithm::Argon2(normalized_algorithm) => {
-                    length.is_some_and(|length| length >= 32 && length % 8 == 0) &&
-                        normalized_algorithm
-                            .version
-                            .is_none_or(|version| version == 19) &&
-                        normalized_algorithm.parallelism != 0 &&
-                        normalized_algorithm.parallelism <= 16777215 &&
-                        normalized_algorithm.memory >= 8 * normalized_algorithm.parallelism &&
-                        normalized_algorithm.passes != 0
-                },
-            }
+            normalized_algorithm.determine_support_from_operation_steps(length)
         },
         "wrapKey" => {
             let Ok(normalized_algorithm) = normalize_algorithm::<WrapKeyOperation>(cx, algorithm)
@@ -4975,7 +4859,7 @@ trait NormalizedAlgorithm: Sized {
     ///
     /// The default implemenation is to return false. The actual implementation depends on the
     /// operation represented by the trait implementor.
-    fn determine_support_from_operation_steps(&self) -> bool {
+    fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
         // Step 1. If the specified operation or algorithm (or one of its parameter values) is
         // expected to fail (for any key and/or data) for an implementation-specific reason (e.g.
         // known nonconformance to the specification), return false.
@@ -5078,7 +4962,7 @@ impl NormalizedAlgorithm for EncryptAlgorithm {
         }
     }
 
-    fn determine_support_from_operation_steps(&self) -> bool {
+    fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
         match self {
             EncryptAlgorithm::RsaOaep(_) => true,
             EncryptAlgorithm::AesCtr(normalized_algorithm) => {
@@ -5198,6 +5082,43 @@ impl NormalizedAlgorithm for DecryptAlgorithm {
             DecryptAlgorithm::ChaCha20Poly1305(algorithm) => algorithm.name,
         }
     }
+
+    fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
+        match self {
+            DecryptAlgorithm::RsaOaep(_) => true,
+            DecryptAlgorithm::AesCtr(normalized_algorithm) => {
+                normalized_algorithm.counter.len() == 16 &&
+                    normalized_algorithm.length != 0 &&
+                    normalized_algorithm.length <= 128
+            },
+            DecryptAlgorithm::AesCbc(normalized_algorithm) => normalized_algorithm.iv.len() == 16,
+            DecryptAlgorithm::AesGcm(normalized_algorithm) => {
+                normalized_algorithm
+                    .tag_length
+                    .as_ref()
+                    .is_none_or(|length| matches!(length, 32 | 64 | 96 | 104 | 112 | 120 | 128)) &&
+                    normalized_algorithm.iv.len() <= u64::MAX as usize &&
+                    normalized_algorithm
+                        .additional_data
+                        .as_ref()
+                        .is_none_or(|additional_data| additional_data.len() <= u64::MAX as usize)
+            },
+            DecryptAlgorithm::AesOcb(normalized_algorithm) => {
+                normalized_algorithm.iv.len() <= 15 &&
+                    normalized_algorithm
+                        .tag_length
+                        .as_ref()
+                        .is_none_or(|length| matches!(length, 64 | 96 | 128))
+            },
+            DecryptAlgorithm::ChaCha20Poly1305(normalized_algorithm) => {
+                normalized_algorithm.iv.len() == 12 &&
+                    normalized_algorithm
+                        .tag_length
+                        .as_ref()
+                        .is_none_or(|length| *length == 128)
+            },
+        }
+    }
 }
 
 impl DecryptAlgorithm {
@@ -5295,6 +5216,25 @@ impl NormalizedAlgorithm for SignAlgorithm {
             SignAlgorithm::Kmac(algorithm) => algorithm.name,
         }
     }
+
+    fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
+        match self {
+            SignAlgorithm::RsassaPkcs1V1_5(_) |
+            SignAlgorithm::RsaPss(_) |
+            SignAlgorithm::Ecdsa(_) |
+            SignAlgorithm::Ed25519(_) => true,
+            SignAlgorithm::Ed448(normalized_algorithm) => normalized_algorithm
+                .context
+                .as_ref()
+                .is_none_or(|context| context.len() <= 255),
+            SignAlgorithm::Hmac(_) => true,
+            SignAlgorithm::MlDsa(normalized_algorithm) => normalized_algorithm
+                .context
+                .as_ref()
+                .is_none_or(|context| context.len() <= 255),
+            SignAlgorithm::Kmac(_) => true,
+        }
+    }
 }
 
 impl SignAlgorithm {
@@ -5382,6 +5322,25 @@ impl NormalizedAlgorithm for VerifyAlgorithm {
             VerifyAlgorithm::Hmac(algorithm) => algorithm.name,
             VerifyAlgorithm::MlDsa(algorithm) => algorithm.name,
             VerifyAlgorithm::Kmac(algorithm) => algorithm.name,
+        }
+    }
+
+    fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
+        match self {
+            VerifyAlgorithm::RsassaPkcs1V1_5(_) |
+            VerifyAlgorithm::RsaPss(_) |
+            VerifyAlgorithm::Ecdsa(_) |
+            VerifyAlgorithm::Ed25519(_) => true,
+            VerifyAlgorithm::Ed448(normalized_algorithm) => normalized_algorithm
+                .context
+                .as_ref()
+                .is_none_or(|context| context.len() <= 255),
+            VerifyAlgorithm::Hmac(_) => true,
+            VerifyAlgorithm::MlDsa(normalized_algorithm) => normalized_algorithm
+                .context
+                .as_ref()
+                .is_none_or(|context| context.len() <= 255),
+            VerifyAlgorithm::Kmac(_) => true,
         }
     }
 }
@@ -5474,6 +5433,19 @@ impl NormalizedAlgorithm for DigestAlgorithm {
             DigestAlgorithm::CShake(algorithm) => algorithm.name,
             DigestAlgorithm::TurboShake(algorithm) => algorithm.name,
             DigestAlgorithm::KangarooTwelve(algorithm) => algorithm.name,
+        }
+    }
+
+    fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
+        match self {
+            DigestAlgorithm::Sha(_) |
+            DigestAlgorithm::Sha3(_) |
+            DigestAlgorithm::CShake(_) |
+            DigestAlgorithm::TurboShake(_) => true,
+            DigestAlgorithm::KangarooTwelve(normalized_algorithm) => {
+                normalized_algorithm.output_length != 0 &&
+                    normalized_algorithm.output_length.is_multiple_of(8)
+            },
         }
     }
 }
@@ -5594,6 +5566,52 @@ impl NormalizedAlgorithm for DeriveBitsAlgorithm {
             DeriveBitsAlgorithm::Hkdf(algorithm) => algorithm.name,
             DeriveBitsAlgorithm::Pbkdf2(algorithm) => algorithm.name,
             DeriveBitsAlgorithm::Argon2(algorithm) => algorithm.name,
+        }
+    }
+
+    fn determine_support_from_operation_steps(&self, length: Option<u32>) -> bool {
+        match self {
+            DeriveBitsAlgorithm::Ecdh(normalized_algorithm) => {
+                let public_key = normalized_algorithm.public.root();
+                let Ok(maximum_length) = ecdh_operation::maximum_length(&public_key) else {
+                    return false;
+                };
+                public_key.Type() == KeyType::Public &&
+                    public_key.algorithm().name() == normalized_algorithm.name &&
+                    length.is_none_or(|length| length <= maximum_length)
+            },
+            DeriveBitsAlgorithm::X25519(normalized_algorithm) => {
+                let public_key = normalized_algorithm.public.root();
+                public_key.Type() == KeyType::Public &&
+                    public_key.algorithm().name() == normalized_algorithm.name &&
+                    length.is_none_or(|length| length <= 256)
+            },
+            DeriveBitsAlgorithm::X448(_) => {
+                length.is_none_or(|length| x448_operation::SECRET_LENGTH as u32 * 8 >= length)
+            },
+            DeriveBitsAlgorithm::Hkdf(normalized_algorithm) => {
+                let hash_length = match normalized_algorithm.hash.name() {
+                    CryptoAlgorithm::Sha1 => 160,
+                    CryptoAlgorithm::Sha256 => 256,
+                    CryptoAlgorithm::Sha384 => 384,
+                    CryptoAlgorithm::Sha512 => 512,
+                    _ => return false,
+                };
+                length.is_some_and(|length| length % 8 == 0 && length <= 255 * hash_length)
+            },
+            DeriveBitsAlgorithm::Pbkdf2(normalized_algorithm) => {
+                length.is_some_and(|length| length % 8 == 0) && normalized_algorithm.iterations != 0
+            },
+            DeriveBitsAlgorithm::Argon2(normalized_algorithm) => {
+                length.is_some_and(|length| length >= 32 && length % 8 == 0) &&
+                    normalized_algorithm
+                        .version
+                        .is_none_or(|version| version == 19) &&
+                    normalized_algorithm.parallelism != 0 &&
+                    normalized_algorithm.parallelism <= 16777215 &&
+                    normalized_algorithm.memory >= 8 * normalized_algorithm.parallelism &&
+                    normalized_algorithm.passes != 0
+            },
         }
     }
 }
