@@ -2536,20 +2536,14 @@ pub(crate) fn check_support_for_algorithm(
             else {
                 return check_support_for_algorithm(cx, "encrypt", algorithm, length);
             };
-
-            match normalized_algorithm {
-                WrapKeyAlgorithm::AesKw(_) => true,
-            }
+            normalized_algorithm.determine_support_from_operation_steps(length)
         },
         "unwrapKey" => {
             let Ok(normalized_algorithm) = normalize_algorithm::<UnwrapKeyOperation>(cx, algorithm)
             else {
                 return check_support_for_algorithm(cx, "decrypt", algorithm, length);
             };
-
-            match normalized_algorithm {
-                UnwrapKeyAlgorithm::AesKw(_) => true,
-            }
+            normalized_algorithm.determine_support_from_operation_steps(length)
         },
         "generateKey" => {
             let Ok(normalized_algorithm) =
@@ -2557,99 +2551,21 @@ pub(crate) fn check_support_for_algorithm(
             else {
                 return false;
             };
-
-            match normalized_algorithm {
-                GenerateKeyAlgorithm::RsassaPkcs1V1_5(normalized_algorithm) |
-                GenerateKeyAlgorithm::RsaPss(normalized_algorithm) |
-                GenerateKeyAlgorithm::RsaOaep(normalized_algorithm) => {
-                    normalized_algorithm.validate_parameters().is_ok()
-                },
-                GenerateKeyAlgorithm::Ecdsa(normalized_algorithm) |
-                GenerateKeyAlgorithm::Ecdh(normalized_algorithm) => {
-                    SUPPORTED_CURVES.contains(&normalized_algorithm.named_curve.as_str())
-                },
-                GenerateKeyAlgorithm::Ed25519(_) |
-                GenerateKeyAlgorithm::X25519(_) |
-                GenerateKeyAlgorithm::Ed448(_) |
-                GenerateKeyAlgorithm::X448(_) => true,
-                GenerateKeyAlgorithm::AesCtr(normalized_algorithm) |
-                GenerateKeyAlgorithm::AesCbc(normalized_algorithm) |
-                GenerateKeyAlgorithm::AesGcm(normalized_algorithm) |
-                GenerateKeyAlgorithm::AesKw(normalized_algorithm) => {
-                    matches!(normalized_algorithm.length, 128 | 192 | 256)
-                },
-                GenerateKeyAlgorithm::Hmac(normalized_algorithm) => {
-                    normalized_algorithm.length.is_none_or(|length| length != 0)
-                },
-                GenerateKeyAlgorithm::MlKem(_) | GenerateKeyAlgorithm::MlDsa(_) => true,
-                GenerateKeyAlgorithm::AesOcb(normalized_algorithm) => {
-                    matches!(normalized_algorithm.length, 128 | 192 | 256)
-                },
-                GenerateKeyAlgorithm::ChaCha20Poly1305(_) | GenerateKeyAlgorithm::Kmac(_) => true,
-            }
+            normalized_algorithm.determine_support_from_operation_steps(length)
         },
         "importKey" => {
             let Ok(normalized_algorithm) = normalize_algorithm::<ImportKeyOperation>(cx, algorithm)
             else {
                 return false;
             };
-
-            match normalized_algorithm {
-                ImportKeyAlgorithm::RsassaPkcs1V1_5(_) |
-                ImportKeyAlgorithm::RsaPss(_) |
-                ImportKeyAlgorithm::RsaOaep(_) => true,
-                ImportKeyAlgorithm::Ecdsa(normalized_algorithm) |
-                ImportKeyAlgorithm::Ecdh(normalized_algorithm) => {
-                    SUPPORTED_CURVES.contains(&normalized_algorithm.named_curve.as_str())
-                },
-                ImportKeyAlgorithm::Ed25519(_) |
-                ImportKeyAlgorithm::X25519(_) |
-                ImportKeyAlgorithm::Ed448(_) |
-                ImportKeyAlgorithm::X448(_) |
-                ImportKeyAlgorithm::AesCtr(_) |
-                ImportKeyAlgorithm::AesCbc(_) |
-                ImportKeyAlgorithm::AesGcm(_) |
-                ImportKeyAlgorithm::AesKw(_) => true,
-                ImportKeyAlgorithm::Hmac(normalized_algorithm) => {
-                    normalized_algorithm.length.is_none_or(|length| length != 0)
-                },
-                ImportKeyAlgorithm::Hkdf(_) |
-                ImportKeyAlgorithm::Pbkdf2(_) |
-                ImportKeyAlgorithm::MlKem(_) |
-                ImportKeyAlgorithm::MlDsa(_) |
-                ImportKeyAlgorithm::AesOcb(_) |
-                ImportKeyAlgorithm::ChaCha20Poly1305(_) |
-                ImportKeyAlgorithm::Kmac(_) |
-                ImportKeyAlgorithm::Argon2(_) => true,
-            }
+            normalized_algorithm.determine_support_from_operation_steps(length)
         },
         "exportKey" => {
             let Ok(normalized_algorithm) = normalize_algorithm::<ExportKeyOperation>(cx, algorithm)
             else {
                 return false;
             };
-
-            match normalized_algorithm {
-                ExportKeyAlgorithm::RsassaPkcs1V1_5(_) |
-                ExportKeyAlgorithm::RsaPss(_) |
-                ExportKeyAlgorithm::RsaOaep(_) |
-                ExportKeyAlgorithm::Ecdsa(_) |
-                ExportKeyAlgorithm::Ecdh(_) |
-                ExportKeyAlgorithm::Ed25519(_) |
-                ExportKeyAlgorithm::X25519(_) |
-                ExportKeyAlgorithm::Ed448(_) |
-                ExportKeyAlgorithm::X448(_) |
-                ExportKeyAlgorithm::AesCtr(_) |
-                ExportKeyAlgorithm::AesCbc(_) |
-                ExportKeyAlgorithm::AesGcm(_) |
-                ExportKeyAlgorithm::AesKw(_) |
-                ExportKeyAlgorithm::Hmac(_) |
-                ExportKeyAlgorithm::MlKem(_) |
-                ExportKeyAlgorithm::MlDsa(_) |
-                ExportKeyAlgorithm::AesOcb(_) |
-                ExportKeyAlgorithm::ChaCha20Poly1305(_) |
-                ExportKeyAlgorithm::Kmac(_) => true,
-            }
+            normalized_algorithm.determine_support_from_operation_steps(length)
         },
         "get key length" => {
             let Ok(normalized_algorithm) =
@@ -2657,27 +2573,7 @@ pub(crate) fn check_support_for_algorithm(
             else {
                 return false;
             };
-
-            match normalized_algorithm {
-                GetKeyLengthAlgorithm::AesCtr(normalized_derived_key_algorithm) |
-                GetKeyLengthAlgorithm::AesCbc(normalized_derived_key_algorithm) |
-                GetKeyLengthAlgorithm::AesGcm(normalized_derived_key_algorithm) |
-                GetKeyLengthAlgorithm::AesKw(normalized_derived_key_algorithm) => {
-                    matches!(normalized_derived_key_algorithm.length, 128 | 192 | 256)
-                },
-                GetKeyLengthAlgorithm::Hmac(normalized_derived_key_algorithm) => {
-                    normalized_derived_key_algorithm
-                        .length
-                        .is_none_or(|length| length != 0)
-                },
-                GetKeyLengthAlgorithm::Hkdf(_) | GetKeyLengthAlgorithm::Pbkdf2(_) => true,
-                GetKeyLengthAlgorithm::AesOcb(normalized_derived_key_algorithm) => {
-                    matches!(normalized_derived_key_algorithm.length, 128 | 192 | 256)
-                },
-                GetKeyLengthAlgorithm::ChaCha20Poly1305(_) |
-                GetKeyLengthAlgorithm::Kmac(_) |
-                GetKeyLengthAlgorithm::Argon2(_) => true,
-            }
+            normalized_algorithm.determine_support_from_operation_steps(length)
         },
         "encapsulate" => {
             let Ok(normalized_algorithm) =
@@ -2685,10 +2581,7 @@ pub(crate) fn check_support_for_algorithm(
             else {
                 return false;
             };
-
-            match normalized_algorithm {
-                EncapsulateAlgorithm::MlKem(_) => true,
-            }
+            normalized_algorithm.determine_support_from_operation_steps(length)
         },
         "decapsulate" => {
             let Ok(normalized_algorithm) =
@@ -2696,10 +2589,7 @@ pub(crate) fn check_support_for_algorithm(
             else {
                 return false;
             };
-
-            match normalized_algorithm {
-                DecapsulateAlgorithm::MlKem(_) => true,
-            }
+            normalized_algorithm.determine_support_from_operation_steps(length)
         },
         _ => false,
     }
@@ -5676,6 +5566,12 @@ impl NormalizedAlgorithm for WrapKeyAlgorithm {
             WrapKeyAlgorithm::AesKw(algorithm) => algorithm.name,
         }
     }
+
+    fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
+        match self {
+            WrapKeyAlgorithm::AesKw(_) => true,
+        }
+    }
 }
 
 impl WrapKeyAlgorithm {
@@ -5719,6 +5615,12 @@ impl NormalizedAlgorithm for UnwrapKeyAlgorithm {
     fn name(&self) -> CryptoAlgorithm {
         match self {
             UnwrapKeyAlgorithm::AesKw(algorithm) => algorithm.name,
+        }
+    }
+
+    fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
+        match self {
+            UnwrapKeyAlgorithm::AesKw(_) => true,
         }
     }
 }
@@ -5856,6 +5758,38 @@ impl NormalizedAlgorithm for GenerateKeyAlgorithm {
             GenerateKeyAlgorithm::AesOcb(algorithm) => algorithm.name,
             GenerateKeyAlgorithm::ChaCha20Poly1305(algorithm) => algorithm.name,
             GenerateKeyAlgorithm::Kmac(algorithm) => algorithm.name,
+        }
+    }
+
+    fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
+        match self {
+            GenerateKeyAlgorithm::RsassaPkcs1V1_5(normalized_algorithm) |
+            GenerateKeyAlgorithm::RsaPss(normalized_algorithm) |
+            GenerateKeyAlgorithm::RsaOaep(normalized_algorithm) => {
+                normalized_algorithm.validate_parameters().is_ok()
+            },
+            GenerateKeyAlgorithm::Ecdsa(normalized_algorithm) |
+            GenerateKeyAlgorithm::Ecdh(normalized_algorithm) => {
+                SUPPORTED_CURVES.contains(&normalized_algorithm.named_curve.as_str())
+            },
+            GenerateKeyAlgorithm::Ed25519(_) |
+            GenerateKeyAlgorithm::X25519(_) |
+            GenerateKeyAlgorithm::Ed448(_) |
+            GenerateKeyAlgorithm::X448(_) => true,
+            GenerateKeyAlgorithm::AesCtr(normalized_algorithm) |
+            GenerateKeyAlgorithm::AesCbc(normalized_algorithm) |
+            GenerateKeyAlgorithm::AesGcm(normalized_algorithm) |
+            GenerateKeyAlgorithm::AesKw(normalized_algorithm) => {
+                matches!(normalized_algorithm.length, 128 | 192 | 256)
+            },
+            GenerateKeyAlgorithm::Hmac(normalized_algorithm) => {
+                normalized_algorithm.length.is_none_or(|length| length != 0)
+            },
+            GenerateKeyAlgorithm::MlKem(_) | GenerateKeyAlgorithm::MlDsa(_) => true,
+            GenerateKeyAlgorithm::AesOcb(normalized_algorithm) => {
+                matches!(normalized_algorithm.length, 128 | 192 | 256)
+            },
+            GenerateKeyAlgorithm::ChaCha20Poly1305(_) | GenerateKeyAlgorithm::Kmac(_) => true,
         }
     }
 }
@@ -6095,6 +6029,37 @@ impl NormalizedAlgorithm for ImportKeyAlgorithm {
             ImportKeyAlgorithm::ChaCha20Poly1305(algorithm) => algorithm.name,
             ImportKeyAlgorithm::Kmac(algorithm) => algorithm.name,
             ImportKeyAlgorithm::Argon2(algorithm) => algorithm.name,
+        }
+    }
+
+    fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
+        match self {
+            ImportKeyAlgorithm::RsassaPkcs1V1_5(_) |
+            ImportKeyAlgorithm::RsaPss(_) |
+            ImportKeyAlgorithm::RsaOaep(_) => true,
+            ImportKeyAlgorithm::Ecdsa(normalized_algorithm) |
+            ImportKeyAlgorithm::Ecdh(normalized_algorithm) => {
+                SUPPORTED_CURVES.contains(&normalized_algorithm.named_curve.as_str())
+            },
+            ImportKeyAlgorithm::Ed25519(_) |
+            ImportKeyAlgorithm::X25519(_) |
+            ImportKeyAlgorithm::Ed448(_) |
+            ImportKeyAlgorithm::X448(_) |
+            ImportKeyAlgorithm::AesCtr(_) |
+            ImportKeyAlgorithm::AesCbc(_) |
+            ImportKeyAlgorithm::AesGcm(_) |
+            ImportKeyAlgorithm::AesKw(_) => true,
+            ImportKeyAlgorithm::Hmac(normalized_algorithm) => {
+                normalized_algorithm.length.is_none_or(|length| length != 0)
+            },
+            ImportKeyAlgorithm::Hkdf(_) |
+            ImportKeyAlgorithm::Pbkdf2(_) |
+            ImportKeyAlgorithm::MlKem(_) |
+            ImportKeyAlgorithm::MlDsa(_) |
+            ImportKeyAlgorithm::AesOcb(_) |
+            ImportKeyAlgorithm::ChaCha20Poly1305(_) |
+            ImportKeyAlgorithm::Kmac(_) |
+            ImportKeyAlgorithm::Argon2(_) => true,
         }
     }
 }
@@ -6376,6 +6341,30 @@ impl NormalizedAlgorithm for ExportKeyAlgorithm {
             ExportKeyAlgorithm::Kmac(algorithm) => algorithm.name,
         }
     }
+
+    fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
+        match self {
+            ExportKeyAlgorithm::RsassaPkcs1V1_5(_) |
+            ExportKeyAlgorithm::RsaPss(_) |
+            ExportKeyAlgorithm::RsaOaep(_) |
+            ExportKeyAlgorithm::Ecdsa(_) |
+            ExportKeyAlgorithm::Ecdh(_) |
+            ExportKeyAlgorithm::Ed25519(_) |
+            ExportKeyAlgorithm::X25519(_) |
+            ExportKeyAlgorithm::Ed448(_) |
+            ExportKeyAlgorithm::X448(_) |
+            ExportKeyAlgorithm::AesCtr(_) |
+            ExportKeyAlgorithm::AesCbc(_) |
+            ExportKeyAlgorithm::AesGcm(_) |
+            ExportKeyAlgorithm::AesKw(_) |
+            ExportKeyAlgorithm::Hmac(_) |
+            ExportKeyAlgorithm::MlKem(_) |
+            ExportKeyAlgorithm::MlDsa(_) |
+            ExportKeyAlgorithm::AesOcb(_) |
+            ExportKeyAlgorithm::ChaCha20Poly1305(_) |
+            ExportKeyAlgorithm::Kmac(_) => true,
+        }
+    }
 }
 
 impl ExportKeyAlgorithm {
@@ -6495,6 +6484,29 @@ impl NormalizedAlgorithm for GetKeyLengthAlgorithm {
             GetKeyLengthAlgorithm::Argon2(algorithm) => algorithm.name,
         }
     }
+
+    fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
+        match self {
+            GetKeyLengthAlgorithm::AesCtr(normalized_derived_key_algorithm) |
+            GetKeyLengthAlgorithm::AesCbc(normalized_derived_key_algorithm) |
+            GetKeyLengthAlgorithm::AesGcm(normalized_derived_key_algorithm) |
+            GetKeyLengthAlgorithm::AesKw(normalized_derived_key_algorithm) => {
+                matches!(normalized_derived_key_algorithm.length, 128 | 192 | 256)
+            },
+            GetKeyLengthAlgorithm::Hmac(normalized_derived_key_algorithm) => {
+                normalized_derived_key_algorithm
+                    .length
+                    .is_none_or(|length| length != 0)
+            },
+            GetKeyLengthAlgorithm::Hkdf(_) | GetKeyLengthAlgorithm::Pbkdf2(_) => true,
+            GetKeyLengthAlgorithm::AesOcb(normalized_derived_key_algorithm) => {
+                matches!(normalized_derived_key_algorithm.length, 128 | 192 | 256)
+            },
+            GetKeyLengthAlgorithm::ChaCha20Poly1305(_) |
+            GetKeyLengthAlgorithm::Kmac(_) |
+            GetKeyLengthAlgorithm::Argon2(_) => true,
+        }
+    }
 }
 
 impl GetKeyLengthAlgorithm {
@@ -6562,6 +6574,12 @@ impl NormalizedAlgorithm for EncapsulateAlgorithm {
             EncapsulateAlgorithm::MlKem(algorithm) => algorithm.name,
         }
     }
+
+    fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
+        match self {
+            EncapsulateAlgorithm::MlKem(_) => true,
+        }
+    }
 }
 
 impl EncapsulateAlgorithm {
@@ -6607,6 +6625,12 @@ impl NormalizedAlgorithm for DecapsulateAlgorithm {
     fn name(&self) -> CryptoAlgorithm {
         match self {
             DecapsulateAlgorithm::MlKem(algorithm) => algorithm.name,
+        }
+    }
+
+    fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
+        match self {
+            DecapsulateAlgorithm::MlKem(_) => true,
         }
     }
 }
