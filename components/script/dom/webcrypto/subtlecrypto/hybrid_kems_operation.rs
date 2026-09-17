@@ -41,11 +41,6 @@ pub(crate) fn encapsulate(
     // internal slot of key as the ek input parameter.
     // Step 3. If the Encaps function returned an error, return an OperationError.
     let (shared_key, ciphertext) = match normalized_algorithm.name {
-        CryptoAlgorithm::MlKem768P256 => {
-            return Err(Error::NotSupported(Some(
-                "Not yet supported MLKEM768-P256".into(),
-            )));
-        },
         CryptoAlgorithm::MlKem768X25519 => {
             let Handle::MlKem768X25519PublicKey(public_key) = key.handle() else {
                 return Err(Error::Operation(Some(
@@ -54,11 +49,6 @@ pub(crate) fn encapsulate(
             };
             let (ciphertext, shared_key) = public_key.encapsulate();
             (shared_key.to_vec(), ciphertext.to_vec())
-        },
-        CryptoAlgorithm::MlKem1024P384 => {
-            return Err(Error::NotSupported(Some(
-                "Not yet supported MLKEM1024-P384".into(),
-            )));
         },
         name => {
             return Err(Error::NotSupported(Some(format!(
@@ -102,11 +92,6 @@ pub(crate) fn decapsulate(
     // internal slot of key as the dk input parameter, and ciphertext as the ct input parameter.
     // Step 3. If the Decaps function returned an error, return an OperationError.
     let shared_key = match normalized_algorithm.name {
-        CryptoAlgorithm::MlKem768P256 => {
-            return Err(Error::NotSupported(Some(
-                "Not yet supported MLKEM768-P256".into(),
-            )));
-        },
         CryptoAlgorithm::MlKem768X25519 => {
             let Handle::MlKem768X25519PrivateKey(private_key) = key.handle() else {
                 return Err(Error::Operation(Some(
@@ -121,11 +106,6 @@ pub(crate) fn decapsulate(
                     ))
                 })?
                 .to_vec()
-        },
-        CryptoAlgorithm::MlKem1024P384 => {
-            return Err(Error::NotSupported(Some(
-                "Not yet supported MLKEM1024-P384".into(),
-            )));
         },
         name => {
             return Err(Error::NotSupported(Some(format!(
@@ -175,11 +155,6 @@ pub(crate) fn generate_key(
     // parameter set indicated by the name member of normalizedAlgorithm.
     // Step 3. If the key generation step fails, then throw an OperationError.
     let (private_key_handle, public_key_handle) = match normalized_algorithm.name {
-        CryptoAlgorithm::MlKem768P256 => {
-            return Err(Error::NotSupported(Some(
-                "Not yet supported MLKEM768-P256".into(),
-            )));
-        },
         CryptoAlgorithm::MlKem768X25519 => {
             let decapsulation_key = MlKem768X25519DecapsulationKey::generate();
             let encapsulation_key = decapsulation_key.encapsulation_key().clone();
@@ -187,11 +162,6 @@ pub(crate) fn generate_key(
                 Handle::MlKem768X25519PrivateKey(decapsulation_key),
                 Handle::MlKem768X25519PublicKey(encapsulation_key),
             )
-        },
-        CryptoAlgorithm::MlKem1024P384 => {
-            return Err(Error::NotSupported(Some(
-                "Not yet supported MLKEM1024-P384".into(),
-            )));
         },
         name => {
             return Err(Error::NotSupported(Some(format!(
@@ -296,11 +266,6 @@ pub(crate) fn import_key(
             // normalizedAlgorithm.
             // Step 2.8. Set the [[algorithm]] internal slot of key to algorithm.
             let public_key = match normalized_algorithm.name {
-                CryptoAlgorithm::MlKem768P256 => {
-                    return Err(Error::NotSupported(Some(
-                        "Not yet supported MLKEM768-P256".into(),
-                    )));
-                },
                 CryptoAlgorithm::MlKem768X25519 => {
                     if key_data.len() != 1216 {
                         return Err(Error::Data(Some(
@@ -315,11 +280,6 @@ pub(crate) fn import_key(
                             ))
                         })?;
                     Handle::MlKem768X25519PublicKey(encapsulation_key)
-                },
-                CryptoAlgorithm::MlKem1024P384 => {
-                    return Err(Error::NotSupported(Some(
-                        "Not yet supported MLKEM1024-P384".into(),
-                    )));
                 },
                 name => {
                     return Err(Error::NotSupported(Some(format!(
@@ -373,11 +333,6 @@ pub(crate) fn import_key(
             // Step 2.5. If the DeriveKeyPair function returned an error, then throw an
             // OperationError.
             let private_key = match normalized_algorithm.name {
-                CryptoAlgorithm::MlKem768P256 => {
-                    return Err(Error::NotSupported(Some(
-                        "Not yet supported MLKEM768-P256".into(),
-                    )));
-                },
                 CryptoAlgorithm::MlKem768X25519 => {
                     let decapsulation_key =
                         MlKem768X25519DecapsulationKey::new_from_slice(key_data).map_err(|_| {
@@ -387,11 +342,6 @@ pub(crate) fn import_key(
                             ))
                         })?;
                     Handle::MlKem768X25519PrivateKey(decapsulation_key)
-                },
-                CryptoAlgorithm::MlKem1024P384 => {
-                    return Err(Error::NotSupported(Some(
-                        "Not yet supported MLKEM1024-P384".into(),
-                    )));
                 },
                 name => {
                     return Err(Error::NotSupported(Some(format!(
@@ -469,22 +419,12 @@ pub(crate) fn import_key(
             // hybrid KEM instance indicated by the name member of normalizedAlgorithm, then throw a
             // DataError.
             match normalized_algorithm.name {
-                CryptoAlgorithm::MlKem768P256 => {
-                    return Err(Error::NotSupported(Some(
-                        "Not yet supported MLKEM768-P256".into(),
-                    )));
-                },
                 CryptoAlgorithm::MlKem768X25519 => {
                     if jwk.alg.as_ref().is_none_or(|alg| alg != "MLKEM768-X25519") {
                         return Err(Error::Data(Some(
                             "The alg field of jwk is not invalid.".into(),
                         )));
                     }
-                },
-                CryptoAlgorithm::MlKem1024P384 => {
-                    return Err(Error::NotSupported(Some(
-                        "Not yet supported MLKEM1024-P384".into(),
-                    )));
                 },
                 name => {
                     return Err(Error::NotSupported(Some(format!(
@@ -545,11 +485,6 @@ pub(crate) fn import_key(
                     // NOTE: The CryptoKey object is created in Step 2.10 - 2.12.
                     let pub_bytes = jwk.decode_required_string_field(JwkStringField::Pub)?;
                     let private_key_handle = match normalized_algorithm.name {
-                        CryptoAlgorithm::MlKem768P256 => {
-                            return Err(Error::NotSupported(Some(
-                                "Not yet supported MLKEM768-P256".into(),
-                            )));
-                        },
                         CryptoAlgorithm::MlKem768X25519 => {
                             let decapsulation_key =
                                 MlKem768X25519DecapsulationKey::new_from_slice(&priv_bytes)
@@ -576,11 +511,6 @@ pub(crate) fn import_key(
                             }
                             Handle::MlKem768X25519PrivateKey(decapsulation_key)
                         },
-                        CryptoAlgorithm::MlKem1024P384 => {
-                            return Err(Error::NotSupported(Some(
-                                "Not yet supported MLKEM1024-P384".into(),
-                            )));
-                        },
                         name => {
                             return Err(Error::NotSupported(Some(format!(
                                 "{} is not a hybrid KEM algorithm",
@@ -603,11 +533,6 @@ pub(crate) fn import_key(
                     // NOTE: The CryptoKey object is created in Step 2.10 - 2.12.
                     let pub_bytes = jwk.decode_required_string_field(JwkStringField::Pub)?;
                     let public_key_handle = match normalized_algorithm.name {
-                        CryptoAlgorithm::MlKem768P256 => {
-                            return Err(Error::NotSupported(Some(
-                                "Not yet supported MLKEM768-P256".into(),
-                            )));
-                        },
                         CryptoAlgorithm::MlKem768X25519 => {
                             if pub_bytes.len() != 1216 {
                                 return Err(Error::Data(Some(
@@ -625,11 +550,6 @@ pub(crate) fn import_key(
                             ))
                                     })?;
                             Handle::MlKem768X25519PublicKey(encapsulation_key)
-                        },
-                        CryptoAlgorithm::MlKem1024P384 => {
-                            return Err(Error::NotSupported(Some(
-                                "Not yet supported MLKEM1024-P384".into(),
-                            )));
                         },
                         name => {
                             return Err(Error::NotSupported(Some(format!(
@@ -804,4 +724,57 @@ pub(crate) fn export_key(format: KeyFormat, key: &CryptoKey) -> Result<ExportedK
 
     // Step 4.  Return result.
     Ok(result)
+}
+
+/// <https://wicg.github.io/webcrypto-modern-algos/#SubtleCrypto-method-getPublicKey>
+/// Step 9 - 15, for hybrid KEM
+pub(crate) fn get_public_key(
+    cx: &mut JSContext,
+    global: &GlobalScope,
+    key: &CryptoKey,
+    algorithm: &KeyAlgorithmAndDerivatives,
+    usages: Vec<KeyUsage>,
+) -> Result<DomRoot<CryptoKey>, Error> {
+    // Step 9. If usages contains an entry which is not supported for a public key by the algorithm
+    // identified by algorithm, then throw a SyntaxError.
+    //
+    // NOTE: See "importKey" operation for supported usages
+    if usages
+        .iter()
+        .any(|usage| !matches!(usage, KeyUsage::EncapsulateKey | KeyUsage::EncapsulateBits))
+    {
+        return Err(Error::Syntax(Some(
+            "Usages contains an entry which is not \"encapsulateKey\" or \"encapsulateBits\""
+                .into(),
+        )));
+    }
+
+    // Step 10. Let publicKey be a new CryptoKey representing the public key corresponding to the
+    // private key represented by the [[handle]] internal slot of key.
+    // Step 11. If an error occurred, then throw a OperationError.
+    // Step 12. Set the [[type]] internal slot of publicKey to "public".
+    // Step 13. Set the [[algorithm]] internal slot of publicKey to algorithm.
+    // Step 14. Set the [[extractable]] internal slot of publicKey to true.
+    // Step 15. Set the [[usages]] internal slot of publicKey to usages.
+    let public_key_handle = match key.handle() {
+        Handle::MlKem768X25519PrivateKey(decapsulation_key) => {
+            Handle::MlKem768X25519PublicKey(decapsulation_key.encapsulation_key().clone())
+        },
+        _ => {
+            return Err(Error::Operation(Some(
+                "[[handle]] internal slot of key is not a hybrid KEM private key".into(),
+            )));
+        },
+    };
+    let public_key = CryptoKey::new(
+        cx,
+        global,
+        KeyType::Public,
+        true,
+        algorithm.clone(),
+        usages,
+        public_key_handle,
+    );
+
+    Ok(public_key)
 }
