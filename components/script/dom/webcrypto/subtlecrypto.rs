@@ -20,7 +20,7 @@ mod ed25519_operation;
 mod ed448_operation;
 mod hkdf_operation;
 mod hmac_operation;
-mod hybrid_kems_operation;
+mod hybrid_kem_operation;
 mod kangarootwelve_operation;
 mod kmac_operation;
 mod ml_dsa_operation;
@@ -5646,7 +5646,7 @@ enum GenerateKeyAlgorithm {
     AesKw(AesKeyGenParams),
     Hmac(HmacKeyGenParams),
     MlKem(Algorithm),
-    HybridKems(Algorithm),
+    HybridKem(Algorithm),
     MlDsa(Algorithm),
     AesOcb(AesKeyGenParams),
     ChaCha20Poly1305(Algorithm),
@@ -5707,7 +5707,7 @@ impl NormalizedAlgorithm for GenerateKeyAlgorithm {
                     object.try_into_with_cx_and_name(cx, algorithm_name)?,
                 ))
             },
-            CryptoAlgorithm::MlKem768X25519 => Ok(GenerateKeyAlgorithm::HybridKems(
+            CryptoAlgorithm::MlKem768X25519 => Ok(GenerateKeyAlgorithm::HybridKem(
                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
             )),
             CryptoAlgorithm::MlDsa44 | CryptoAlgorithm::MlDsa65 | CryptoAlgorithm::MlDsa87 => Ok(
@@ -5746,7 +5746,7 @@ impl NormalizedAlgorithm for GenerateKeyAlgorithm {
             GenerateKeyAlgorithm::AesKw(algorithm) => algorithm.name,
             GenerateKeyAlgorithm::Hmac(algorithm) => algorithm.name,
             GenerateKeyAlgorithm::MlKem(algorithm) => algorithm.name,
-            GenerateKeyAlgorithm::HybridKems(algorithm) => algorithm.name,
+            GenerateKeyAlgorithm::HybridKem(algorithm) => algorithm.name,
             GenerateKeyAlgorithm::MlDsa(algorithm) => algorithm.name,
             GenerateKeyAlgorithm::AesOcb(algorithm) => algorithm.name,
             GenerateKeyAlgorithm::ChaCha20Poly1305(algorithm) => algorithm.name,
@@ -5779,7 +5779,7 @@ impl NormalizedAlgorithm for GenerateKeyAlgorithm {
                 normalized_algorithm.length.is_none_or(|length| length != 0)
             },
             GenerateKeyAlgorithm::MlKem(_) |
-            GenerateKeyAlgorithm::HybridKems(_) |
+            GenerateKeyAlgorithm::HybridKem(_) |
             GenerateKeyAlgorithm::MlDsa(_) => true,
             GenerateKeyAlgorithm::AesOcb(normalized_algorithm) => {
                 matches!(normalized_algorithm.length, 128 | 192 | 256)
@@ -5864,8 +5864,8 @@ impl GenerateKeyAlgorithm {
                 ml_kem_operation::generate_key(cx, global, algorithm, extractable, usages)
                     .map(CryptoKeyOrCryptoKeyPair::CryptoKeyPair)
             },
-            GenerateKeyAlgorithm::HybridKems(algorithm) => {
-                hybrid_kems_operation::generate_key(cx, global, algorithm, extractable, usages)
+            GenerateKeyAlgorithm::HybridKem(algorithm) => {
+                hybrid_kem_operation::generate_key(cx, global, algorithm, extractable, usages)
                     .map(CryptoKeyOrCryptoKeyPair::CryptoKeyPair)
             },
             GenerateKeyAlgorithm::MlDsa(algorithm) => {
@@ -5915,7 +5915,7 @@ enum ImportKeyAlgorithm {
     Hkdf(Algorithm),
     Pbkdf2(Algorithm),
     MlKem(Algorithm),
-    HybridKems(Algorithm),
+    HybridKem(Algorithm),
     MlDsa(Algorithm),
     AesOcb(Algorithm),
     ChaCha20Poly1305(Algorithm),
@@ -5983,7 +5983,7 @@ impl NormalizedAlgorithm for ImportKeyAlgorithm {
                     object.try_into_with_cx_and_name(cx, algorithm_name)?,
                 ))
             },
-            CryptoAlgorithm::MlKem768X25519 => Ok(ImportKeyAlgorithm::HybridKems(
+            CryptoAlgorithm::MlKem768X25519 => Ok(ImportKeyAlgorithm::HybridKem(
                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
             )),
             CryptoAlgorithm::MlDsa44 | CryptoAlgorithm::MlDsa65 | CryptoAlgorithm::MlDsa87 => Ok(
@@ -6027,7 +6027,7 @@ impl NormalizedAlgorithm for ImportKeyAlgorithm {
             ImportKeyAlgorithm::Hkdf(algorithm) => algorithm.name,
             ImportKeyAlgorithm::Pbkdf2(algorithm) => algorithm.name,
             ImportKeyAlgorithm::MlKem(algorithm) => algorithm.name,
-            ImportKeyAlgorithm::HybridKems(algorithm) => algorithm.name,
+            ImportKeyAlgorithm::HybridKem(algorithm) => algorithm.name,
             ImportKeyAlgorithm::MlDsa(algorithm) => algorithm.name,
             ImportKeyAlgorithm::AesOcb(algorithm) => algorithm.name,
             ImportKeyAlgorithm::ChaCha20Poly1305(algorithm) => algorithm.name,
@@ -6059,7 +6059,7 @@ impl NormalizedAlgorithm for ImportKeyAlgorithm {
             ImportKeyAlgorithm::Hkdf(_) |
             ImportKeyAlgorithm::Pbkdf2(_) |
             ImportKeyAlgorithm::MlKem(_) |
-            ImportKeyAlgorithm::HybridKems(_) |
+            ImportKeyAlgorithm::HybridKem(_) |
             ImportKeyAlgorithm::MlDsa(_) |
             ImportKeyAlgorithm::AesOcb(_) |
             ImportKeyAlgorithm::ChaCha20Poly1305(_) |
@@ -6175,7 +6175,7 @@ impl ImportKeyAlgorithm {
                 extractable,
                 usages,
             ),
-            ImportKeyAlgorithm::HybridKems(algorithm) => hybrid_kems_operation::import_key(
+            ImportKeyAlgorithm::HybridKem(algorithm) => hybrid_kem_operation::import_key(
                 cx,
                 global,
                 algorithm,
@@ -6253,7 +6253,7 @@ impl ImportKeyAlgorithm {
             },
             ImportKeyAlgorithm::Hkdf(_) | ImportKeyAlgorithm::Pbkdf2(_) => false,
             ImportKeyAlgorithm::MlKem(_) |
-            ImportKeyAlgorithm::HybridKems(_) |
+            ImportKeyAlgorithm::HybridKem(_) |
             ImportKeyAlgorithm::MlDsa(_) => true,
             ImportKeyAlgorithm::AesOcb(_) => !matches!(key_data_length, 128 | 192 | 256),
             ImportKeyAlgorithm::ChaCha20Poly1305(_) => key_data_length != 256,
@@ -6290,7 +6290,7 @@ enum ExportKeyAlgorithm {
     AesKw(Algorithm),
     Hmac(Algorithm),
     MlKem(Algorithm),
-    HybridKems(Algorithm),
+    HybridKem(Algorithm),
     MlDsa(Algorithm),
     AesOcb(Algorithm),
     ChaCha20Poly1305(Algorithm),
@@ -6351,7 +6351,7 @@ impl NormalizedAlgorithm for ExportKeyAlgorithm {
                     object.try_into_with_cx_and_name(cx, algorithm_name)?,
                 ))
             },
-            CryptoAlgorithm::MlKem768X25519 => Ok(ExportKeyAlgorithm::HybridKems(
+            CryptoAlgorithm::MlKem768X25519 => Ok(ExportKeyAlgorithm::HybridKem(
                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
             )),
             CryptoAlgorithm::MlDsa44 | CryptoAlgorithm::MlDsa65 | CryptoAlgorithm::MlDsa87 => Ok(
@@ -6390,7 +6390,7 @@ impl NormalizedAlgorithm for ExportKeyAlgorithm {
             ExportKeyAlgorithm::AesKw(algorithm) => algorithm.name,
             ExportKeyAlgorithm::Hmac(algorithm) => algorithm.name,
             ExportKeyAlgorithm::MlKem(algorithm) => algorithm.name,
-            ExportKeyAlgorithm::HybridKems(algorithm) => algorithm.name,
+            ExportKeyAlgorithm::HybridKem(algorithm) => algorithm.name,
             ExportKeyAlgorithm::MlDsa(algorithm) => algorithm.name,
             ExportKeyAlgorithm::AesOcb(algorithm) => algorithm.name,
             ExportKeyAlgorithm::ChaCha20Poly1305(algorithm) => algorithm.name,
@@ -6415,7 +6415,7 @@ impl NormalizedAlgorithm for ExportKeyAlgorithm {
             ExportKeyAlgorithm::AesKw(_) |
             ExportKeyAlgorithm::Hmac(_) |
             ExportKeyAlgorithm::MlKem(_) |
-            ExportKeyAlgorithm::HybridKems(_) |
+            ExportKeyAlgorithm::HybridKem(_) |
             ExportKeyAlgorithm::MlDsa(_) |
             ExportKeyAlgorithm::AesOcb(_) |
             ExportKeyAlgorithm::ChaCha20Poly1305(_) |
@@ -6444,8 +6444,8 @@ impl ExportKeyAlgorithm {
             ExportKeyAlgorithm::AesKw(_algorithm) => aes_kw_operation::export_key(format, key),
             ExportKeyAlgorithm::Hmac(_algorithm) => hmac_operation::export_key(format, key),
             ExportKeyAlgorithm::MlKem(_algorithm) => ml_kem_operation::export_key(format, key),
-            ExportKeyAlgorithm::HybridKems(_algorithm) => {
-                hybrid_kems_operation::export_key(format, key)
+            ExportKeyAlgorithm::HybridKem(_algorithm) => {
+                hybrid_kem_operation::export_key(format, key)
             },
             ExportKeyAlgorithm::MlDsa(_algorithm) => ml_dsa_operation::export_key(format, key),
             ExportKeyAlgorithm::AesOcb(_algorithm) => aes_ocb_operation::export_key(format, key),
@@ -6608,7 +6608,7 @@ impl Operation for EncapsulateOperation {
 /// <https://w3c.github.io/webcrypto/#dfn-normalize-an-algorithm>
 enum EncapsulateAlgorithm {
     MlKem(Algorithm),
-    HybridKems(Algorithm),
+    HybridKem(Algorithm),
 }
 
 impl NormalizedAlgorithm for EncapsulateAlgorithm {
@@ -6623,7 +6623,7 @@ impl NormalizedAlgorithm for EncapsulateAlgorithm {
                     object.try_into_with_cx_and_name(cx, algorithm_name)?,
                 ))
             },
-            CryptoAlgorithm::MlKem768X25519 => Ok(EncapsulateAlgorithm::HybridKems(
+            CryptoAlgorithm::MlKem768X25519 => Ok(EncapsulateAlgorithm::HybridKem(
                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
             )),
             _ => Err(Error::NotSupported(Some(format!(
@@ -6636,13 +6636,13 @@ impl NormalizedAlgorithm for EncapsulateAlgorithm {
     fn name(&self) -> CryptoAlgorithm {
         match self {
             EncapsulateAlgorithm::MlKem(algorithm) => algorithm.name,
-            EncapsulateAlgorithm::HybridKems(algorithm) => algorithm.name,
+            EncapsulateAlgorithm::HybridKem(algorithm) => algorithm.name,
         }
     }
 
     fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
         match self {
-            EncapsulateAlgorithm::MlKem(_) | EncapsulateAlgorithm::HybridKems(_) => true,
+            EncapsulateAlgorithm::MlKem(_) | EncapsulateAlgorithm::HybridKem(_) => true,
         }
     }
 }
@@ -6651,8 +6651,8 @@ impl EncapsulateAlgorithm {
     fn encapsulate(&self, key: &CryptoKey) -> Result<EncapsulatedBits, Error> {
         match self {
             EncapsulateAlgorithm::MlKem(algorithm) => ml_kem_operation::encapsulate(algorithm, key),
-            EncapsulateAlgorithm::HybridKems(algorithm) => {
-                hybrid_kems_operation::encapsulate(algorithm, key)
+            EncapsulateAlgorithm::HybridKem(algorithm) => {
+                hybrid_kem_operation::encapsulate(algorithm, key)
             },
         }
     }
@@ -6669,7 +6669,7 @@ impl Operation for DecapsulateOperation {
 /// <https://w3c.github.io/webcrypto/#dfn-normalize-an-algorithm>
 enum DecapsulateAlgorithm {
     MlKem(Algorithm),
-    HybridKems(Algorithm),
+    HybridKem(Algorithm),
 }
 
 impl NormalizedAlgorithm for DecapsulateAlgorithm {
@@ -6684,7 +6684,7 @@ impl NormalizedAlgorithm for DecapsulateAlgorithm {
                     object.try_into_with_cx_and_name(cx, algorithm_name)?,
                 ))
             },
-            CryptoAlgorithm::MlKem768X25519 => Ok(DecapsulateAlgorithm::HybridKems(
+            CryptoAlgorithm::MlKem768X25519 => Ok(DecapsulateAlgorithm::HybridKem(
                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
             )),
             _ => Err(Error::NotSupported(Some(format!(
@@ -6697,13 +6697,13 @@ impl NormalizedAlgorithm for DecapsulateAlgorithm {
     fn name(&self) -> CryptoAlgorithm {
         match self {
             DecapsulateAlgorithm::MlKem(algorithm) => algorithm.name,
-            DecapsulateAlgorithm::HybridKems(algorithm) => algorithm.name,
+            DecapsulateAlgorithm::HybridKem(algorithm) => algorithm.name,
         }
     }
 
     fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
         match self {
-            DecapsulateAlgorithm::MlKem(_) | DecapsulateAlgorithm::HybridKems(_) => true,
+            DecapsulateAlgorithm::MlKem(_) | DecapsulateAlgorithm::HybridKem(_) => true,
         }
     }
 }
@@ -6714,8 +6714,8 @@ impl DecapsulateAlgorithm {
             DecapsulateAlgorithm::MlKem(algorithm) => {
                 ml_kem_operation::decapsulate(algorithm, key, ciphertext)
             },
-            DecapsulateAlgorithm::HybridKems(algorithm) => {
-                hybrid_kems_operation::decapsulate(algorithm, key, ciphertext)
+            DecapsulateAlgorithm::HybridKem(algorithm) => {
+                hybrid_kem_operation::decapsulate(algorithm, key, ciphertext)
             },
         }
     }
@@ -6732,7 +6732,7 @@ impl Operation for GetSharedKeyLengthOperation {
 /// <https://w3c.github.io/webcrypto/#dfn-normalize-an-algorithm>
 enum GetSharedKeyLengthAlgorithm {
     MlKem(Algorithm),
-    HybridKems(Algorithm),
+    HybridKem(Algorithm),
 }
 
 impl NormalizedAlgorithm for GetSharedKeyLengthAlgorithm {
@@ -6747,7 +6747,7 @@ impl NormalizedAlgorithm for GetSharedKeyLengthAlgorithm {
                     object.try_into_with_cx_and_name(cx, algorithm_name)?,
                 ))
             },
-            CryptoAlgorithm::MlKem768X25519 => Ok(GetSharedKeyLengthAlgorithm::HybridKems(
+            CryptoAlgorithm::MlKem768X25519 => Ok(GetSharedKeyLengthAlgorithm::HybridKem(
                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
             )),
             _ => Err(Error::NotSupported(Some(format!(
@@ -6760,7 +6760,7 @@ impl NormalizedAlgorithm for GetSharedKeyLengthAlgorithm {
     fn name(&self) -> CryptoAlgorithm {
         match self {
             GetSharedKeyLengthAlgorithm::MlKem(algorithm) => algorithm.name,
-            GetSharedKeyLengthAlgorithm::HybridKems(algorithm) => algorithm.name,
+            GetSharedKeyLengthAlgorithm::HybridKem(algorithm) => algorithm.name,
         }
     }
 }
@@ -6771,8 +6771,8 @@ impl GetSharedKeyLengthAlgorithm {
             GetSharedKeyLengthAlgorithm::MlKem(_algorithm) => {
                 ml_kem_operation::get_shared_key_length()
             },
-            GetSharedKeyLengthAlgorithm::HybridKems(_algorithm) => {
-                hybrid_kems_operation::get_shared_key_length()
+            GetSharedKeyLengthAlgorithm::HybridKem(_algorithm) => {
+                hybrid_kem_operation::get_shared_key_length()
             },
         }
     }
@@ -6798,7 +6798,7 @@ enum GetPublicKeyAlgorithm {
     Ed448(Algorithm),
     X448(Algorithm),
     MlKem(Algorithm),
-    HybridKems(Algorithm),
+    HybridKem(Algorithm),
     MlDsa(Algorithm),
 }
 
@@ -6841,7 +6841,7 @@ impl NormalizedAlgorithm for GetPublicKeyAlgorithm {
                     object.try_into_with_cx_and_name(cx, algorithm_name)?,
                 ))
             },
-            CryptoAlgorithm::MlKem768X25519 => Ok(GetPublicKeyAlgorithm::HybridKems(
+            CryptoAlgorithm::MlKem768X25519 => Ok(GetPublicKeyAlgorithm::HybridKem(
                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
             )),
             CryptoAlgorithm::MlDsa44 | CryptoAlgorithm::MlDsa65 | CryptoAlgorithm::MlDsa87 => Ok(
@@ -6866,7 +6866,7 @@ impl NormalizedAlgorithm for GetPublicKeyAlgorithm {
             GetPublicKeyAlgorithm::Ed448(algorithm) => algorithm.name,
             GetPublicKeyAlgorithm::X448(algorithm) => algorithm.name,
             GetPublicKeyAlgorithm::MlKem(algorithm) => algorithm.name,
-            GetPublicKeyAlgorithm::HybridKems(algorithm) => algorithm.name,
+            GetPublicKeyAlgorithm::HybridKem(algorithm) => algorithm.name,
             GetPublicKeyAlgorithm::MlDsa(algorithm) => algorithm.name,
         }
     }
@@ -6912,8 +6912,8 @@ impl GetPublicKeyAlgorithm {
             GetPublicKeyAlgorithm::MlKem(_algorithm) => {
                 ml_kem_operation::get_public_key(cx, global, key, algorithm, usages)
             },
-            GetPublicKeyAlgorithm::HybridKems(_algorithm) => {
-                hybrid_kems_operation::get_public_key(cx, global, key, algorithm, usages)
+            GetPublicKeyAlgorithm::HybridKem(_algorithm) => {
+                hybrid_kem_operation::get_public_key(cx, global, key, algorithm, usages)
             },
             GetPublicKeyAlgorithm::MlDsa(_algorithm) => {
                 ml_dsa_operation::get_public_key(cx, global, key, algorithm, usages)
