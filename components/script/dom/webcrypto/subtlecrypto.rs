@@ -5650,6 +5650,7 @@ enum GenerateKeyAlgorithm {
     AesKw(AesKeyGenParams),
     Hmac(HmacKeyGenParams),
     MlKem(Algorithm),
+    HybridKems(Algorithm),
     MlDsa(Algorithm),
     AesOcb(AesKeyGenParams),
     ChaCha20Poly1305(Algorithm),
@@ -5710,6 +5711,11 @@ impl NormalizedAlgorithm for GenerateKeyAlgorithm {
                     object.try_into_with_cx_and_name(cx, algorithm_name)?,
                 ))
             },
+            CryptoAlgorithm::MlKem768P256 |
+            CryptoAlgorithm::MlKem768X25519 |
+            CryptoAlgorithm::MlKem1024P384 => Ok(GenerateKeyAlgorithm::HybridKems(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
             CryptoAlgorithm::MlDsa44 | CryptoAlgorithm::MlDsa65 | CryptoAlgorithm::MlDsa87 => Ok(
                 GenerateKeyAlgorithm::MlDsa(object.try_into_with_cx_and_name(cx, algorithm_name)?),
             ),
@@ -5746,6 +5752,7 @@ impl NormalizedAlgorithm for GenerateKeyAlgorithm {
             GenerateKeyAlgorithm::AesKw(algorithm) => algorithm.name,
             GenerateKeyAlgorithm::Hmac(algorithm) => algorithm.name,
             GenerateKeyAlgorithm::MlKem(algorithm) => algorithm.name,
+            GenerateKeyAlgorithm::HybridKems(algorithm) => algorithm.name,
             GenerateKeyAlgorithm::MlDsa(algorithm) => algorithm.name,
             GenerateKeyAlgorithm::AesOcb(algorithm) => algorithm.name,
             GenerateKeyAlgorithm::ChaCha20Poly1305(algorithm) => algorithm.name,
@@ -5777,7 +5784,9 @@ impl NormalizedAlgorithm for GenerateKeyAlgorithm {
             GenerateKeyAlgorithm::Hmac(normalized_algorithm) => {
                 normalized_algorithm.length.is_none_or(|length| length != 0)
             },
-            GenerateKeyAlgorithm::MlKem(_) | GenerateKeyAlgorithm::MlDsa(_) => true,
+            GenerateKeyAlgorithm::MlKem(_) |
+            GenerateKeyAlgorithm::HybridKems(_) |
+            GenerateKeyAlgorithm::MlDsa(_) => true,
             GenerateKeyAlgorithm::AesOcb(normalized_algorithm) => {
                 matches!(normalized_algorithm.length, 128 | 192 | 256)
             },
@@ -5859,6 +5868,10 @@ impl GenerateKeyAlgorithm {
             },
             GenerateKeyAlgorithm::MlKem(algorithm) => {
                 ml_kem_operation::generate_key(cx, global, algorithm, extractable, usages)
+                    .map(CryptoKeyOrCryptoKeyPair::CryptoKeyPair)
+            },
+            GenerateKeyAlgorithm::HybridKems(algorithm) => {
+                hybrid_kems_operation::generate_key(cx, global, algorithm, extractable, usages)
                     .map(CryptoKeyOrCryptoKeyPair::CryptoKeyPair)
             },
             GenerateKeyAlgorithm::MlDsa(algorithm) => {
