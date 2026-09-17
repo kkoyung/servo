@@ -6618,6 +6618,7 @@ impl Operation for EncapsulateOperation {
 /// <https://w3c.github.io/webcrypto/#dfn-normalize-an-algorithm>
 enum EncapsulateAlgorithm {
     MlKem(Algorithm),
+    HybridKems(Algorithm),
 }
 
 impl NormalizedAlgorithm for EncapsulateAlgorithm {
@@ -6632,6 +6633,11 @@ impl NormalizedAlgorithm for EncapsulateAlgorithm {
                     object.try_into_with_cx_and_name(cx, algorithm_name)?,
                 ))
             },
+            CryptoAlgorithm::MlKem768P256 |
+            CryptoAlgorithm::MlKem768X25519 |
+            CryptoAlgorithm::MlKem1024P384 => Ok(EncapsulateAlgorithm::HybridKems(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
             _ => Err(Error::NotSupported(Some(format!(
                 "{} does not support \"encapsulate\" operation",
                 algorithm_name.as_str()
@@ -6642,12 +6648,13 @@ impl NormalizedAlgorithm for EncapsulateAlgorithm {
     fn name(&self) -> CryptoAlgorithm {
         match self {
             EncapsulateAlgorithm::MlKem(algorithm) => algorithm.name,
+            EncapsulateAlgorithm::HybridKems(algorithm) => algorithm.name,
         }
     }
 
     fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
         match self {
-            EncapsulateAlgorithm::MlKem(_) => true,
+            EncapsulateAlgorithm::MlKem(_) | EncapsulateAlgorithm::HybridKems(_) => true,
         }
     }
 }
@@ -6656,6 +6663,9 @@ impl EncapsulateAlgorithm {
     fn encapsulate(&self, key: &CryptoKey) -> Result<EncapsulatedBits, Error> {
         match self {
             EncapsulateAlgorithm::MlKem(algorithm) => ml_kem_operation::encapsulate(algorithm, key),
+            EncapsulateAlgorithm::HybridKems(algorithm) => {
+                hybrid_kems_operation::encapsulate(algorithm, key)
+            },
         }
     }
 }
@@ -6671,6 +6681,7 @@ impl Operation for DecapsulateOperation {
 /// <https://w3c.github.io/webcrypto/#dfn-normalize-an-algorithm>
 enum DecapsulateAlgorithm {
     MlKem(Algorithm),
+    HybridKems(Algorithm),
 }
 
 impl NormalizedAlgorithm for DecapsulateAlgorithm {
@@ -6685,6 +6696,11 @@ impl NormalizedAlgorithm for DecapsulateAlgorithm {
                     object.try_into_with_cx_and_name(cx, algorithm_name)?,
                 ))
             },
+            CryptoAlgorithm::MlKem768P256 |
+            CryptoAlgorithm::MlKem768X25519 |
+            CryptoAlgorithm::MlKem1024P384 => Ok(DecapsulateAlgorithm::HybridKems(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
             _ => Err(Error::NotSupported(Some(format!(
                 "{} does not support \"decapsulate\" operation",
                 algorithm_name.as_str()
@@ -6695,12 +6711,13 @@ impl NormalizedAlgorithm for DecapsulateAlgorithm {
     fn name(&self) -> CryptoAlgorithm {
         match self {
             DecapsulateAlgorithm::MlKem(algorithm) => algorithm.name,
+            DecapsulateAlgorithm::HybridKems(algorithm) => algorithm.name,
         }
     }
 
     fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
         match self {
-            DecapsulateAlgorithm::MlKem(_) => true,
+            DecapsulateAlgorithm::MlKem(_) | DecapsulateAlgorithm::HybridKems(_) => true,
         }
     }
 }
@@ -6710,6 +6727,9 @@ impl DecapsulateAlgorithm {
         match self {
             DecapsulateAlgorithm::MlKem(algorithm) => {
                 ml_kem_operation::decapsulate(algorithm, key, ciphertext)
+            },
+            DecapsulateAlgorithm::HybridKems(algorithm) => {
+                hybrid_kems_operation::decapsulate(algorithm, key, ciphertext)
             },
         }
     }
@@ -6726,6 +6746,7 @@ impl Operation for GetSharedKeyLengthOperation {
 /// <https://w3c.github.io/webcrypto/#dfn-normalize-an-algorithm>
 enum GetSharedKeyLengthAlgorithm {
     MlKem(Algorithm),
+    HybridKems(Algorithm),
 }
 
 impl NormalizedAlgorithm for GetSharedKeyLengthAlgorithm {
@@ -6740,6 +6761,11 @@ impl NormalizedAlgorithm for GetSharedKeyLengthAlgorithm {
                     object.try_into_with_cx_and_name(cx, algorithm_name)?,
                 ))
             },
+            CryptoAlgorithm::MlKem768P256 |
+            CryptoAlgorithm::MlKem768X25519 |
+            CryptoAlgorithm::MlKem1024P384 => Ok(GetSharedKeyLengthAlgorithm::HybridKems(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
             _ => Err(Error::NotSupported(Some(format!(
                 "{} does not support \"get shared key length\" operation",
                 algorithm_name.as_str()
@@ -6750,6 +6776,7 @@ impl NormalizedAlgorithm for GetSharedKeyLengthAlgorithm {
     fn name(&self) -> CryptoAlgorithm {
         match self {
             GetSharedKeyLengthAlgorithm::MlKem(algorithm) => algorithm.name,
+            GetSharedKeyLengthAlgorithm::HybridKems(algorithm) => algorithm.name,
         }
     }
 }
@@ -6759,6 +6786,9 @@ impl GetSharedKeyLengthAlgorithm {
         match self {
             GetSharedKeyLengthAlgorithm::MlKem(_algorithm) => {
                 ml_kem_operation::get_shared_key_length()
+            },
+            GetSharedKeyLengthAlgorithm::HybridKems(_algorithm) => {
+                hybrid_kems_operation::get_shared_key_length()
             },
         }
     }
