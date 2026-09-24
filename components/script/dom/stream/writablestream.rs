@@ -164,7 +164,7 @@ pub struct WritableStream {
 
 impl WritableStream {
     /// <https://streams.spec.whatwg.org/#initialize-writable-stream>
-    fn new_inherited() -> WritableStream {
+    pub(crate) fn new_inherited() -> WritableStream {
         WritableStream {
             reflector_: Reflector::new(),
             backpressure: Default::default(),

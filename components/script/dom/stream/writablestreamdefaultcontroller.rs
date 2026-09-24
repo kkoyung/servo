@@ -32,6 +32,8 @@ use crate::dom::readablestreamdefaultcontroller::{EnqueuedValue, QueueWithSizes,
 use crate::dom::stream::writablestream::WritableStream;
 use crate::dom::types::{AbortController, AbortSignal, TransformStream};
 use crate::realms::enter_auto_realm;
+use crate::dom::webtransport::webtransportdatagramswritable::WebTransportDatagramsWritable;
+use crate::dom::webtransport::webtransport::WebTransport;
 
 impl js::gc::Rootable for CloseAlgorithmFulfillmentHandler {}
 
@@ -291,6 +293,8 @@ pub enum UnderlyingSinkType {
     },
     /// Algorithms supporting transform streams are implemented in Rust.
     Transform(Dom<TransformStream>, TracedPromise),
+    /// Algorithms supporting WebTransportDatagramsWritable streams are implemented in Rust.
+    WebTransportDatagramsWritable(Dom<WebTransportDatagramsWritable>, Dom<WebTransport>),
 }
 
 impl UnderlyingSinkType {
@@ -428,6 +432,9 @@ impl WritableStreamDefaultController {
             UnderlyingSinkType::Transform(_, _) => {
                 return;
             },
+            UnderlyingSinkType::WebTransportDatagramsWritable(_, _) => {
+                return;
+            }
         }
 
         // Set controller.[[strategySizeAlgorithm]] to undefined.
@@ -551,6 +558,10 @@ impl WritableStreamDefaultController {
                 // Let startAlgorithm be an algorithm that returns startPromise.
                 Ok(start_promise.root(cx))
             },
+            UnderlyingSinkType::WebTransportDatagramsWritable(_, _) => {
+                // Let startAlgorithm be an algorithm that returns undefined.
+                Ok(Promise::new_resolved_rooted(cx, global, ()))
+            },
         }
     }
 
@@ -613,6 +624,10 @@ impl WritableStreamDefaultController {
                 stream
                     .transform_stream_default_sink_abort_algorithm(cx, global, reason)
                     .expect("Transform stream default sink abort algorithm should not fail.")
+            },
+            UnderlyingSinkType::WebTransportDatagramsWritable(_, _) => {
+                // Return a promise resolved with undefined.
+                Promise::new_resolved_rooted(cx, global, ())
             },
         };
 
@@ -698,6 +713,9 @@ impl WritableStreamDefaultController {
                     .transform_stream_default_sink_write_algorithm(cx, global, chunk)
                     .expect("Transform stream default sink write algorithm should not fail.")
             },
+            UnderlyingSinkType::WebTransportDatagramsWritable(stream, transport) => {
+                stream.write_datagrams(cx, global, transport, chunk)
+            },
         }
     }
 
@@ -744,6 +762,10 @@ impl WritableStreamDefaultController {
                 stream
                     .transform_stream_default_sink_close_algorithm(cx, global)
                     .expect("Transform stream default sink close algorithm should not fail.")
+            },
+            UnderlyingSinkType::WebTransportDatagramsWritable(_, _) => {
+                // Return a promise resolved with undefined.
+                Promise::new_resolved_rooted(cx, global, ())
             },
         }
     }

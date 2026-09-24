@@ -356,7 +356,7 @@ pub(crate) use self::webcrypto::*;
 pub(crate) mod webrtc;
 pub(crate) use self::webrtc::*;
 pub(crate) mod webtransport;
-// pub(crate) use self::webtransport::*;
+pub(crate) use self::webtransport::*;
 pub(crate) mod webvtt;
 pub(crate) use self::webvtt::*;
 pub(crate) mod window;

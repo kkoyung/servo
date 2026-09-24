@@ -5,7 +5,7 @@
 // https://w3c.github.io/webtransport/#web-transport
 [Exposed=(Window,Worker), SecureContext, Pref="dom_webtransport_enabled"]
 interface WebTransport {
-  constructor(USVString url, optional WebTransportOptions options = {});
+  [Throws] constructor(USVString url, optional WebTransportOptions options = {});
 
   // Promise<WebTransportConnectionStats> getStats();
   // [NewObject] Promise<Uint8Array> exportKeyingMaterial(BufferSource label, BufferSource context, unsigned long outputLength);
@@ -32,7 +32,7 @@ interface WebTransport {
   //     optional WebTransportSendStreamOptions options = {});
   /* a ReadableStream of WebTransportReceiveStream objects */
   // readonly attribute ReadableStream incomingUnidirectionalStreams;
-  // WebTransportSendGroup createSendGroup();
+  WebTransportSendGroup createSendGroup();
 
   // static readonly attribute boolean supportsReliableOnly;
 };

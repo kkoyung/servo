@@ -8,3 +8,5 @@ pub(crate) use self::webtransport::*;
     reason = "The interface name is WebTransport"
 )]
 pub(crate) mod webtransport;
+pub(crate) mod webtransportdatagramswritable;
+pub(crate) mod webtransportsendgroup;
