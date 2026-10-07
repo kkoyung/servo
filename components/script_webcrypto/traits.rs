@@ -14,8 +14,8 @@ use script_bindings::DomTypes;
 // use script_bindings::error::{Error, Fallible};
 // use script_bindings::reflector::{DomGlobalGeneric, DomObject};
 // use script_bindings::tasks::TaskOnce;
-// use serde_core::Serialize;
-// use servo_base::generic_channel::GenericCallback;
+use serde_core::Serialize;
+use servo_base::generic_channel::GenericCallback;
 // use servo_url::MutableOrigin;
 // use webgpu_traits::{
 //     BufferAccessError, Mapping, ShaderCompilationInfo, WebGPUAdapterResponse,
@@ -69,9 +69,12 @@ use crate::subtlecrypto::SubtleCrypto;
 
 // This trait enforces the equivalence of all local types with the types in DomTypes.
 trait_set::trait_set! {
-pub trait Equivalence = DomTypes<
-    CryptoKey = CryptoKey<Self>,
+    pub trait Equivalence = DomTypes<
+        CryptoKey = CryptoKey<Self>,
         SubtleCrypto = SubtleCrypto<Self>>;
+
+    pub trait WebCryptoPromise<D: DomTypes> =
+        WebCryptoPromiseCallbackTrait<D, SubtleCrypto<D>, ()>;
 }
 
 // trait_set::trait_set! {
@@ -144,11 +147,11 @@ pub trait Equivalence = DomTypes<
 // ;
 // }
 //
-// /// Trait for sending Promise callbacks
-// pub trait WebGPUPromiseCallbackTrait<D: DomTypes, S, T: Serialize + 'static + Send> {
-//     fn callback_promise_dom_manipulation_task_source(&self, d: &S) -> GenericCallback<T>;
-// }
-//
+/// Trait for sending Promise callbacks
+pub trait WebCryptoPromiseCallbackTrait<D: DomTypes, S, T: Serialize + 'static + Send> {
+    fn callback_promise_dom_manipulation_task_source(&self, d: &S) -> GenericCallback<T>;
+}
+
 // pub trait WebGPUGlobalTrait<D: DomTypes>: Sized + DomObject {
 //     fn global_wgpu_id_hub(&self) -> Arc<IdentityHub>;
 //     fn queue_webgpu_task_source(&self, task: impl TaskOnce + 'static);

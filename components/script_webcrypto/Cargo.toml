@@ -27,6 +27,7 @@ malloc_size_of = { workspace = true }
 malloc_size_of_derive = { workspace = true }
 rustc-hash = { workspace = true }
 script_bindings = { workspace = true, features = ["webcrypto"] }
+serde_core = { workspace = true }
 servo-base = { workspace = true }
 servo-constellation-traits = { workspace = true }
 strum = { workspace = true }

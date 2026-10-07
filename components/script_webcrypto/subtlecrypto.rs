@@ -65,6 +65,7 @@ use servo_constellation_traits::{
 use strum::{EnumString, IntoStaticStr, VariantArray};
 use zeroize::Zeroizing;
 
+use script_bindings::interfaces::PromiseHelpers;
 use script_bindings::buffer_source::{create_buffer_source, get_buffer_source_copy};
 use script_bindings::codegen::GenericBindings::CryptoKeyBinding::{
     CryptoKeyMethods, CryptoKeyPair, KeyType, KeyUsage,
@@ -90,6 +91,7 @@ use crate::cryptokey::{CryptoKey, CryptoKeyOrCryptoKeyPair};
 // use crate::dom::globalscope::GlobalScope;
 // use crate::dom::promise::{Promise, RootedPromise};
 use crate::traits::Equivalence;
+use crate::traits::WebCryptoPromise;
 
 // Named elliptic curves
 const NAMED_CURVE_P256: &str = "P-256";
@@ -215,6 +217,7 @@ pub(crate) struct SubtleCrypto<D: DomTypes> {
 impl<D> SubtleCrypto<D>
 where
     D: Equivalence,
+    <D::Promise as PromiseHelpers<D>>::StackRoot: WebCryptoPromise<D>,
 {
     fn new_inherited() -> SubtleCrypto<D> {
         SubtleCrypto {
@@ -229,7 +232,11 @@ where
     /// Queue a global task on the crypto task source, given realm's global object, to resolve
     /// promise with the result of creating an ArrayBuffer in realm, containing data. If it fails
     /// to create buffer source, reject promise with a JSFailedError.
-    fn resolve_promise_with_data(&self, promise: &RootedPromise, data: Zeroizing<Vec<u8>>) {
+    fn resolve_promise_with_data(
+        &self,
+        promise: &<D::Promise as PromiseHelpers<D>>::StackRoot,
+        data: Zeroizing<Vec<u8>>,
+    ) {
         let trusted_promise = TrustedPromise::from(promise);
         self.global()
             .task_manager()
@@ -254,7 +261,7 @@ where
     fn resolve_promise_with_jwk(
         &self,
         cx: &mut JSContext,
-        promise: &RootedPromise,
+        promise: &<D::Promise as PromiseHelpers<D>>::StackRoot,
         jwk: Box<JsonWebKey>,
     ) {
         // NOTE: Serialize the JsonWebKey dictionary by stringifying it, in order to pass it to
@@ -293,7 +300,11 @@ where
 
     /// Queue a global task on the crypto task source, given realm's global object, to resolve
     /// promise with a CryptoKey.
-    fn resolve_promise_with_key(&self, promise: &RootedPromise, key: &CryptoKey<D>) {
+    fn resolve_promise_with_key(
+        &self,
+        promise: &<D::Promise as PromiseHelpers<D>>::StackRoot,
+        key: &CryptoKey<D>,
+    ) {
         let trusted_key = Trusted::new(key);
         let trusted_promise = TrustedPromise::from(promise);
         self.global()
@@ -308,7 +319,11 @@ where
 
     /// Queue a global task on the crypto task source, given realm's global object, to resolve
     /// promise with a CryptoKeyPair.
-    fn resolve_promise_with_key_pair(&self, promise: &RootedPromise, key_pair: CryptoKeyPair<D>) {
+    fn resolve_promise_with_key_pair(
+        &self,
+        promise: &<D::Promise as PromiseHelpers<D>>::StackRoot,
+        key_pair: CryptoKeyPair<D>,
+    ) {
         let trusted_private_key = key_pair.privateKey.map(|key| Trusted::new(&*key));
         let trusted_public_key = key_pair.publicKey.map(|key| Trusted::new(&*key));
         let trusted_promise = TrustedPromise::from(promise);
@@ -327,7 +342,11 @@ where
 
     /// Queue a global task on the crypto task source, given realm's global object, to resolve
     /// promise with a bool value.
-    fn resolve_promise_with_bool(&self, promise: &RootedPromise, result: bool) {
+    fn resolve_promise_with_bool(
+        &self,
+        promise: &<D::Promise as PromiseHelpers<D>>::StackRoot,
+        result: bool,
+    ) {
         let trusted_promise = TrustedPromise::from(promise);
         self.global()
             .task_manager()
@@ -340,7 +359,11 @@ where
 
     /// Queue a global task on the crypto task source, given realm's global object, to reject
     /// promise with an error.
-    fn reject_promise_with_error(&self, promise: &RootedPromise, error: Error) {
+    fn reject_promise_with_error(
+        &self,
+        promise: &<D::Promise as PromiseHelpers<D>>::StackRoot,
+        error: Error,
+    ) {
         let trusted_promise = TrustedPromise::from(promise);
         self.global()
             .task_manager()
@@ -356,7 +379,7 @@ where
     /// defined by [WebIDL].
     fn resolve_promise_with_encapsulated_key(
         &self,
-        promise: &RootedPromise,
+        promise: &<D::Promise as PromiseHelpers<D>>::StackRoot,
         encapsulated_key: EncapsulatedKey<D>,
     ) {
         let trusted_promise = TrustedPromise::from(promise);
@@ -373,7 +396,7 @@ where
     /// defined by [WebIDL].
     fn resolve_promise_with_encapsulated_bits(
         &self,
-        promise: &RootedPromise,
+        promise: &<D::Promise as PromiseHelpers<D>>::StackRoot,
         encapsulated_bits: EncapsulatedBits,
     ) {
         let trusted_promise = TrustedPromise::from(promise);
@@ -389,6 +412,7 @@ where
 impl<D> SubtleCryptoMethods<D> for SubtleCrypto<D>
 where
     D: Equivalence,
+    <D::Promise as PromiseHelpers<D>>::StackRoot: WebCryptoPromise<D>,
 {
     /// <https://w3c.github.io/webcrypto/#SubtleCrypto-method-encrypt>
     fn Encrypt(
@@ -397,7 +421,7 @@ where
         algorithm: AlgorithmIdentifier,
         key: &CryptoKey<D>,
         data: ArrayBufferViewOrArrayBuffer,
-    ) -> RootedPromise {
+    ) -> <D::Promise as PromiseHelpers<D>>::StackRoot {
         // Step 1. Let algorithm and key be the algorithm and key parameters passed to the
         // encrypt() method, respectively.
         // NOTE: We did that in method parameter.
@@ -408,7 +432,7 @@ where
         let normalized_algorithm = match normalize_algorithm::<EncryptOperation>(cx, &algorithm) {
             Ok(normalized_algorithm) => normalized_algorithm,
             Err(error) => {
-                let promise = Promise::new_in_realm(cx);
+                let promise = D::Promise::new_in_realm(cx);
                 promise.reject_error(cx, error);
                 return promise;
             },
@@ -420,7 +444,7 @@ where
 
         // Step 5. Let realm be the relevant realm of this.
         // Step 6. Let promise be a new Promise.
-        let promise = Promise::new_in_realm(cx);
+        let promise = D::Promise::new_in_realm(cx);
 
         // Step 7. Return promise and perform the remaining steps in parallel.
         let this = Trusted::new(self);
@@ -481,7 +505,7 @@ where
         algorithm: AlgorithmIdentifier,
         key: &CryptoKey<D>,
         data: ArrayBufferViewOrArrayBuffer,
-    ) -> RootedPromise {
+    ) -> <D::Promise as PromiseHelpers<D>>::StackRoot {
         // Step 1. Let algorithm and key be the algorithm and key parameters passed to the
         // decrypt() method, respectively.
         // NOTE: We did that in method parameter.
@@ -492,7 +516,7 @@ where
         let normalized_algorithm = match normalize_algorithm::<DecryptOperation>(cx, &algorithm) {
             Ok(normalized_algorithm) => normalized_algorithm,
             Err(error) => {
-                let promise = Promise::new_in_realm(cx);
+                let promise = D::Promise::new_in_realm(cx);
                 promise.reject_error(cx, error);
                 return promise;
             },
@@ -504,7 +528,7 @@ where
 
         // Step 5. Let realm be the relevant realm of this.
         // Step 6. Let promise be a new Promise.
-        let promise = Promise::new_in_realm(cx);
+        let promise = D::Promise::new_in_realm(cx);
 
         // Step 7. Return promise and perform the remaining steps in parallel.
         let this = Trusted::new(self);
@@ -565,7 +589,7 @@ where
         algorithm: AlgorithmIdentifier,
         key: &CryptoKey<D>,
         data: ArrayBufferViewOrArrayBuffer,
-    ) -> RootedPromise {
+    ) -> <D::Promise as PromiseHelpers<D>>::StackRoot {
         // Step 1. Let algorithm and key be the algorithm and key parameters passed to the sign()
         // method, respectively.
         // NOTE: We did that in method parameter.
@@ -576,7 +600,7 @@ where
         let normalized_algorithm = match normalize_algorithm::<SignOperation>(cx, &algorithm) {
             Ok(normalized_algorithm) => normalized_algorithm,
             Err(error) => {
-                let promise = Promise::new_in_realm(cx);
+                let promise = D::Promise::new_in_realm(cx);
                 promise.reject_error(cx, error);
                 return promise;
             },
@@ -588,7 +612,7 @@ where
 
         // Step 5. Let realm be the relevant realm of this.
         // Step 6. Let promise be a new Promise.
-        let promise = Promise::new_in_realm(cx);
+        let promise = D::Promise::new_in_realm(cx);
 
         // Step 7. Return promise and perform the remaining steps in parallel.
         let this = Trusted::new(self);
@@ -649,7 +673,7 @@ where
         key: &CryptoKey<D>,
         signature: ArrayBufferViewOrArrayBuffer,
         data: ArrayBufferViewOrArrayBuffer,
-    ) -> RootedPromise {
+    ) -> <D::Promise as PromiseHelpers<D>>::StackRoot {
         // Step 1. Let algorithm and key be the algorithm and key parameters passed to the verify()
         // method, respectively.
         // NOTE: We did that in method parameter.
@@ -660,7 +684,7 @@ where
         let normalized_algorithm = match normalize_algorithm::<VerifyOperation>(cx, &algorithm) {
             Ok(algorithm) => algorithm,
             Err(error) => {
-                let promise = Promise::new_in_realm(cx);
+                let promise = D::Promise::new_in_realm(cx);
                 promise.reject_error(cx, error);
                 return promise;
             },
@@ -676,7 +700,7 @@ where
 
         // Step 6. Let realm be the relevant realm of this.
         // Step 7. Let promise be a new Promise.
-        let promise = Promise::new_in_realm(cx);
+        let promise = D::Promise::new_in_realm(cx);
 
         // Step 8. Return promise and perform the remaining steps in parallel.
         let this = Trusted::new(self);
@@ -734,7 +758,7 @@ where
         cx: &mut CurrentRealm,
         algorithm: AlgorithmIdentifier,
         data: ArrayBufferViewOrArrayBuffer,
-    ) -> RootedPromise {
+    ) -> <D::Promise as PromiseHelpers<D>>::StackRoot {
         // Step 1. Let algorithm be the algorithm parameter passed to the digest() method.
         // NOTE: We did that in method parameter.
 
@@ -744,7 +768,7 @@ where
         let normalized_algorithm = match normalize_algorithm::<DigestOperation>(cx, &algorithm) {
             Ok(normalized_algorithm) => normalized_algorithm,
             Err(error) => {
-                let promise = Promise::new_in_realm(cx);
+                let promise = D::Promise::new_in_realm(cx);
                 promise.reject_error(cx, error);
                 return promise;
             },
@@ -756,7 +780,7 @@ where
 
         // Step 5. Let realm be the relevant realm of this.
         // Step 6. Let promise be a new Promise.
-        let promise = Promise::new_in_realm(cx);
+        let promise = D::Promise::new_in_realm(cx);
 
         // Step 7. Return promise and perform the remaining steps in parallel.
         let this = Trusted::new(self);
@@ -799,14 +823,14 @@ where
         algorithm: AlgorithmIdentifier,
         extractable: bool,
         key_usages: Vec<KeyUsage>,
-    ) -> RootedPromise {
+    ) -> <D::Promise as PromiseHelpers<D>>::StackRoot {
         // Step 1. Let algorithm, extractable and usages be the algorithm, extractable and
         // keyUsages parameters passed to the generateKey() method, respectively.
 
         // Step 2. Let normalizedAlgorithm be the result of normalizing an algorithm, with alg set
         // to algorithm and op set to "generateKey".
         // Step 3. If an error occurred, return a Promise rejected with normalizedAlgorithm.
-        let promise = Promise::new_in_realm(cx);
+        let promise = D::Promise::new_in_realm(cx);
         let normalized_algorithm = match normalize_algorithm::<GenerateKeyOperation>(cx, &algorithm)
         {
             Ok(normalized_algorithm) => normalized_algorithm,
@@ -904,7 +928,7 @@ where
         derived_key_type: AlgorithmIdentifier,
         extractable: bool,
         usages: Vec<KeyUsage>,
-    ) -> RootedPromise {
+    ) -> <D::Promise as PromiseHelpers<D>>::StackRoot {
         // Step 1. Let algorithm, baseKey, derivedKeyType, extractable and usages be the algorithm,
         // baseKey, derivedKeyType, extractable and keyUsages parameters passed to the deriveKey()
         // method, respectively.
@@ -913,7 +937,7 @@ where
         // Step 2. Let normalizedAlgorithm be the result of normalizing an algorithm, with alg set
         // to algorithm and op set to "deriveBits".
         // Step 3. If an error occurred, return a Promise rejected with normalizedAlgorithm.
-        let promise = Promise::new_in_realm(cx);
+        let promise = D::Promise::new_in_realm(cx);
         let normalized_algorithm = match normalize_algorithm::<DeriveBitsOperation>(cx, &algorithm)
         {
             Ok(normalized_algorithm) => normalized_algorithm,
@@ -1052,7 +1076,7 @@ where
         algorithm: AlgorithmIdentifier,
         base_key: &CryptoKey<D>,
         length: Option<u32>,
-    ) -> RootedPromise {
+    ) -> <D::Promise as PromiseHelpers<D>>::StackRoot {
         // Step 1. Let algorithm, baseKey and length, be the algorithm, baseKey and length
         // parameters passed to the deriveBits() method, respectively.
         // NOTE: We did that in method parameter.
@@ -1060,7 +1084,7 @@ where
         // Step 2. Let normalizedAlgorithm be the result of normalizing an algorithm, with alg set
         // to algorithm and op set to "deriveBits".
         // Step 3. If an error occurred, return a Promise rejected with normalizedAlgorithm.
-        let promise = Promise::new_in_realm(cx);
+        let promise = D::Promise::new_in_realm(cx);
         let normalized_algorithm = match normalize_algorithm::<DeriveBitsOperation>(cx, &algorithm)
         {
             Ok(normalized_algorithm) => normalized_algorithm,
@@ -1134,7 +1158,7 @@ where
         algorithm: AlgorithmIdentifier,
         extractable: bool,
         key_usages: Vec<KeyUsage>,
-    ) -> RootedPromise {
+    ) -> <D::Promise as PromiseHelpers<D>>::StackRoot {
         // Step 1. Let format, algorithm, extractable and usages, be the format, algorithm,
         // extractable and keyUsages parameters passed to the importKey() method, respectively.
 
@@ -1144,7 +1168,7 @@ where
         let normalized_algorithm = match normalize_algorithm::<ImportKeyOperation>(cx, &algorithm) {
             Ok(algorithm) => algorithm,
             Err(error) => {
-                let promise = Promise::new_in_realm(cx);
+                let promise = D::Promise::new_in_realm(cx);
                 promise.reject_error(cx, error);
                 return promise;
             },
@@ -1159,7 +1183,7 @@ where
                     ArrayBufferViewOrArrayBufferOrJsonWebKey::ArrayBuffer(_) => {
                         // Step 4.1. If the keyData parameter passed to the importKey() method is
                         // not a JsonWebKey dictionary, throw a TypeError.
-                        let promise = Promise::new_in_realm(cx);
+                        let promise = D::Promise::new_in_realm(cx);
                         promise.reject_error(
                             cx,
                             Error::Type(c"The keyData type does not match the format".to_owned()),
@@ -1180,7 +1204,7 @@ where
                                 Zeroizing::new(stringified.as_bytes(cx.no_gc()).to_vec())
                             },
                             Err(error) => {
-                                let promise = Promise::new_in_realm(cx);
+                                let promise = D::Promise::new_in_realm(cx);
                                 promise.reject_error(cx, error);
                                 return promise;
                             },
@@ -1194,7 +1218,7 @@ where
                     // Step 4.1. If the keyData parameter passed to the importKey() method is a
                     // JsonWebKey dictionary, throw a TypeError.
                     ArrayBufferViewOrArrayBufferOrJsonWebKey::JsonWebKey(_) => {
-                        let promise = Promise::new_in_realm(cx);
+                        let promise = D::Promise::new_in_realm(cx);
                         promise.reject_error(
                             cx,
                             Error::Type(c"The keyData type does not match the format".to_owned()),
@@ -1216,7 +1240,7 @@ where
 
         // Step 5. Let realm be the relevant realm of this.
         // Step 6. Let promise be a new Promise.
-        let promise = Promise::new_in_realm(cx);
+        let promise = D::Promise::new_in_realm(cx);
 
         // Step 7. Return promise and perform the remaining steps in parallel.
         let this = Trusted::new(self);
@@ -1279,14 +1303,14 @@ where
         cx: &mut CurrentRealm,
         format: KeyFormat,
         key: &CryptoKey<D>,
-    ) -> RootedPromise {
+    ) -> <D::Promise as PromiseHelpers<D>>::StackRoot {
         // Step 1. Let format and key be the format and key parameters passed to the exportKey()
         // method, respectively.
         // NOTE: We did that in method parameter.
 
         // Step 2. Let realm be the relevant realm of this.
         // Step 3. Let promise be a new Promise.
-        let promise = Promise::new_in_realm(cx);
+        let promise = D::Promise::new_in_realm(cx);
 
         // Step 4. Return promise and perform the remaining steps in parallel.
         let trusted_subtle = Trusted::new(self);
@@ -1370,7 +1394,7 @@ where
         key: &CryptoKey<D>,
         wrapping_key: &CryptoKey<D>,
         algorithm: AlgorithmIdentifier,
-    ) -> RootedPromise {
+    ) -> <D::Promise as PromiseHelpers<D>>::StackRoot {
         // Step 1. Let format, key, wrappingKey and algorithm be the format, key, wrappingKey and
         // wrapAlgorithm parameters passed to the wrapKey() method, respectively.
         // NOTE: We did that in method parameter.
@@ -1392,7 +1416,7 @@ where
             match normalize_algorithm::<EncryptOperation>(cx, &algorithm) {
                 Ok(algorithm) => WrapKeyAlgorithmOrEncryptAlgorithm::EncryptAlgorithm(algorithm),
                 Err(error) => {
-                    let promise = Promise::new_in_realm(cx);
+                    let promise = D::Promise::new_in_realm(cx);
                     promise.reject_error(cx, error);
                     return promise;
                 },
@@ -1401,7 +1425,7 @@ where
 
         // Step 5. Let realm be the relevant realm of this.
         // Step 6. Let promise be a new Promise.
-        let promise = Promise::new_in_realm(cx);
+        let promise = D::Promise::new_in_realm(cx);
 
         // Step 7. Return promise and perform the remaining steps in parallel.
         let trusted_subtle = Trusted::new(self);
@@ -1547,7 +1571,7 @@ where
         unwrapped_key_algorithm: AlgorithmIdentifier,
         extractable: bool,
         usages: Vec<KeyUsage>,
-    ) -> RootedPromise {
+    ) -> <D::Promise as PromiseHelpers<D>>::StackRoot {
         // Step 1. Let format, unwrappingKey, algorithm, unwrappedKeyAlgorithm, extractable and
         // usages, be the format, unwrappingKey, unwrapAlgorithm, unwrappedKeyAlgorithm,
         // extractable and keyUsages parameters passed to the unwrapKey() method, respectively.
@@ -1570,7 +1594,7 @@ where
             match normalize_algorithm::<DecryptOperation>(cx, &algorithm) {
                 Ok(algorithm) => UnwrapKeyAlgorithmOrDecryptAlgorithm::DecryptAlgorithm(algorithm),
                 Err(error) => {
-                    let promise = Promise::new_in_realm(cx);
+                    let promise = D::Promise::new_in_realm(cx);
                     promise.reject_error(cx, error);
                     return promise;
                 },
@@ -1584,7 +1608,7 @@ where
             match normalize_algorithm::<ImportKeyOperation>(cx, &unwrapped_key_algorithm) {
                 Ok(algorithm) => algorithm,
                 Err(error) => {
-                    let promise = Promise::new_in_realm(cx);
+                    let promise = D::Promise::new_in_realm(cx);
                     promise.reject_error(cx, error);
                     return promise;
                 },
@@ -1596,7 +1620,7 @@ where
 
         // Step 8. Let realm be the relevant realm of this.
         // Step 9. Let promise be a new Promise.
-        let promise = Promise::new_in_realm(cx);
+        let promise = D::Promise::new_in_realm(cx);
 
         // Step 10. Return promise and perform the remaining steps in parallel.
         let trusted_subtle = Trusted::new(self);
@@ -1729,7 +1753,7 @@ where
         shared_key_algorithm: AlgorithmIdentifier,
         extractable: bool,
         usages: Vec<KeyUsage>,
-    ) -> RootedPromise {
+    ) -> <D::Promise as PromiseHelpers<D>>::StackRoot {
         // Step 1. Let encapsulationAlgorithm, encapsulationKey, sharedKeyAlgorithm, extractable
         // and usages be the encapsulationAlgorithm, encapsulationKey, sharedKeyAlgorithm,
         // extractable and keyUsages parameters passed to the encapsulateKey() method,
@@ -1739,7 +1763,7 @@ where
         // with alg set to encapsulationAlgorithm and op set to "encapsulate".
         // Step 3. If an error occurred, return a Promise rejected with
         // normalizedEncapsulationAlgorithm.
-        let promise = Promise::new_in_realm(cx);
+        let promise = D::Promise::new_in_realm(cx);
         let normalized_encapsulation_algorithm =
             match normalize_algorithm::<EncapsulateOperation>(cx, &encapsulation_algorithm) {
                 Ok(algorithm) => algorithm,
@@ -1873,7 +1897,7 @@ where
         cx: &mut CurrentRealm,
         encapsulation_algorithm: AlgorithmIdentifier,
         encapsulation_key: &CryptoKey<D>,
-    ) -> RootedPromise {
+    ) -> <D::Promise as PromiseHelpers<D>>::StackRoot {
         // Step 1. Let encapsulationAlgorithm and encapsulationKey be the encapsulationAlgorithm
         // and encapsulationKey parameters passed to the encapsulateBits() method, respectively.
 
@@ -1881,7 +1905,7 @@ where
         // with alg set to encapsulationAlgorithm and op set to "encapsulate".
         // Step 3. If an error occurred, return a Promise rejected with
         // normalizedEncapsulationAlgorithm.
-        let promise = Promise::new_in_realm(cx);
+        let promise = D::Promise::new_in_realm(cx);
         let normalized_encapsulation_algorithm =
             match normalize_algorithm::<EncapsulateOperation>(cx, &encapsulation_algorithm) {
                 Ok(algorithm) => algorithm,
@@ -1965,7 +1989,7 @@ where
         shared_key_algorithm: AlgorithmIdentifier,
         extractable: bool,
         usages: Vec<KeyUsage>,
-    ) -> RootedPromise {
+    ) -> <D::Promise as PromiseHelpers<D>>::StackRoot {
         // Step 1. Let decapsulationAlgorithm, decapsulationKey, sharedKeyAlgorithm, extractable
         // and usages be the decapsulationAlgorithm, decapsulationKey, sharedKeyAlgorithm,
         // extractable and keyUsages parameters passed to the decapsulateKey() method,
@@ -1979,7 +2003,7 @@ where
             match normalize_algorithm::<DecapsulateOperation>(cx, &decapsulation_algorithm) {
                 Ok(normalized_algorithm) => normalized_algorithm,
                 Err(error) => {
-                    let promise = Promise::new_in_realm(cx);
+                    let promise = D::Promise::new_in_realm(cx);
                     promise.reject_error(cx, error);
                     return promise;
                 },
@@ -1993,7 +2017,7 @@ where
             match normalize_algorithm::<ImportKeyOperation>(cx, &shared_key_algorithm) {
                 Ok(normalized_algorithm) => normalized_algorithm,
                 Err(error) => {
-                    let promise = Promise::new_in_realm(cx);
+                    let promise = D::Promise::new_in_realm(cx);
                     promise.reject_error(cx, error);
                     return promise;
                 },
@@ -2005,7 +2029,7 @@ where
 
         // Step 7. Let realm be the relevant realm of this.
         // Step 8. Let promise be a new Promise.
-        let promise = Promise::new_in_realm(cx);
+        let promise = D::Promise::new_in_realm(cx);
 
         // Step 9. Return promise and perform the remaining steps in parallel.
         let trusted_subtle = Trusted::new(self);
@@ -2101,7 +2125,7 @@ where
         decapsulation_algorithm: AlgorithmIdentifier,
         decapsulation_key: &CryptoKey<D>,
         ciphertext: ArrayBufferViewOrArrayBuffer,
-    ) -> RootedPromise {
+    ) -> <D::Promise as PromiseHelpers<D>>::StackRoot {
         // Step 1. Let decapsulationAlgorithm and decapsulationKey be the decapsulationAlgorithm
         // and decapsulationKey parameters passed to the decapsulateBits() method, respectively.
 
@@ -2113,7 +2137,7 @@ where
             match normalize_algorithm::<DecapsulateOperation>(cx, &decapsulation_algorithm) {
                 Ok(normalized_algorithm) => normalized_algorithm,
                 Err(error) => {
-                    let promise = Promise::new_in_realm(cx);
+                    let promise = D::Promise::new_in_realm(cx);
                     promise.reject_error(cx, error);
                     return promise;
                 },
@@ -2125,7 +2149,7 @@ where
 
         // Step 5. Let realm be the relevant realm of this.
         // Step 6. Let promise be a new Promise.
-        let promise = Promise::new_in_realm(cx);
+        let promise = D::Promise::new_in_realm(cx);
 
         // Step 7. Return promise and perform the remaining steps in parallel.
         let trusted_subtle = Trusted::new(self);
@@ -2195,7 +2219,7 @@ where
         cx: &mut CurrentRealm,
         key: &CryptoKey<D>,
         usages: Vec<KeyUsage>,
-    ) -> RootedPromise {
+    ) -> <D::Promise as PromiseHelpers<D>>::StackRoot {
         // Step 1. Let key and usages be the key and keyUsages parameters passed to the
         // getPublicKey() method, respectively.
 
@@ -2214,7 +2238,7 @@ where
         ) {
             Ok(normalized_algorithm) => normalized_algorithm,
             Err(error) => {
-                let promise = Promise::new_in_realm(cx);
+                let promise = D::Promise::new_in_realm(cx);
                 promise.reject_error(cx, error);
                 return promise;
             },
@@ -2222,7 +2246,7 @@ where
 
         // Step 4. Let realm be the relevant realm of this.
         // Step 5. Let promise be a new Promise.
-        let promise = Promise::new_in_realm(cx);
+        let promise = D::Promise::new_in_realm(cx);
 
         // Step 6. Return promise and perform the remaining steps in parallel.
         let trusted_subtle = Trusted::new(self);
@@ -5638,15 +5662,17 @@ impl UnwrapKeyAlgorithm {
 }
 
 /// The value of the key "unwrapKey" in the internal object supportedAlgorithms
-struct GenerateKeyOperation {}
+struct GenerateKeyOperation<D: DomTypes> {
+    phantom: PhantomData<D>,
+}
 
-impl Operation for GenerateKeyOperation {
-    type RegisteredAlgorithm = GenerateKeyAlgorithm;
+impl<D: DomTypes> Operation for GenerateKeyOperation<D> {
+    type RegisteredAlgorithm = GenerateKeyAlgorithm<D>;
 }
 
 /// Normalized algorithm for the "generateKey" operation, used as output of
 /// <https://w3c.github.io/webcrypto/#dfn-normalize-an-algorithm>
-enum GenerateKeyAlgorithm {
+enum GenerateKeyAlgorithm<D: DomTypes> {
     RsassaPkcs1V1_5(RsaHashedKeyGenParams),
     RsaPss(RsaHashedKeyGenParams),
     RsaOaep(RsaHashedKeyGenParams),
@@ -5667,9 +5693,10 @@ enum GenerateKeyAlgorithm {
     AesOcb(AesKeyGenParams),
     ChaCha20Poly1305(Algorithm),
     Kmac(KmacKeyGenParams),
+    Phantom(PhantomData<D>),
 }
 
-impl NormalizedAlgorithm for GenerateKeyAlgorithm {
+impl<D: DomTypes> NormalizedAlgorithm for GenerateKeyAlgorithm<D> {
     fn from_object(
         cx: &mut JSContext,
         algorithm_name: CryptoAlgorithm,
@@ -5805,14 +5832,14 @@ impl NormalizedAlgorithm for GenerateKeyAlgorithm {
     }
 }
 
-impl GenerateKeyAlgorithm {
+impl<D: DomTypes> GenerateKeyAlgorithm<D> {
     fn generate_key(
         &self,
         cx: &mut JSContext,
         global: &D::GlobalScope,
         extractable: bool,
         usages: Vec<KeyUsage>,
-    ) -> Result<CryptoKeyOrCryptoKeyPair, Error> {
+    ) -> Result<CryptoKeyOrCryptoKeyPair<D>, Error> {
         match self {
             GenerateKeyAlgorithm::RsassaPkcs1V1_5(algorithm) => {
                 rsassa_pkcs1_v1_5_operation::generate_key(
@@ -5905,15 +5932,17 @@ impl GenerateKeyAlgorithm {
 }
 
 /// The value of the key "importKey" in the internal object supportedAlgorithms
-struct ImportKeyOperation {}
+struct ImportKeyOperation<D: DomTypes> {
+    phantom: PhantomData<D>,
+}
 
-impl Operation for ImportKeyOperation {
-    type RegisteredAlgorithm = ImportKeyAlgorithm;
+impl<D: DomTypes> Operation for ImportKeyOperation<D> {
+    type RegisteredAlgorithm = ImportKeyAlgorithm<D>;
 }
 
 /// Normalized algorithm for the "importKey" operation, used as output of
 /// <https://w3c.github.io/webcrypto/#dfn-normalize-an-algorithm>
-enum ImportKeyAlgorithm {
+enum ImportKeyAlgorithm<D: DomTypes> {
     RsassaPkcs1V1_5(RsaHashedImportParams),
     RsaPss(RsaHashedImportParams),
     RsaOaep(RsaHashedImportParams),
@@ -5937,9 +5966,10 @@ enum ImportKeyAlgorithm {
     ChaCha20Poly1305(Algorithm),
     Kmac(KmacImportParams),
     Argon2(Algorithm),
+    Phantom(PhantomData<D>),
 }
 
-impl NormalizedAlgorithm for ImportKeyAlgorithm {
+impl<D: DomTypes> NormalizedAlgorithm for ImportKeyAlgorithm<D> {
     fn from_object(
         cx: &mut JSContext,
         algorithm_name: CryptoAlgorithm,
@@ -6085,7 +6115,7 @@ impl NormalizedAlgorithm for ImportKeyAlgorithm {
     }
 }
 
-impl<D: DomTypes> ImportKeyAlgorithm {
+impl<D: DomTypes> ImportKeyAlgorithm<D> {
     fn import_key(
         &self,
         cx: &mut JSContext,
@@ -6795,15 +6825,17 @@ impl GetSharedKeyLengthAlgorithm {
 }
 
 /// The value of the key "getPublicKey" in the internal object supportedAlgorithms
-struct GetPublicKeyOperation {}
+struct GetPublicKeyOperation<D: DomTypes> {
+    phantom: PhantomData<D>,
+}
 
-impl Operation for GetPublicKeyOperation {
-    type RegisteredAlgorithm = GetPublicKeyAlgorithm;
+impl<D: DomTypes> Operation for GetPublicKeyOperation<D> {
+    type RegisteredAlgorithm = GetPublicKeyAlgorithm<D>;
 }
 
 /// Normalized algorithm for the "getPublicKey" operation, used as output of
 /// <https://w3c.github.io/webcrypto/#dfn-normalize-an-algorithm>
-enum GetPublicKeyAlgorithm {
+enum GetPublicKeyAlgorithm<D: DomTypes> {
     RsassaPkcs1v1_5(Algorithm),
     RsaPss(Algorithm),
     RsaOaep(Algorithm),
@@ -6816,9 +6848,10 @@ enum GetPublicKeyAlgorithm {
     MlKem(Algorithm),
     HybridKem(Algorithm),
     MlDsa(Algorithm),
+    Phantom(PhantomData<D>),
 }
 
-impl NormalizedAlgorithm for GetPublicKeyAlgorithm {
+impl<D: DomTypes> NormalizedAlgorithm for GetPublicKeyAlgorithm<D> {
     fn from_object(
         cx: &mut JSContext,
         algorithm_name: CryptoAlgorithm,
@@ -6888,15 +6921,15 @@ impl NormalizedAlgorithm for GetPublicKeyAlgorithm {
     }
 }
 
-impl GetPublicKeyAlgorithm {
+impl<D: DomTypes> GetPublicKeyAlgorithm<D> {
     fn get_public_key(
         &self,
         cx: &mut JSContext,
         global: &D::GlobalScope,
-        key: &CryptoKey,
+        key: &CryptoKey<D>,
         algorithm: &KeyAlgorithmAndDerivatives,
         usages: Vec<KeyUsage>,
-    ) -> Result<DomRoot<CryptoKey>, Error> {
+    ) -> Result<DomRoot<CryptoKey<D>>, Error> {
         match self {
             GetPublicKeyAlgorithm::RsassaPkcs1v1_5(_algorithm) => {
                 rsassa_pkcs1_v1_5_operation::get_public_key(cx, global, key, algorithm, usages)
