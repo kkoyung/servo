@@ -239,6 +239,1900 @@ impl<D> SubtleCryptoMethods<D> for SubtleCrypto<D>
 where
     D: DomTypes,
 {
+    // /// <https://w3c.github.io/webcrypto/#SubtleCrypto-method-encrypt>
+    // fn Encrypt(
+    //     &self,
+    //     cx: &mut CurrentRealm,
+    //     algorithm: AlgorithmIdentifier,
+    //     key: &CryptoKey,
+    //     data: ArrayBufferViewOrArrayBuffer,
+    // ) -> RootedPromise {
+    //     // Step 1. Let algorithm and key be the algorithm and key parameters passed to the
+    //     // encrypt() method, respectively.
+    //     // NOTE: We did that in method parameter.
+    //
+    //     // Step 2. Let normalizedAlgorithm be the result of normalizing an algorithm, with alg set
+    //     // to algorithm and op set to "encrypt".
+    //     // Step 3. If an error occurred, return a Promise rejected with normalizedAlgorithm.
+    //     let normalized_algorithm = match normalize_algorithm::<EncryptOperation>(cx, &algorithm) {
+    //         Ok(normalized_algorithm) => normalized_algorithm,
+    //         Err(error) => {
+    //             let promise = Promise::new_in_realm(cx);
+    //             promise.reject_error(cx, error);
+    //             return promise;
+    //         },
+    //     };
+    //
+    //     // Step 4. Let data be the result of getting a copy of the bytes held by the data parameter
+    //     // passed to the encrypt() method.
+    //     let data = Zeroizing::new(get_buffer_source_copy((&data).into()));
+    //
+    //     // Step 5. Let realm be the relevant realm of this.
+    //     // Step 6. Let promise be a new Promise.
+    //     let promise = Promise::new_in_realm(cx);
+    //
+    //     // Step 7. Return promise and perform the remaining steps in parallel.
+    //     let this = Trusted::new(self);
+    //     let trusted_promise = TrustedPromise::from(&promise);
+    //     let trusted_key = Trusted::new(key);
+    //     self.global()
+    //         .task_manager()
+    //         .dom_manipulation_task_source()
+    //         .queue(task!(encrypt: move |cx| {
+    //             let subtle = this.root();
+    //             let promise = &trusted_promise.root(cx);
+    //             let key = trusted_key.root();
+    //
+    //             // Step 8. If the following steps or referenced procedures say to throw an error,
+    //             // queue a global task on the crypto task source, given realm's global object, to
+    //             // reject promise with the returned error; and then terminate the algorithm.
+    //
+    //             // Step 9. If the name member of normalizedAlgorithm is not equal to the name
+    //             // attribute of the [[algorithm]] internal slot of key then throw an
+    //             // InvalidAccessError.
+    //             if normalized_algorithm.name() != key.algorithm().name() {
+    //                 subtle.reject_promise_with_error(promise, Error::InvalidAccess(Some("Algorithm's name does not equal key algorithm name".into())));
+    //                 return;
+    //             }
+    //
+    //             // Step 10. If the [[usages]] internal slot of key does not contain an entry that
+    //             // is "encrypt", then throw an InvalidAccessError.
+    //             if !key.usages().contains(&KeyUsage::Encrypt) {
+    //                 subtle.reject_promise_with_error(promise, Error::InvalidAccess(Some("Key usages does not contain 'encrypt' entry".into())));
+    //                 return;
+    //             }
+    //
+    //             // Step 11. Let ciphertext be the result of performing the encrypt operation
+    //             // specified by normalizedAlgorithm using algorithm and key and with data as
+    //             // plaintext.
+    //             let ciphertext = match normalized_algorithm.encrypt(&key, &data) {
+    //                 Ok(ciphertext) => ciphertext,
+    //                 Err(error) => {
+    //                     subtle.reject_promise_with_error(promise, error);
+    //                     return;
+    //                 },
+    //             };
+    //
+    //             // Step 12. Queue a global task on the crypto task source, given realm's global
+    //             // object, to perform the remaining steps.
+    //             // Step 13. Let result be the result of creating an ArrayBuffer in realm,
+    //             // containing ciphertext.
+    //             // Step 14. Resolve promise with result.
+    //             subtle.resolve_promise_with_data(promise, ciphertext.into());
+    //         }));
+    //     promise
+    // }
+    //
+    // /// <https://w3c.github.io/webcrypto/#SubtleCrypto-method-decrypt>
+    // fn Decrypt(
+    //     &self,
+    //     cx: &mut CurrentRealm,
+    //     algorithm: AlgorithmIdentifier,
+    //     key: &CryptoKey,
+    //     data: ArrayBufferViewOrArrayBuffer,
+    // ) -> RootedPromise {
+    //     // Step 1. Let algorithm and key be the algorithm and key parameters passed to the
+    //     // decrypt() method, respectively.
+    //     // NOTE: We did that in method parameter.
+    //
+    //     // Step 2. Let normalizedAlgorithm be the result of normalizing an algorithm, with alg set
+    //     // to algorithm and op set to "decrypt".
+    //     // Step 3. If an error occurred, return a Promise rejected with normalizedAlgorithm.
+    //     let normalized_algorithm = match normalize_algorithm::<DecryptOperation>(cx, &algorithm) {
+    //         Ok(normalized_algorithm) => normalized_algorithm,
+    //         Err(error) => {
+    //             let promise = Promise::new_in_realm(cx);
+    //             promise.reject_error(cx, error);
+    //             return promise;
+    //         },
+    //     };
+    //
+    //     // Step 4. Let data be the result of getting a copy of the bytes held by the data parameter
+    //     // passed to the decrypt() method.
+    //     let data = get_buffer_source_copy((&data).into());
+    //
+    //     // Step 5. Let realm be the relevant realm of this.
+    //     // Step 6. Let promise be a new Promise.
+    //     let promise = Promise::new_in_realm(cx);
+    //
+    //     // Step 7. Return promise and perform the remaining steps in parallel.
+    //     let this = Trusted::new(self);
+    //     let trusted_promise = TrustedPromise::from(&promise);
+    //     let trusted_key = Trusted::new(key);
+    //     self.global()
+    //         .task_manager()
+    //         .dom_manipulation_task_source()
+    //         .queue(task!(decrypt: move |cx| {
+    //             let subtle = this.root();
+    //             let promise = &trusted_promise.root(cx);
+    //             let key = trusted_key.root();
+    //
+    //             // Step 8. If the following steps or referenced procedures say to throw an error,
+    //             // queue a global task on the crypto task source, given realm's global object, to
+    //             // reject promise with the returned error; and then terminate the algorithm.
+    //
+    //             // Step 9. If the name member of normalizedAlgorithm is not equal to the name
+    //             // attribute of the [[algorithm]] internal slot of key then throw an
+    //             // InvalidAccessError.
+    //             if normalized_algorithm.name() != key.algorithm().name() {
+    //                 subtle.reject_promise_with_error(promise, Error::InvalidAccess(Some("Normalized algorithm name does not equal key algorithm name".into())));
+    //                 return;
+    //             }
+    //
+    //             // Step 10. If the [[usages]] internal slot of key does not contain an entry that
+    //             // is "decrypt", then throw an InvalidAccessError.
+    //             if !key.usages().contains(&KeyUsage::Decrypt) {
+    //                 subtle.reject_promise_with_error(promise, Error::InvalidAccess(Some("Key usages does not contain 'decrypt' entry".into())));
+    //                 return;
+    //             }
+    //
+    //             // Step 11. Let plaintext be the result of performing the decrypt operation
+    //             // specified by normalizedAlgorithm using key and algorithm and with data as
+    //             // ciphertext.
+    //             let plaintext = match normalized_algorithm.decrypt(&key, &data) {
+    //                 Ok(plaintext) => Zeroizing::new(plaintext),
+    //                 Err(error) => {
+    //                     subtle.reject_promise_with_error(promise, error);
+    //                     return;
+    //                 },
+    //             };
+    //
+    //             // Step 12. Queue a global task on the crypto task source, given realm's global
+    //             // object, to perform the remaining steps.
+    //             // Step 13. Let result be the result of creating an ArrayBuffer in realm,
+    //             // containing plaintext.
+    //             // Step 14. Resolve promise with result.
+    //             subtle.resolve_promise_with_data(promise, plaintext);
+    //         }));
+    //     promise
+    // }
+    //
+    // /// <https://w3c.github.io/webcrypto/#SubtleCrypto-method-sign>
+    // fn Sign(
+    //     &self,
+    //     cx: &mut CurrentRealm,
+    //     algorithm: AlgorithmIdentifier,
+    //     key: &CryptoKey,
+    //     data: ArrayBufferViewOrArrayBuffer,
+    // ) -> RootedPromise {
+    //     // Step 1. Let algorithm and key be the algorithm and key parameters passed to the sign()
+    //     // method, respectively.
+    //     // NOTE: We did that in method parameter.
+    //
+    //     // Step 2. Let normalizedAlgorithm be the result of normalizing an algorithm, with alg set
+    //     // to algorithm and op set to "sign".
+    //     // Step 3. If an error occurred, return a Promise rejected with normalizedAlgorithm.
+    //     let normalized_algorithm = match normalize_algorithm::<SignOperation>(cx, &algorithm) {
+    //         Ok(normalized_algorithm) => normalized_algorithm,
+    //         Err(error) => {
+    //             let promise = Promise::new_in_realm(cx);
+    //             promise.reject_error(cx, error);
+    //             return promise;
+    //         },
+    //     };
+    //
+    //     // Step 4. Let data be the result of getting a copy of the bytes held by the data parameter
+    //     // passed to the sign() method.
+    //     let data = get_buffer_source_copy((&data).into());
+    //
+    //     // Step 5. Let realm be the relevant realm of this.
+    //     // Step 6. Let promise be a new Promise.
+    //     let promise = Promise::new_in_realm(cx);
+    //
+    //     // Step 7. Return promise and perform the remaining steps in parallel.
+    //     let this = Trusted::new(self);
+    //     let trusted_promise = TrustedPromise::from(&promise);
+    //     let trusted_key = Trusted::new(key);
+    //     self.global()
+    //         .task_manager()
+    //         .dom_manipulation_task_source()
+    //         .queue(task!(sign: move |cx| {
+    //             let subtle = this.root();
+    //             let promise = &trusted_promise.root(cx);
+    //             let key = trusted_key.root();
+    //
+    //             // Step 8. If the following steps or referenced procedures say to throw an error,
+    //             // queue a global task on the crypto task source, given realm's global object, to
+    //             // reject promise with the returned error; and then terminate the algorithm.
+    //
+    //             // Step 9. If the name member of normalizedAlgorithm is not equal to the name
+    //             // attribute of the [[algorithm]] internal slot of key then throw an
+    //             // InvalidAccessError.
+    //             if normalized_algorithm.name() != key.algorithm().name() {
+    //                 subtle.reject_promise_with_error(promise, Error::InvalidAccess(Some("Normalized algorithm name does not equal key algorithm name".into())));
+    //                 return;
+    //             }
+    //
+    //             // Step 10. If the [[usages]] internal slot of key does not contain an entry that
+    //             // is "sign", then throw an InvalidAccessError.
+    //             if !key.usages().contains(&KeyUsage::Sign) {
+    //                 subtle.reject_promise_with_error(promise, Error::InvalidAccess(Some("Key usages does not contain 'sign' entry".into())));
+    //                 return;
+    //             }
+    //
+    //             // Step 11. Let signature be the result of performing the sign operation specified
+    //             // by normalizedAlgorithm using key and algorithm and with data as message.
+    //             let signature = match normalized_algorithm.sign(&key, &data) {
+    //                 Ok(signature) => signature,
+    //                 Err(error) => {
+    //                     subtle.reject_promise_with_error(promise, error);
+    //                     return;
+    //                 },
+    //             };
+    //
+    //             // Step 12. Queue a global task on the crypto task source, given realm's global
+    //             // object, to perform the remaining steps.
+    //             // Step 13. Let result be the result of creating an ArrayBuffer in realm,
+    //             // containing signature.
+    //             // Step 14. Resolve promise with result.
+    //             subtle.resolve_promise_with_data(promise, signature.into());
+    //         }));
+    //     promise
+    // }
+    //
+    // /// <https://w3c.github.io/webcrypto/#SubtleCrypto-method-verify>
+    // fn Verify(
+    //     &self,
+    //     cx: &mut CurrentRealm,
+    //     algorithm: AlgorithmIdentifier,
+    //     key: &CryptoKey,
+    //     signature: ArrayBufferViewOrArrayBuffer,
+    //     data: ArrayBufferViewOrArrayBuffer,
+    // ) -> RootedPromise {
+    //     // Step 1. Let algorithm and key be the algorithm and key parameters passed to the verify()
+    //     // method, respectively.
+    //     // NOTE: We did that in method parameter.
+    //
+    //     // Step 2. Let normalizedAlgorithm be the result of normalizing an algorithm, with alg set to
+    //     // algorithm and op set to "verify".
+    //     // Step 3. If an error occurred, return a Promise rejected with normalizedAlgorithm.
+    //     let normalized_algorithm = match normalize_algorithm::<VerifyOperation>(cx, &algorithm) {
+    //         Ok(algorithm) => algorithm,
+    //         Err(error) => {
+    //             let promise = Promise::new_in_realm(cx);
+    //             promise.reject_error(cx, error);
+    //             return promise;
+    //         },
+    //     };
+    //
+    //     // Step 4. Let signature be the result of getting a copy of the bytes held by the signature
+    //     // parameter passed to the verify() method.
+    //     let signature = get_buffer_source_copy((&signature).into());
+    //
+    //     // Step 5. Let data be the result of getting a copy of the bytes held by the data parameter
+    //     // passed to the verify() method.
+    //     let data = get_buffer_source_copy((&data).into());
+    //
+    //     // Step 6. Let realm be the relevant realm of this.
+    //     // Step 7. Let promise be a new Promise.
+    //     let promise = Promise::new_in_realm(cx);
+    //
+    //     // Step 8. Return promise and perform the remaining steps in parallel.
+    //     let this = Trusted::new(self);
+    //     let trusted_promise = TrustedPromise::from(&promise);
+    //     let trusted_key = Trusted::new(key);
+    //     self.global()
+    //         .task_manager()
+    //         .dom_manipulation_task_source()
+    //         .queue(task!(sign: move |cx| {
+    //             let subtle = this.root();
+    //             let promise = &trusted_promise.root(cx);
+    //             let key = trusted_key.root();
+    //
+    //             // Step 9. If the following steps or referenced procedures say to throw an error,
+    //             // queue a global task on the crypto task source, given realm's global object, to
+    //             // reject promise with the returned error; and then terminate the algorithm.
+    //
+    //             // Step 10. If the name member of normalizedAlgorithm is not equal to the name
+    //             // attribute of the [[algorithm]] internal slot of key then throw an
+    //             // InvalidAccessError.
+    //             if normalized_algorithm.name() != key.algorithm().name() {
+    //                 subtle.reject_promise_with_error(promise, Error::InvalidAccess(Some("Normalized algorithm name does not equal key algorithm name".into())));
+    //                 return;
+    //             }
+    //
+    //             // Step 11. If the [[usages]] internal slot of key does not contain an entry that
+    //             // is "verify", then throw an InvalidAccessError.
+    //             if !key.usages().contains(&KeyUsage::Verify) {
+    //                 subtle.reject_promise_with_error(promise, Error::InvalidAccess(Some("Key usages does not contain 'verify' entry".into())));
+    //                 return;
+    //             }
+    //
+    //             // Step 12. Let result be the result of performing the verify operation specified
+    //             // by normalizedAlgorithm using key, algorithm and signature and with data as
+    //             // message.
+    //             let result = match normalized_algorithm.verify(&key, &data, &signature) {
+    //                 Ok(result) => result,
+    //                 Err(error) => {
+    //                     subtle.reject_promise_with_error(promise, error);
+    //                     return;
+    //                 },
+    //             };
+    //
+    //             // Step 13. Queue a global task on the crypto task source, given realm's global
+    //             // object, to perform the remaining steps.
+    //             // Step 14. Resolve promise with result.
+    //             subtle.resolve_promise_with_bool(promise, result);
+    //         }));
+    //     promise
+    // }
+
+    /// <https://w3c.github.io/webcrypto/#SubtleCrypto-method-digest>
+    fn Digest(
+        &self,
+        cx: &mut CurrentRealm,
+        algorithm: AlgorithmIdentifier,
+        data: ArrayBufferViewOrArrayBuffer,
+    ) -> <D::Promise as PromiseHelpers<D>>::StackRoot {
+        // Step 1. Let algorithm be the algorithm parameter passed to the digest() method.
+        // NOTE: We did that in method parameter.
+
+        // Step 2. Let normalizedAlgorithm be the result of normalizing an algorithm,
+        // with alg set to algorithm and op set to "digest".
+        // Step 3. If an error occurred, return a Promise rejected with normalizedAlgorithm.
+        let normalized_algorithm = match normalize_algorithm::<DigestOperation>(cx, &algorithm) {
+            Ok(normalized_algorithm) => normalized_algorithm,
+            Err(error) => {
+                let promise = D::Promise::new_in_realm(cx);
+                promise.reject_error(cx, error);
+                return promise;
+            },
+        };
+
+        // Step 4. Let data be the result of getting a copy of the bytes held by the
+        // data parameter passed to the digest() method.
+        let data = get_buffer_source_copy((&data).into());
+
+        // Step 5. Let realm be the relevant realm of this.
+        // Step 6. Let promise be a new Promise.
+        let promise = D::Promise::new_in_realm(cx);
+
+        // Step 7. Return promise and perform the remaining steps in parallel.
+        let this = Trusted::new(self);
+        // let trusted_promise = TrustedPromise::from(&promise);
+        // self.global()
+        //     .task_manager()
+        //     .dom_manipulation_task_source()
+        //     .queue(task!(digest_: move |cx| {
+        //         let subtle = this.root();
+        //         let promise = &trusted_promise.root(cx);
+        //
+        //         // Step 8. If the following steps or referenced procedures say to throw an error,
+        //         // queue a global task on the crypto task source, given realm's global object, to
+        //         // reject promise with the returned error; and then terminate the algorithm.
+        //
+        //         // Step 9. Let digest be the result of performing the digest operation specified by
+        //         // normalizedAlgorithm using algorithm, with data as message.
+        //         let digest = match normalized_algorithm.digest(&data) {
+        //             Ok(digest) => digest,
+        //             Err(error) => {
+        //                 subtle.reject_promise_with_error(promise, error);
+        //                 return;
+        //             }
+        //         };
+        //
+        //         // Step 10. Queue a global task on the crypto task source, given realm's global
+        //         // object, to perform the remaining steps.
+        //         // Step 11. Let result be the result of creating an ArrayBuffer in realm,
+        //         // containing digest.
+        //         // Step 12. Resolve promise with result.
+        //         subtle.resolve_promise_with_data(promise, digest.into());
+        //     }));
+        promise
+    }
+
+    // /// <https://w3c.github.io/webcrypto/#SubtleCrypto-method-generateKey>
+    // fn GenerateKey(
+    //     &self,
+    //     cx: &mut CurrentRealm,
+    //     algorithm: AlgorithmIdentifier,
+    //     extractable: bool,
+    //     key_usages: Vec<KeyUsage>,
+    // ) -> RootedPromise {
+    //     // Step 1. Let algorithm, extractable and usages be the algorithm, extractable and
+    //     // keyUsages parameters passed to the generateKey() method, respectively.
+    //
+    //     // Step 2. Let normalizedAlgorithm be the result of normalizing an algorithm, with alg set
+    //     // to algorithm and op set to "generateKey".
+    //     // Step 3. If an error occurred, return a Promise rejected with normalizedAlgorithm.
+    //     let promise = Promise::new_in_realm(cx);
+    //     let normalized_algorithm = match normalize_algorithm::<GenerateKeyOperation>(cx, &algorithm)
+    //     {
+    //         Ok(normalized_algorithm) => normalized_algorithm,
+    //         Err(error) => {
+    //             promise.reject_error(cx, error);
+    //             return promise;
+    //         },
+    //     };
+    //
+    //     // Step 4. Let realm be the relevant realm of this.
+    //     // Step 5. Let promise be a new Promise.
+    //     // NOTE: We did that in preparation of Step 3.
+    //
+    //     // Step 6. Return promise and perform the remaining steps in parallel.
+    //     let trusted_subtle = Trusted::new(self);
+    //     let trusted_promise = TrustedPromise::from(&promise);
+    //     self.global()
+    //         .task_manager()
+    //         .dom_manipulation_task_source()
+    //         .queue(task!(generate_key: move |cx| {
+    //             let subtle = trusted_subtle.root();
+    //             let promise = &trusted_promise.root(cx);
+    //
+    //             // Step 7. If the following steps or referenced procedures say to throw an error,
+    //             // queue a global task on the crypto task source, given realm's global object, to
+    //             // reject promise with the returned error; and then terminate the algorithm.
+    //
+    //             // Step 8. Let result be the result of performing the generate key operation
+    //             // specified by normalizedAlgorithm using algorithm, extractable and usages.
+    //             let result = match normalized_algorithm.generate_key(
+    //                 cx,
+    //                 &subtle.global(),
+    //                 extractable,
+    //                 key_usages,
+    //             ) {
+    //                 Ok(result) => result,
+    //                 Err(error) => {
+    //                     subtle.reject_promise_with_error(promise, error);
+    //                     return;
+    //                 }
+    //             };
+    //
+    //             // Step 9.
+    //             // If result is a CryptoKey object:
+    //             //     If the [[type]] internal slot of result is "secret" or "private" and usages
+    //             //     is empty, then throw a SyntaxError.
+    //             // If result is a CryptoKeyPair object:
+    //             //     If the [[usages]] internal slot of the privateKey attribute of result is the
+    //             //     empty sequence, then throw a SyntaxError.
+    //             match &result {
+    //                 CryptoKeyOrCryptoKeyPair::CryptoKey(crpyto_key) => {
+    //                     if matches!(crpyto_key.Type(), KeyType::Secret | KeyType::Private)
+    //                         && crpyto_key.usages().is_empty()
+    //                     {
+    //                         subtle.reject_promise_with_error(promise, Error::Syntax(Some("Crypto key usages is empty".into())));
+    //                         return;
+    //                     }
+    //                 },
+    //                 CryptoKeyOrCryptoKeyPair::CryptoKeyPair(crypto_key_pair) => {
+    //                     if crypto_key_pair
+    //                         .privateKey
+    //                         .as_ref()
+    //                         .is_none_or(|private_key| private_key.usages().is_empty())
+    //                     {
+    //                         subtle.reject_promise_with_error(promise, Error::Syntax(Some("Private key usages is an empty sequence".into())));
+    //                         return;
+    //                     }
+    //                 }
+    //             };
+    //
+    //             // Step 10. Queue a global task on the crypto task source, given realm's global
+    //             // object, to perform the remaining steps.
+    //             // Step 11. Let result be the result of converting result to an ECMAScript Object
+    //             // in realm, as defined by [WebIDL].
+    //             // Step 12. Resolve promise with result.
+    //             match result {
+    //                 CryptoKeyOrCryptoKeyPair::CryptoKey(key) => {
+    //                     subtle.resolve_promise_with_key(promise, &key);
+    //                 },
+    //                 CryptoKeyOrCryptoKeyPair::CryptoKeyPair(key_pair) => {
+    //                     subtle.resolve_promise_with_key_pair(promise, key_pair);
+    //                 },
+    //             }
+    //         }));
+    //
+    //     promise
+    // }
+    //
+    // /// <https://w3c.github.io/webcrypto/#SubtleCrypto-method-deriveKey>
+    // fn DeriveKey(
+    //     &self,
+    //     cx: &mut CurrentRealm,
+    //     algorithm: AlgorithmIdentifier,
+    //     base_key: &CryptoKey,
+    //     derived_key_type: AlgorithmIdentifier,
+    //     extractable: bool,
+    //     usages: Vec<KeyUsage>,
+    // ) -> RootedPromise {
+    //     // Step 1. Let algorithm, baseKey, derivedKeyType, extractable and usages be the algorithm,
+    //     // baseKey, derivedKeyType, extractable and keyUsages parameters passed to the deriveKey()
+    //     // method, respectively.
+    //     // NOTE: We did that in method parameter.
+    //
+    //     // Step 2. Let normalizedAlgorithm be the result of normalizing an algorithm, with alg set
+    //     // to algorithm and op set to "deriveBits".
+    //     // Step 3. If an error occurred, return a Promise rejected with normalizedAlgorithm.
+    //     let promise = Promise::new_in_realm(cx);
+    //     let normalized_algorithm = match normalize_algorithm::<DeriveBitsOperation>(cx, &algorithm)
+    //     {
+    //         Ok(normalized_algorithm) => normalized_algorithm,
+    //         Err(error) => {
+    //             promise.reject_error(cx, error);
+    //             return promise;
+    //         },
+    //     };
+    //
+    //     // Step 4. Let normalizedDerivedKeyAlgorithmImport be the result of normalizing an
+    //     // algorithm, with alg set to derivedKeyType and op set to "importKey".
+    //     // Step 5. If an error occurred, return a Promise rejected with
+    //     // normalizedDerivedKeyAlgorithmImport.
+    //     let normalized_derived_key_algorithm_import =
+    //         match normalize_algorithm::<ImportKeyOperation>(cx, &derived_key_type) {
+    //             Ok(normalized_algorithm) => normalized_algorithm,
+    //             Err(error) => {
+    //                 promise.reject_error(cx, error);
+    //                 return promise;
+    //             },
+    //         };
+    //
+    //     // Step 6. Let normalizedDerivedKeyAlgorithmLength be the result of normalizing an
+    //     // algorithm, with alg set to derivedKeyType and op set to "get key length".
+    //     // Step 7. If an error occurred, return a Promise rejected with
+    //     // normalizedDerivedKeyAlgorithmLength.
+    //     let normalized_derived_key_algorithm_length =
+    //         match normalize_algorithm::<GetKeyLengthOperation>(cx, &derived_key_type) {
+    //             Ok(normalized_algorithm) => normalized_algorithm,
+    //             Err(error) => {
+    //                 promise.reject_error(cx, error);
+    //                 return promise;
+    //             },
+    //         };
+    //
+    //     // Step 8. Let realm be the relevant realm of this.
+    //     // Step 9. Let promise be a new Promise.
+    //     // NOTE: We did that in preparation of Step 3.
+    //
+    //     // Step 10. Return promise and perform the remaining steps in parallel.
+    //     let trusted_subtle = Trusted::new(self);
+    //     let trusted_base_key = Trusted::new(base_key);
+    //     let trusted_promise = TrustedPromise::from(&promise);
+    //     self.global().task_manager().dom_manipulation_task_source().queue(
+    //         task!(derive_key: move |cx| {
+    //             let subtle = trusted_subtle.root();
+    //             let base_key = trusted_base_key.root();
+    //             let promise = &trusted_promise.root(cx);
+    //
+    //             // Step 11. If the following steps or referenced procedures say to throw an error,
+    //             // queue a global task on the crypto task source, given realm's global object, to
+    //             // reject promise with the returned error; and then terminate the algorithm.
+    //
+    //             // Step 12. If the name member of normalizedAlgorithm is not equal to the name
+    //             // attribute of the [[algorithm]] internal slot of baseKey then throw an
+    //             // InvalidAccessError.
+    //             if normalized_algorithm.name() != base_key.algorithm().name() {
+    //                 subtle.reject_promise_with_error(promise, Error::InvalidAccess(Some("Normalized algorithm name does not equal name of base key algorithm".into())));
+    //                 return;
+    //             }
+    //
+    //             // Step 13. If the [[usages]] internal slot of baseKey does not contain an entry
+    //             // that is "deriveKey", then throw an InvalidAccessError.
+    //             if !base_key.usages().contains(&KeyUsage::DeriveKey) {
+    //                 subtle.reject_promise_with_error(promise, Error::InvalidAccess(Some("Key usages does not contain 'deriveKey' entry".into())));
+    //                 return;
+    //             }
+    //
+    //             // Step 14. Let length be the result of performing the get key length algorithm
+    //             // specified by normalizedDerivedKeyAlgorithmLength using derivedKeyType.
+    //             let length = match normalized_derived_key_algorithm_length.get_key_length() {
+    //                 Ok(length) => length,
+    //                 Err(error) => {
+    //                     subtle.reject_promise_with_error(promise, error);
+    //                     return;
+    //                 }
+    //             };
+    //
+    //             // Step 15. Let secret be the result of performing the derive bits operation
+    //             // specified by normalizedAlgorithm using key, algorithm and length.
+    //             let secret = match normalized_algorithm.derive_bits(&base_key, length) {
+    //                 Ok(secret) => Zeroizing::new(secret),
+    //                 Err(error) => {
+    //                     subtle.reject_promise_with_error(promise, error);
+    //                     return;
+    //                 }
+    //             };
+    //
+    //             // Step 16. Let result be the result of performing the import key operation
+    //             // specified by normalizedDerivedKeyAlgorithmImport using "raw" as format, secret
+    //             // as keyData, derivedKeyType as algorithm and using extractable and usages.
+    //             // NOTE: Use "raw-secret" instead, according to
+    //             // <https://wicg.github.io/webcrypto-modern-algos/#subtlecrypto-interface-keyformat>.
+    //             let result = match normalized_derived_key_algorithm_import.import_key(
+    //                 cx,
+    //                 &subtle.global(),
+    //                 KeyFormat::Raw_secret,
+    //                 &secret,
+    //                 extractable,
+    //                 usages.clone(),
+    //             ) {
+    //                 Ok(algorithm) => algorithm,
+    //                 Err(error) => {
+    //                     subtle.reject_promise_with_error(promise, error);
+    //                     return;
+    //                 },
+    //             };
+    //
+    //             // Step 17. If the [[type]] internal slot of result is "secret" or "private" and
+    //             // usages is empty, then throw a SyntaxError.
+    //             if matches!(result.Type(), KeyType::Secret | KeyType::Private) && usages.is_empty() {
+    //                 subtle.reject_promise_with_error(promise, Error::Syntax(Some("Key usages is empty".into())));
+    //                 return;
+    //             }
+    //
+    //             // Step 18. Set the [[extractable]] internal slot of result to extractable.
+    //             // Step 19. Set the [[usages]] internal slot of result to the normalized value of
+    //             // usages.
+    //             // NOTE: Done by the importKey operation in Step 16.
+    //
+    //             // Step 20. Queue a global task on the crypto task source, given realm's global
+    //             // object, to perform the remaining steps.
+    //             // Step 20. Let result be the result of converting result to an ECMAScript Object
+    //             // in realm, as defined by [WebIDL].
+    //             // Step 20. Resolve promise with result.
+    //             subtle.resolve_promise_with_key(promise, &result);
+    //         }),
+    //     );
+    //     promise
+    // }
+    //
+    // /// <https://w3c.github.io/webcrypto/#dfn-SubtleCrypto-method-deriveBits>
+    // fn DeriveBits(
+    //     &self,
+    //     cx: &mut CurrentRealm,
+    //     algorithm: AlgorithmIdentifier,
+    //     base_key: &CryptoKey,
+    //     length: Option<u32>,
+    // ) -> RootedPromise {
+    //     // Step 1. Let algorithm, baseKey and length, be the algorithm, baseKey and length
+    //     // parameters passed to the deriveBits() method, respectively.
+    //     // NOTE: We did that in method parameter.
+    //
+    //     // Step 2. Let normalizedAlgorithm be the result of normalizing an algorithm, with alg set
+    //     // to algorithm and op set to "deriveBits".
+    //     // Step 3. If an error occurred, return a Promise rejected with normalizedAlgorithm.
+    //     let promise = Promise::new_in_realm(cx);
+    //     let normalized_algorithm = match normalize_algorithm::<DeriveBitsOperation>(cx, &algorithm)
+    //     {
+    //         Ok(normalized_algorithm) => normalized_algorithm,
+    //         Err(error) => {
+    //             promise.reject_error(cx, error);
+    //             return promise;
+    //         },
+    //     };
+    //
+    //     // Step 4. Let realm be the relevant realm of this.
+    //     // Step 5. Let promise be a new Promise.
+    //     // NOTE: We did that in preparation of Step 3.
+    //
+    //     // Step 5. Return promise and perform the remaining steps in parallel.
+    //     let trsuted_subtle = Trusted::new(self);
+    //     let trusted_base_key = Trusted::new(base_key);
+    //     let trusted_promise = TrustedPromise::from(&promise);
+    //     self.global()
+    //         .task_manager()
+    //         .dom_manipulation_task_source()
+    //         .queue(task!(import_key: move |cx| {
+    //             let subtle = trsuted_subtle.root();
+    //             let base_key = trusted_base_key.root();
+    //             let promise = &trusted_promise.root(cx);
+    //
+    //             // Step 7. If the following steps or referenced procedures say to throw an error,
+    //             // queue a global task on the crypto task source, given realm's global object, to
+    //             // reject promise with the returned error; and then terminate the algorithm.
+    //
+    //             // Step 8. If the name member of normalizedAlgorithm is not equal to the name
+    //             // attribute of the [[algorithm]] internal slot of baseKey then throw an
+    //             // InvalidAccessError.
+    //             if normalized_algorithm.name() != base_key.algorithm().name() {
+    //                 subtle.reject_promise_with_error(promise, Error::InvalidAccess(Some("Normalized algorithm name does not equal name of base key algorithm".into())));
+    //                 return;
+    //             }
+    //
+    //             // Step 9. If the [[usages]] internal slot of baseKey does not contain an entry
+    //             // that is "deriveBits", then throw an InvalidAccessError.
+    //             if !base_key.usages().contains(&KeyUsage::DeriveBits) {
+    //                 subtle.reject_promise_with_error(promise, Error::InvalidAccess(Some("Key usages does not contain 'deriveBits' entry".into())));
+    //                 return;
+    //             }
+    //
+    //             // Step 10. Let bits be the result of performing the derive bits operation
+    //             // specified by normalizedAlgorithm using baseKey, algorithm and length.
+    //             let bits = match normalized_algorithm.derive_bits(&base_key, length) {
+    //                 Ok(bits) => Zeroizing::new(bits),
+    //                 Err(error) => {
+    //                     subtle.reject_promise_with_error(promise, error);
+    //                     return;
+    //                 }
+    //             };
+    //
+    //             // Step 11. Queue a global task on the crypto task source, given realm's global
+    //             // object, to perform the remaining steps.
+    //             // Step 12. Let result be the result of creating an ArrayBuffer in realm,
+    //             // containing bits.
+    //             // Step 13. Resolve promise with result.
+    //             subtle.resolve_promise_with_data(promise, bits);
+    //         }));
+    //     promise
+    // }
+    //
+    // /// <https://w3c.github.io/webcrypto/#SubtleCrypto-method-importKey>
+    // fn ImportKey(
+    //     &self,
+    //     cx: &mut CurrentRealm,
+    //     format: KeyFormat,
+    //     key_data: ArrayBufferViewOrArrayBufferOrJsonWebKey,
+    //     algorithm: AlgorithmIdentifier,
+    //     extractable: bool,
+    //     key_usages: Vec<KeyUsage>,
+    // ) -> RootedPromise {
+    //     // Step 1. Let format, algorithm, extractable and usages, be the format, algorithm,
+    //     // extractable and keyUsages parameters passed to the importKey() method, respectively.
+    //
+    //     // Step 2. Let normalizedAlgorithm be the result of normalizing an algorithm, with alg set
+    //     // to algorithm and op set to "importKey".
+    //     // Step 3. If an error occurred, return a Promise rejected with normalizedAlgorithm.
+    //     let normalized_algorithm = match normalize_algorithm::<ImportKeyOperation>(cx, &algorithm) {
+    //         Ok(algorithm) => algorithm,
+    //         Err(error) => {
+    //             let promise = Promise::new_in_realm(cx);
+    //             promise.reject_error(cx, error);
+    //             return promise;
+    //         },
+    //     };
+    //
+    //     // Step 4.
+    //     let key_data = match format {
+    //         // If format is equal to the string "jwk":
+    //         KeyFormat::Jwk => {
+    //             match key_data {
+    //                 ArrayBufferViewOrArrayBufferOrJsonWebKey::ArrayBufferView(_) |
+    //                 ArrayBufferViewOrArrayBufferOrJsonWebKey::ArrayBuffer(_) => {
+    //                     // Step 4.1. If the keyData parameter passed to the importKey() method is
+    //                     // not a JsonWebKey dictionary, throw a TypeError.
+    //                     let promise = Promise::new_in_realm(cx);
+    //                     promise.reject_error(
+    //                         cx,
+    //                         Error::Type(c"The keyData type does not match the format".to_owned()),
+    //                     );
+    //                     return promise;
+    //                 },
+    //
+    //                 ArrayBufferViewOrArrayBufferOrJsonWebKey::JsonWebKey(jwk) => {
+    //                     // Step 4.2. Let keyData be the keyData parameter passed to the importKey()
+    //                     // method.
+    //                     //
+    //                     // NOTE: Serialize JsonWebKey throught stringifying it.
+    //                     // JsonWebKey::stringify internally relies on ToJSON, so it will raise an
+    //                     // exception when a JS error is thrown. When this happens, we report the
+    //                     // error.
+    //                     match jwk.stringify(cx) {
+    //                         Ok(stringified) => {
+    //                             Zeroizing::new(stringified.as_bytes(cx.no_gc()).to_vec())
+    //                         },
+    //                         Err(error) => {
+    //                             let promise = Promise::new_in_realm(cx);
+    //                             promise.reject_error(cx, error);
+    //                             return promise;
+    //                         },
+    //                     }
+    //                 },
+    //             }
+    //         },
+    //         // Otherwise:
+    //         _ => {
+    //             match &key_data {
+    //                 // Step 4.1. If the keyData parameter passed to the importKey() method is a
+    //                 // JsonWebKey dictionary, throw a TypeError.
+    //                 ArrayBufferViewOrArrayBufferOrJsonWebKey::JsonWebKey(_) => {
+    //                     let promise = Promise::new_in_realm(cx);
+    //                     promise.reject_error(
+    //                         cx,
+    //                         Error::Type(c"The keyData type does not match the format".to_owned()),
+    //                     );
+    //                     return promise;
+    //                 },
+    //
+    //                 // Step 4.2. Let keyData be the result of getting a copy of the bytes held by
+    //                 // the keyData parameter passed to the importKey() method.
+    //                 ArrayBufferViewOrArrayBufferOrJsonWebKey::ArrayBufferView(view) => {
+    //                     Zeroizing::new(get_buffer_source_copy(view.into()))
+    //                 },
+    //                 ArrayBufferViewOrArrayBufferOrJsonWebKey::ArrayBuffer(buffer) => {
+    //                     Zeroizing::new(get_buffer_source_copy(buffer.into()))
+    //                 },
+    //             }
+    //         },
+    //     };
+    //
+    //     // Step 5. Let realm be the relevant realm of this.
+    //     // Step 6. Let promise be a new Promise.
+    //     let promise = Promise::new_in_realm(cx);
+    //
+    //     // Step 7. Return promise and perform the remaining steps in parallel.
+    //     let this = Trusted::new(self);
+    //     let trusted_promise = TrustedPromise::from(&promise);
+    //     self.global()
+    //         .task_manager()
+    //         .dom_manipulation_task_source()
+    //         .queue(task!(import_key: move |cx| {
+    //             let subtle = this.root();
+    //             let promise = &trusted_promise.root(cx);
+    //
+    //             // Step 8. If the following steps or referenced procedures say to throw an error,
+    //             // queue a global task on the crypto task source, given realm's global object, to
+    //             // reject promise with the returned error; and then terminate the algorithm.
+    //
+    //             // Step 9. Let result be the CryptoKey object that results from performing the
+    //             // import key operation specified by normalizedAlgorithm using keyData, algorithm,
+    //             // format, extractable and usages.
+    //             let result = match normalized_algorithm.import_key(
+    //                 cx,
+    //                 &subtle.global(),
+    //                 format,
+    //                 &key_data,
+    //                 extractable,
+    //                 key_usages.clone(),
+    //             ) {
+    //                 Ok(key) => key,
+    //                 Err(error) => {
+    //                     subtle.reject_promise_with_error(promise, error);
+    //                     return;
+    //                 },
+    //             };
+    //
+    //             // Step 10. If the [[type]] internal slot of result is "secret" or "private" and
+    //             // usages is empty, then throw a SyntaxError.
+    //             if matches!(result.Type(), KeyType::Secret | KeyType::Private) && key_usages.is_empty() {
+    //                 subtle.reject_promise_with_error(promise, Error::Syntax(Some("Key usages is empty".into())));
+    //                 return;
+    //             }
+    //
+    //             // Step 11. Set the [[extractable]] internal slot of result to extractable.
+    //             // Step 12. Set the [[usages]] internal slot of result to the normalized value of
+    //             // usages.
+    //             // NOTE: Done by the importKey operation in Step 9.
+    //
+    //             // Step 13. Queue a global task on the crypto task source, given realm's global
+    //             // object, to perform the remaining steps.
+    //             // Step 14. Let result be the result of converting result to an ECMAScript Object
+    //             // in realm, as defined by [WebIDL].
+    //             // Step 15. Resolve promise with result.
+    //             subtle.resolve_promise_with_key(promise, &result);
+    //         }));
+    //
+    //     promise
+    // }
+    //
+    // /// <https://w3c.github.io/webcrypto/#SubtleCrypto-method-exportKey>
+    // fn ExportKey(
+    //     &self,
+    //     cx: &mut CurrentRealm,
+    //     format: KeyFormat,
+    //     key: &CryptoKey,
+    // ) -> RootedPromise {
+    //     // Step 1. Let format and key be the format and key parameters passed to the exportKey()
+    //     // method, respectively.
+    //     // NOTE: We did that in method parameter.
+    //
+    //     // Step 2. Let realm be the relevant realm of this.
+    //     // Step 3. Let promise be a new Promise.
+    //     let promise = Promise::new_in_realm(cx);
+    //
+    //     // Step 4. Return promise and perform the remaining steps in parallel.
+    //     let trusted_subtle = Trusted::new(self);
+    //     let trusted_promise = TrustedPromise::from(&promise);
+    //     let trusted_key = Trusted::new(key);
+    //     self.global()
+    //         .task_manager()
+    //         .dom_manipulation_task_source()
+    //         .queue(task!(export_key: move |cx| {
+    //             let subtle = trusted_subtle.root();
+    //             let promise = &trusted_promise.root(cx);
+    //             let key = trusted_key.root();
+    //
+    //             // Step 5. If the following steps or referenced procedures say to throw an error,
+    //             // queue a global task on the crypto task source, given realm's global object, to
+    //             // reject promise with the returned error; and then terminate the algorithm.
+    //
+    //             // Step 6. If the name member of the [[algorithm]] internal slot of key does not
+    //             // identify a registered algorithm that supports the export key operation, then
+    //             // throw a NotSupportedError.
+    //             //
+    //             // NOTE: We rely on [`normalize_algorithm`] to check whether the algorithm supports
+    //             // the export key operation.
+    //             let export_key_algorithm = match normalize_algorithm::<ExportKeyOperation>(
+    //                 cx,
+    //                 &AlgorithmIdentifier::String(DOMString::from(key.algorithm().name().as_str())),
+    //             ) {
+    //                 Ok(normalized_algorithm) => normalized_algorithm,
+    //                 Err(error) => {
+    //                     subtle.reject_promise_with_error(promise, error);
+    //                     return;
+    //                 },
+    //             };
+    //
+    //             // Step 7. If the [[extractable]] internal slot of key is false, then throw an
+    //             // InvalidAccessError.
+    //             if !key.Extractable() {
+    //                 subtle.reject_promise_with_error(promise, Error::InvalidAccess(Some("Key is not extractable".into())));
+    //                 return;
+    //             }
+    //
+    //             // Step 8. Let result be the result of performing the export key operation
+    //             // specified by the [[algorithm]] internal slot of key using key and format.
+    //             let result = match export_key_algorithm.export_key(format, &key) {
+    //                 Ok(exported_key) => exported_key,
+    //                 Err(error) => {
+    //                     subtle.reject_promise_with_error(promise, error);
+    //                     return;
+    //                 },
+    //             };
+    //
+    //             // Step 9. Queue a global task on the crypto task source, given realm's global
+    //             // object, to perform the remaining steps.
+    //             // Step 10.
+    //             // If format is equal to the string "jwk":
+    //             //     Let result be the result of converting result to an ECMAScript Object in
+    //             //     realm, as defined by [WebIDL].
+    //             // Otherwise:
+    //             //     Let result be the result of creating an ArrayBuffer in realm, containing
+    //             //     result.
+    //             // Step 11. Resolve promise with result.
+    //             // NOTE: We determine the format by pattern matching on result, which is an
+    //             // ExportedKey enum.
+    //             match result {
+    //                 ExportedKey::Bytes(bytes) => {
+    //                     subtle.resolve_promise_with_data(promise, bytes);
+    //                 },
+    //                 ExportedKey::Jwk(jwk) => {
+    //                     subtle.resolve_promise_with_jwk(cx, promise, jwk);
+    //                 },
+    //             }
+    //         }));
+    //     promise
+    // }
+    //
+    // /// <https://w3c.github.io/webcrypto/#SubtleCrypto-method-wrapKey>
+    // fn WrapKey(
+    //     &self,
+    //     cx: &mut CurrentRealm,
+    //     format: KeyFormat,
+    //     key: &CryptoKey,
+    //     wrapping_key: &CryptoKey,
+    //     algorithm: AlgorithmIdentifier,
+    // ) -> RootedPromise {
+    //     // Step 1. Let format, key, wrappingKey and algorithm be the format, key, wrappingKey and
+    //     // wrapAlgorithm parameters passed to the wrapKey() method, respectively.
+    //     // NOTE: We did that in method parameter.
+    //
+    //     // Step 2. Let normalizedAlgorithm be the result of normalizing an algorithm, with alg set
+    //     // to algorithm and op set to "wrapKey".
+    //     // Step 3. If an error occurred, let normalizedAlgorithm be the result of normalizing an
+    //     // algorithm, with alg set to algorithm and op set to "encrypt".
+    //     // Step 4. If an error occurred, return a Promise rejected with normalizedAlgorithm.
+    //     enum WrapKeyAlgorithmOrEncryptAlgorithm {
+    //         WrapKeyAlgorithm(WrapKeyAlgorithm),
+    //         EncryptAlgorithm(EncryptAlgorithm),
+    //     }
+    //     let normalized_algorithm = if let Ok(algorithm) =
+    //         normalize_algorithm::<WrapKeyOperation>(cx, &algorithm)
+    //     {
+    //         WrapKeyAlgorithmOrEncryptAlgorithm::WrapKeyAlgorithm(algorithm)
+    //     } else {
+    //         match normalize_algorithm::<EncryptOperation>(cx, &algorithm) {
+    //             Ok(algorithm) => WrapKeyAlgorithmOrEncryptAlgorithm::EncryptAlgorithm(algorithm),
+    //             Err(error) => {
+    //                 let promise = Promise::new_in_realm(cx);
+    //                 promise.reject_error(cx, error);
+    //                 return promise;
+    //             },
+    //         }
+    //     };
+    //
+    //     // Step 5. Let realm be the relevant realm of this.
+    //     // Step 6. Let promise be a new Promise.
+    //     let promise = Promise::new_in_realm(cx);
+    //
+    //     // Step 7. Return promise and perform the remaining steps in parallel.
+    //     let trusted_subtle = Trusted::new(self);
+    //     let trusted_key = Trusted::new(key);
+    //     let trusted_wrapping_key = Trusted::new(wrapping_key);
+    //     let trusted_promise = TrustedPromise::from(&promise);
+    //     self.global()
+    //         .task_manager()
+    //         .dom_manipulation_task_source()
+    //         .queue(task!(wrap_key: move |cx| {
+    //             let subtle = trusted_subtle.root();
+    //             let key = trusted_key.root();
+    //             let wrapping_key = trusted_wrapping_key.root();
+    //             let promise = &trusted_promise.root(cx);
+    //
+    //             // Step 8. If the following steps or referenced procedures say to throw an error,
+    //             // queue a global task on the crypto task source, given realm's global object, to
+    //             // reject promise with the returned error; and then terminate the algorithm.
+    //
+    //             // Step 9. If the name member of normalizedAlgorithm is not equal to the name
+    //             // attribute of the [[algorithm]] internal slot of wrappingKey then throw an
+    //             // InvalidAccessError.
+    //             let normalized_algorithm_name = match &normalized_algorithm {
+    //                 WrapKeyAlgorithmOrEncryptAlgorithm::WrapKeyAlgorithm(algorithm) => {
+    //                     algorithm.name()
+    //                 },
+    //                 WrapKeyAlgorithmOrEncryptAlgorithm::EncryptAlgorithm(algorithm) => {
+    //                     algorithm.name()
+    //                 },
+    //             };
+    //             if normalized_algorithm_name != wrapping_key.algorithm().name() {
+    //                 subtle.reject_promise_with_error(promise, Error::InvalidAccess(Some("Normalized algorithm name does not equal name of wrapping key algorithm".into())));
+    //                 return;
+    //             }
+    //
+    //             // Step 10. If the [[usages]] internal slot of wrappingKey does not contain an
+    //             // entry that is "wrapKey", then throw an InvalidAccessError.
+    //             if !wrapping_key.usages().contains(&KeyUsage::WrapKey) {
+    //                 subtle.reject_promise_with_error(promise, Error::InvalidAccess(Some("Wrapping key usages does not contain 'wrapKey' entry".into())));
+    //                 return;
+    //             }
+    //
+    //             // Step 11. If the algorithm identified by the [[algorithm]] internal slot of key
+    //             // does not support the export key operation, then throw a NotSupportedError.
+    //             //
+    //             // NOTE: We rely on [`normalize_algorithm`] to check whether the algorithm supports
+    //             // the export key operation.
+    //             let export_key_algorithm = match normalize_algorithm::<ExportKeyOperation>(
+    //                 cx,
+    //                 &AlgorithmIdentifier::String(DOMString::from(key.algorithm().name().as_str())),
+    //             ) {
+    //                 Ok(normalized_algorithm) => normalized_algorithm,
+    //                 Err(error) => {
+    //                     subtle.reject_promise_with_error(promise, error);
+    //                     return;
+    //                 },
+    //             };
+    //
+    //             // Step 12. If the [[extractable]] internal slot of key is false, then throw an
+    //             // InvalidAccessError.
+    //             if !key.Extractable() {
+    //                 subtle.reject_promise_with_error(promise, Error::InvalidAccess(Some("Key is not extractable".into())));
+    //                 return;
+    //             }
+    //
+    //             // Step 13. Let exportedKey be the result of performing the export key operation
+    //             // specified by the [[algorithm]] internal slot of key using key and format.
+    //             let exported_key = match export_key_algorithm.export_key(format, &key) {
+    //                 Ok(exported_key) => exported_key,
+    //                 Err(error) => {
+    //                     subtle.reject_promise_with_error(promise, error);
+    //                     return;
+    //                 },
+    //             };
+    //
+    //             // Step 14.
+    //             // If format is equal to the string "jwk":
+    //             //     Step 14.1. Let json be the result of representing exportedKey as a UTF-16
+    //             //     string conforming to the JSON grammar; for example, by executing the
+    //             //     JSON.stringify algorithm specified in [ECMA-262] in the context of a new
+    //             //     global object.
+    //             //     Step 14.2. Let bytes be the result of UTF-8 encoding json.
+    //             // Otherwise:
+    //             //     Let bytes be exportedKey.
+    //             // NOTE: We determine the format by pattern matching on result, which is an
+    //             // ExportedKey enum.
+    //             let bytes = match exported_key {
+    //                 ExportedKey::Bytes(bytes) => bytes,
+    //                 ExportedKey::Jwk(jwk) => match jwk.stringify(cx) {
+    //                     Ok(stringified_jwk) => Zeroizing::new(stringified_jwk.as_bytes(cx.no_gc()).to_vec()),
+    //                     Err(error) => {
+    //                         subtle.reject_promise_with_error(promise, error);
+    //                         return;
+    //                     },
+    //                 },
+    //             };
+    //
+    //             // Step 15.
+    //             // If normalizedAlgorithm supports the wrap key operation:
+    //             //     Let result be the result of performing the wrap key operation specified by
+    //             //     normalizedAlgorithm using algorithm, wrappingKey as key and bytes as
+    //             //     plaintext.
+    //             // Otherwise, if normalizedAlgorithm supports the encrypt operation:
+    //             //     Let result be the result of performing the encrypt operation specified by
+    //             //     normalizedAlgorithm using algorithm, wrappingKey as key and bytes as
+    //             //     plaintext.
+    //             // Otherwise:
+    //             //     throw a NotSupportedError.
+    //             let result = match normalized_algorithm {
+    //                 WrapKeyAlgorithmOrEncryptAlgorithm::WrapKeyAlgorithm(algorithm) => {
+    //                     algorithm.wrap_key(&wrapping_key, &bytes)
+    //                 },
+    //                 WrapKeyAlgorithmOrEncryptAlgorithm::EncryptAlgorithm(algorithm) => {
+    //                     algorithm.encrypt(&wrapping_key, &bytes)
+    //                 },
+    //             };
+    //             let result = match result {
+    //                 Ok(result) => result,
+    //                 Err(error) => {
+    //                     subtle.reject_promise_with_error(promise, error);
+    //                     return;
+    //                 },
+    //             };
+    //
+    //             // Step 16. Queue a global task on the crypto task source, given realm's global
+    //             // object, to perform the remaining steps.
+    //             // Step 17. Let result be the result of creating an ArrayBuffer in realm,
+    //             // containing result.
+    //             // Step 18. Resolve promise with result.
+    //             subtle.resolve_promise_with_data(promise, result.into());
+    //         }));
+    //     promise
+    // }
+    //
+    // /// <https://w3c.github.io/webcrypto/#SubtleCrypto-method-unwrapKey>
+    // fn UnwrapKey(
+    //     &self,
+    //     cx: &mut CurrentRealm,
+    //     format: KeyFormat,
+    //     wrapped_key: ArrayBufferViewOrArrayBuffer,
+    //     unwrapping_key: &CryptoKey,
+    //     algorithm: AlgorithmIdentifier,
+    //     unwrapped_key_algorithm: AlgorithmIdentifier,
+    //     extractable: bool,
+    //     usages: Vec<KeyUsage>,
+    // ) -> RootedPromise {
+    //     // Step 1. Let format, unwrappingKey, algorithm, unwrappedKeyAlgorithm, extractable and
+    //     // usages, be the format, unwrappingKey, unwrapAlgorithm, unwrappedKeyAlgorithm,
+    //     // extractable and keyUsages parameters passed to the unwrapKey() method, respectively.
+    //     // NOTE: We did that in method parameter.
+    //
+    //     // Step 2. Let normalizedAlgorithm be the result of normalizing an algorithm, with alg set
+    //     // to algorithm and op set to "unwrapKey".
+    //     // Step 3. If an error occurred, let normalizedAlgorithm be the result of normalizing an
+    //     // algorithm, with alg set to algorithm and op set to "decrypt".
+    //     // Step 4. If an error occurred, return a Promise rejected with normalizedAlgorithm.
+    //     enum UnwrapKeyAlgorithmOrDecryptAlgorithm {
+    //         UnwrapKeyAlgorithm(UnwrapKeyAlgorithm),
+    //         DecryptAlgorithm(DecryptAlgorithm),
+    //     }
+    //     let normalized_algorithm = if let Ok(algorithm) =
+    //         normalize_algorithm::<UnwrapKeyOperation>(cx, &algorithm)
+    //     {
+    //         UnwrapKeyAlgorithmOrDecryptAlgorithm::UnwrapKeyAlgorithm(algorithm)
+    //     } else {
+    //         match normalize_algorithm::<DecryptOperation>(cx, &algorithm) {
+    //             Ok(algorithm) => UnwrapKeyAlgorithmOrDecryptAlgorithm::DecryptAlgorithm(algorithm),
+    //             Err(error) => {
+    //                 let promise = Promise::new_in_realm(cx);
+    //                 promise.reject_error(cx, error);
+    //                 return promise;
+    //             },
+    //         }
+    //     };
+    //
+    //     // Step 5. Let normalizedKeyAlgorithm be the result of normalizing an algorithm, with alg
+    //     // set to unwrappedKeyAlgorithm and op set to "importKey".
+    //     // Step 6. If an error occurred, return a Promise rejected with normalizedKeyAlgorithm.
+    //     let normalized_key_algorithm =
+    //         match normalize_algorithm::<ImportKeyOperation>(cx, &unwrapped_key_algorithm) {
+    //             Ok(algorithm) => algorithm,
+    //             Err(error) => {
+    //                 let promise = Promise::new_in_realm(cx);
+    //                 promise.reject_error(cx, error);
+    //                 return promise;
+    //             },
+    //         };
+    //
+    //     // Step 7. Let wrappedKey be the result of getting a copy of the bytes held by the
+    //     // wrappedKey parameter passed to the unwrapKey() method.
+    //     let wrapped_key = get_buffer_source_copy((&wrapped_key).into());
+    //
+    //     // Step 8. Let realm be the relevant realm of this.
+    //     // Step 9. Let promise be a new Promise.
+    //     let promise = Promise::new_in_realm(cx);
+    //
+    //     // Step 10. Return promise and perform the remaining steps in parallel.
+    //     let trusted_subtle = Trusted::new(self);
+    //     let trusted_unwrapping_key = Trusted::new(unwrapping_key);
+    //     let trusted_promise = TrustedPromise::from(&promise);
+    //     self.global().task_manager().dom_manipulation_task_source().queue(
+    //         task!(unwrap_key: move |cx| {
+    //             let subtle = trusted_subtle.root();
+    //             let unwrapping_key = trusted_unwrapping_key.root();
+    //             let promise = &trusted_promise.root(cx);
+    //
+    //             // Step 11. If the following steps or referenced procedures say to throw an error,
+    //             // queue a global task on the crypto task source, given realm's global object, to
+    //             // reject promise with the returned error; and then terminate the algorithm.
+    //
+    //             // Step 12. If the name member of normalizedAlgorithm is not equal to the name
+    //             // attribute of the [[algorithm]] internal slot of unwrappingKey then throw an
+    //             // InvalidAccessError.
+    //             let normalized_algorithm_name = match &normalized_algorithm {
+    //                 UnwrapKeyAlgorithmOrDecryptAlgorithm::UnwrapKeyAlgorithm(algorithm) => {
+    //                     algorithm.name()
+    //                 },
+    //                 UnwrapKeyAlgorithmOrDecryptAlgorithm::DecryptAlgorithm(algorithm) => {
+    //                     algorithm.name()
+    //                 },
+    //             };
+    //             if normalized_algorithm_name != unwrapping_key.algorithm().name() {
+    //                 subtle.reject_promise_with_error(promise, Error::InvalidAccess(Some("Normalized algorithm name does not equal name of unwrapping key algorithm".into())));
+    //                 return;
+    //             }
+    //
+    //             // Step 13. If the [[usages]] internal slot of unwrappingKey does not contain an
+    //             // entry that is "unwrapKey", then throw an InvalidAccessError.
+    //             if !unwrapping_key.usages().contains(&KeyUsage::UnwrapKey) {
+    //                 subtle.reject_promise_with_error(promise, Error::InvalidAccess(Some("Unwrapping key usages does not contain 'unwrapKey' entry".into())));
+    //                 return;
+    //             }
+    //
+    //             // Step 14.
+    //             // If normalizedAlgorithm supports an unwrap key operation:
+    //             //     Let bytes be the result of performing the unwrap key operation specified by
+    //             //     normalizedAlgorithm using algorithm, unwrappingKey as key and wrappedKey as
+    //             //     ciphertext.
+    //             // Otherwise, if normalizedAlgorithm supports a decrypt operation:
+    //             //     Let bytes be the result of performing the decrypt operation specified by
+    //             //     normalizedAlgorithm using algorithm, unwrappingKey as key and wrappedKey as
+    //             //     ciphertext.
+    //             // Otherwise:
+    //             //     throw a NotSupportedError.
+    //             let bytes = match normalized_algorithm {
+    //                 UnwrapKeyAlgorithmOrDecryptAlgorithm::UnwrapKeyAlgorithm(algorithm) => {
+    //                     algorithm.unwrap_key(&unwrapping_key, &wrapped_key)
+    //                 },
+    //                 UnwrapKeyAlgorithmOrDecryptAlgorithm::DecryptAlgorithm(algorithm) => {
+    //                     algorithm.decrypt(&unwrapping_key, &wrapped_key)
+    //                 },
+    //             };
+    //             let bytes = match bytes {
+    //                 Ok(bytes) => Zeroizing::new(bytes),
+    //                 Err(error) => {
+    //                     subtle.reject_promise_with_error(promise, error);
+    //                     return;
+    //                 },
+    //             };
+    //
+    //             // Step 15.
+    //             // If format is equal to the string "jwk":
+    //             //     Let key be the result of executing the parse a JWK algorithm, with bytes as
+    //             //     the data to be parsed.
+    //             //     NOTE: We only parse bytes by executing the parse a JWK algorithm, but keep
+    //             //     it as raw bytes for later steps, instead of converting it to a JsonWebKey
+    //             //     dictionary.
+    //             //
+    //             // Otherwise:
+    //             //     Let key be bytes.
+    //             if format == KeyFormat::Jwk
+    //                 && let Err(error) = JsonWebKey::parse(cx, &bytes) {
+    //                     subtle.reject_promise_with_error(promise, error);
+    //                     return;
+    //                 }
+    //             let key = bytes;
+    //
+    //             // Step 16. Let result be the result of performing the import key operation
+    //             // specified by normalizedKeyAlgorithm using unwrappedKeyAlgorithm as algorithm,
+    //             // format, usages and extractable and with key as keyData.
+    //             let result = match normalized_key_algorithm.import_key(
+    //                 cx,
+    //                 &subtle.global(),
+    //                 format,
+    //                 &key,
+    //                 extractable,
+    //                 usages.clone(),
+    //             ) {
+    //                 Ok(result) => result,
+    //                 Err(error) => {
+    //                     subtle.reject_promise_with_error(promise, error);
+    //                     return;
+    //                 },
+    //             };
+    //
+    //             // Step 17. If the [[type]] internal slot of result is "secret" or "private" and
+    //             // usages is empty, then throw a SyntaxError.
+    //             if matches!(result.Type(), KeyType::Secret | KeyType::Private) && usages.is_empty() {
+    //                 subtle.reject_promise_with_error(promise, Error::Syntax(Some("Key usages is empty".into())));
+    //                 return;
+    //             }
+    //
+    //             // Step 18. Set the [[extractable]] internal slot of result to extractable.
+    //             // Step 19. Set the [[usages]] internal slot of result to the normalized value of
+    //             // usages.
+    //             // NOTE: Done by the importKey operation in Step 16.
+    //
+    //             // Step 20. Queue a global task on the crypto task source, given realm's global
+    //             // object, to perform the remaining steps.
+    //             // Step 21. Let result be the result of converting result to an ECMAScript Object
+    //             // in realm, as defined by [WebIDL].
+    //             // Step 22. Resolve promise with result.
+    //             subtle.resolve_promise_with_key(promise, &result);
+    //         }),
+    //     );
+    //     promise
+    // }
+    //
+    // /// <https://wicg.github.io/webcrypto-modern-algos/#SubtleCrypto-method-encapsulateKey>
+    // fn EncapsulateKey(
+    //     &self,
+    //     cx: &mut CurrentRealm,
+    //     encapsulation_algorithm: AlgorithmIdentifier,
+    //     encapsulation_key: &CryptoKey,
+    //     shared_key_algorithm: AlgorithmIdentifier,
+    //     extractable: bool,
+    //     usages: Vec<KeyUsage>,
+    // ) -> RootedPromise {
+    //     // Step 1. Let encapsulationAlgorithm, encapsulationKey, sharedKeyAlgorithm, extractable
+    //     // and usages be the encapsulationAlgorithm, encapsulationKey, sharedKeyAlgorithm,
+    //     // extractable and keyUsages parameters passed to the encapsulateKey() method,
+    //     // respectively.
+    //
+    //     // Step 2. Let normalizedEncapsulationAlgorithm be the result of normalizing an algorithm,
+    //     // with alg set to encapsulationAlgorithm and op set to "encapsulate".
+    //     // Step 3. If an error occurred, return a Promise rejected with
+    //     // normalizedEncapsulationAlgorithm.
+    //     let promise = Promise::new_in_realm(cx);
+    //     let normalized_encapsulation_algorithm =
+    //         match normalize_algorithm::<EncapsulateOperation>(cx, &encapsulation_algorithm) {
+    //             Ok(algorithm) => algorithm,
+    //             Err(error) => {
+    //                 promise.reject_error(cx, error);
+    //                 return promise;
+    //             },
+    //         };
+    //
+    //     // Step 4. Let normalizedSharedKeyAlgorithm be the result of normalizing an algorithm, with
+    //     // alg set to sharedKeyAlgorithm and op set to "importKey".
+    //     // Step 5. If an error occurred, return a Promise rejected with
+    //     // normalizedSharedKeyAlgorithm.
+    //     let normalized_shared_key_algorithm =
+    //         match normalize_algorithm::<ImportKeyOperation>(cx, &shared_key_algorithm) {
+    //             Ok(algorithm) => algorithm,
+    //             Err(error) => {
+    //                 promise.reject_error(cx, error);
+    //                 return promise;
+    //             },
+    //         };
+    //
+    //     // Step 6. Let realm be the relevant realm of this.
+    //     // Step 7. Let promise be a new Promise.
+    //     // NOTE: We did that in preparation of Step 3.
+    //
+    //     // Step 8. Return promise and perform the remaining steps in parallel.
+    //     let trusted_subtle = Trusted::new(self);
+    //     let trusted_encapsulated_key = Trusted::new(encapsulation_key);
+    //     let trusted_promise = TrustedPromise::from(&promise);
+    //     self.global().task_manager().dom_manipulation_task_source().queue(
+    //         task!(encapsulate_keys: move |cx| {
+    //             let subtle = trusted_subtle.root();
+    //             let encapsulation_key = trusted_encapsulated_key.root();
+    //             let promise = &trusted_promise.root(cx);
+    //
+    //             // Step 9. If the following steps or referenced procedures say to throw an error,
+    //             // queue a global task on the crypto task source, given realm's global object, to
+    //             // reject promise with the returned error; and then terminate the algorithm.
+    //
+    //             // Step 10. If the name member of normalizedEncapsulationAlgorithm is not equal to
+    //             // the name attribute of the [[algorithm]] internal slot of encapsulationKey then
+    //             // throw an InvalidAccessError.
+    //             if normalized_encapsulation_algorithm.name() != encapsulation_key.algorithm().name() {
+    //                 subtle.reject_promise_with_error(promise, Error::InvalidAccess(Some(
+    //                     "[[algorithm]] internal slot of encapsulationKey is not equal to \
+    //                     normalizedEncapsulationAlgorithm".to_string(),
+    //                 )));
+    //                 return;
+    //             }
+    //
+    //             // Step 11. If the [[usages]] internal slot of encapsulationKey does not contain an
+    //             // entry that is "encapsulateKey", then throw an InvalidAccessError.
+    //             if !encapsulation_key.usages().contains(&KeyUsage::EncapsulateKey) {
+    //                 subtle.reject_promise_with_error(promise, Error::InvalidAccess(Some(
+    //                     "[[usages]] internal slot of encapsulationKey does not contain an \
+    //                     entry that is \"encapsulateBits\"".to_string(),
+    //                 )));
+    //                 return;
+    //             }
+    //
+    //             // Step 12. Let encapsulatedBits be the result of performing the encapsulate
+    //             // operation specified by the [[algorithm]] internal slot of encapsulationKey using
+    //             // encapsulationKey.
+    //             // NOTE: Step 10 guarantees normalizedEncapsulationAlgorithm specifies the same
+    //             // algorithm as the [[algorithm]] internal slot of encapsulationKey.
+    //             let encapsulated_bits_result =
+    //                 normalized_encapsulation_algorithm.encapsulate(&encapsulation_key);
+    //             let encapsulated_bits = match encapsulated_bits_result {
+    //                 Ok(encapsulated_bits) => encapsulated_bits,
+    //                 Err(error) => {
+    //                     subtle.reject_promise_with_error(promise, error);
+    //                     return;
+    //                 },
+    //             };
+    //
+    //             // Step 13. Let sharedKey be the result of performing the import key operation
+    //             // specified by normalizedSharedKeyAlgorithm using "raw-secret" as format, the
+    //             // sharedKey field of encapsulatedBits as keyData, sharedKeyAlgorithm as algorithm
+    //             // and using extractable and usages.
+    //             // Step 14. Set the [[extractable]] internal slot of sharedKey to extractable.
+    //             // Step 15. Set the [[usages]] internal slot of sharedKey to the normalized value
+    //             // of usages.
+    //             // NOTE: Step 14 and 15 are done by the importKey operation in Step 13.
+    //             let encapsulated_shared_key = match &encapsulated_bits.shared_key {
+    //                 Some(shared_key) => shared_key,
+    //                 None => {
+    //                     subtle.reject_promise_with_error(promise, Error::Operation(Some(
+    //                         "Shared key is missing in the result of the encapsulate operation"
+    //                             .to_string())));
+    //                     return;
+    //                 },
+    //             };
+    //             let shared_key_result = normalized_shared_key_algorithm.import_key(
+    //                 cx,
+    //                 &subtle.global(),
+    //                 KeyFormat::Raw_secret,
+    //                 encapsulated_shared_key,
+    //                 extractable,
+    //                 usages.clone(),
+    //             );
+    //             let shared_key = match shared_key_result {
+    //                 Ok(shared_key) => shared_key,
+    //                 Err(error) => {
+    //                     subtle.reject_promise_with_error(promise, error);
+    //                     return;
+    //                 },
+    //             };
+    //
+    //             // Step 16. Let encapsulatedKey be a new EncapsulatedKey dictionary with sharedKey
+    //             // set to sharedKey and ciphertext set to the ciphertext field of encapsulatedBits.
+    //             let encapsulated_key = EncapsulatedKey {
+    //                 shared_key: Some(Trusted::new(&shared_key)),
+    //                 ciphertext:encapsulated_bits.ciphertext,
+    //             };
+    //
+    //             // Step 17. Queue a global task on the crypto task source, given realm's global
+    //             // object, to perform the remaining steps.
+    //             // Step 18. Let result be the result of converting encapsulatedKey to an ECMAScript
+    //             // Object in realm, as defined by [WebIDL].
+    //             // Step 19. Resolve promise with result.
+    //             subtle.resolve_promise_with_encapsulated_key(promise, encapsulated_key);
+    //         })
+    //     );
+    //     promise
+    // }
+    //
+    // /// <https://wicg.github.io/webcrypto-modern-algos/#SubtleCrypto-method-encapsulateBits>
+    // fn EncapsulateBits(
+    //     &self,
+    //     cx: &mut CurrentRealm,
+    //     encapsulation_algorithm: AlgorithmIdentifier,
+    //     encapsulation_key: &CryptoKey,
+    // ) -> RootedPromise {
+    //     // Step 1. Let encapsulationAlgorithm and encapsulationKey be the encapsulationAlgorithm
+    //     // and encapsulationKey parameters passed to the encapsulateBits() method, respectively.
+    //
+    //     // Step 2. Let normalizedEncapsulationAlgorithm be the result of normalizing an algorithm,
+    //     // with alg set to encapsulationAlgorithm and op set to "encapsulate".
+    //     // Step 3. If an error occurred, return a Promise rejected with
+    //     // normalizedEncapsulationAlgorithm.
+    //     let promise = Promise::new_in_realm(cx);
+    //     let normalized_encapsulation_algorithm =
+    //         match normalize_algorithm::<EncapsulateOperation>(cx, &encapsulation_algorithm) {
+    //             Ok(algorithm) => algorithm,
+    //             Err(error) => {
+    //                 promise.reject_error(cx, error);
+    //                 return promise;
+    //             },
+    //         };
+    //
+    //     // Step 4. Let realm be the relevant realm of this.
+    //     // Step 5. Let promise be a new Promise.
+    //     // NOTE: We did that in preparation of Step 3.
+    //
+    //     // Step 6. Return promise and perform the remaining steps in parallel.
+    //     let trusted_subtle = Trusted::new(self);
+    //     let trusted_encapsulation_key = Trusted::new(encapsulation_key);
+    //     let trusted_promise = TrustedPromise::from(&promise);
+    //     self.global().task_manager().dom_manipulation_task_source().queue(
+    //         task!(derive_key: move |cx| {
+    //             let subtle = trusted_subtle.root();
+    //             let encapsulation_key = trusted_encapsulation_key.root();
+    //             let promise = &trusted_promise.root(cx);
+    //
+    //             // Step 7. If the following steps or referenced procedures say to throw an error,
+    //             // queue a global task on the crypto task source, given realm's global object, to
+    //             // reject promise with the returned error; and then terminate the algorithm.
+    //
+    //             // Step 8. If the name member of normalizedEncapsulationAlgorithm is not equal to
+    //             // the name attribute of the [[algorithm]] internal slot of encapsulationKey then
+    //             // throw an InvalidAccessError.
+    //             if normalized_encapsulation_algorithm.name() != encapsulation_key.algorithm().name() {
+    //                 subtle.reject_promise_with_error(promise, Error::InvalidAccess(Some(
+    //                     "[[algorithm]] internal slot of encapsulationKey is not equal to \
+    //                     normalizedEncapsulationAlgorithm".to_string(),
+    //                 )));
+    //                 return;
+    //             }
+    //
+    //             // Step 9. If the [[usages]] internal slot of encapsulationKey does not contain an
+    //             // entry that is "encapsulateBits", then throw an InvalidAccessError.
+    //             if !encapsulation_key.usages().contains(&KeyUsage::EncapsulateBits) {
+    //                 subtle.reject_promise_with_error(promise, Error::InvalidAccess(Some(
+    //                     "[[usages]] internal slot of encapsulationKey does not contain an \
+    //                     entry that is \"encapsulateBits\"".to_string(),
+    //                 )));
+    //                 return;
+    //             }
+    //
+    //             // Step 10. Let encapsulatedBits be the result of performing the encapsulate
+    //             // operation specified by the [[algorithm]] internal slot of encapsulationKey using
+    //             // encapsulationKey.
+    //             // NOTE: Step 8 guarantees normalizedEncapsulationAlgorithm specifies the same
+    //             // algorithm as the [[algorithm]] internal slot of encapsulationKey.
+    //             let encapsulated_bits =
+    //                 match normalized_encapsulation_algorithm.encapsulate(&encapsulation_key) {
+    //                     Ok(encapsulated_bits) => encapsulated_bits,
+    //                     Err(error) => {
+    //                         subtle.reject_promise_with_error(promise, error);
+    //                         return;
+    //                     },
+    //                 };
+    //
+    //             // Step 11. Queue a global task on the crypto task source, given realm's global
+    //             // object, to perform the remaining steps.
+    //             // Step 12. Let result be the result of converting encapsulatedBits to an
+    //             // ECMAScript Object in realm, as defined by [WebIDL].
+    //             // Step 13. Resolve promise with result.
+    //             subtle.resolve_promise_with_encapsulated_bits(promise, encapsulated_bits);
+    //         }),
+    //     );
+    //     promise
+    // }
+    //
+    // /// <https://wicg.github.io/webcrypto-modern-algos/#SubtleCrypto-method-decapsulateKey>
+    // fn DecapsulateKey(
+    //     &self,
+    //     cx: &mut CurrentRealm,
+    //     decapsulation_algorithm: AlgorithmIdentifier,
+    //     decapsulation_key: &CryptoKey,
+    //     ciphertext: ArrayBufferViewOrArrayBuffer,
+    //     shared_key_algorithm: AlgorithmIdentifier,
+    //     extractable: bool,
+    //     usages: Vec<KeyUsage>,
+    // ) -> RootedPromise {
+    //     // Step 1. Let decapsulationAlgorithm, decapsulationKey, sharedKeyAlgorithm, extractable
+    //     // and usages be the decapsulationAlgorithm, decapsulationKey, sharedKeyAlgorithm,
+    //     // extractable and keyUsages parameters passed to the decapsulateKey() method,
+    //     // respectively.
+    //
+    //     // Step 2. Let normalizedDecapsulationAlgorithm be the result of normalizing an algorithm,
+    //     // with alg set to decapsulationAlgorithm and op set to "decapsulate".
+    //     // Step 3. If an error occurred, return a Promise rejected with
+    //     // normalizedDecapsulationAlgorithm.
+    //     let normalized_decapsulation_algorithm =
+    //         match normalize_algorithm::<DecapsulateOperation>(cx, &decapsulation_algorithm) {
+    //             Ok(normalized_algorithm) => normalized_algorithm,
+    //             Err(error) => {
+    //                 let promise = Promise::new_in_realm(cx);
+    //                 promise.reject_error(cx, error);
+    //                 return promise;
+    //             },
+    //         };
+    //
+    //     // Step 4. Let normalizedSharedKeyAlgorithm be the result of normalizing an algorithm, with
+    //     // alg set to sharedKeyAlgorithm and op set to "importKey".
+    //     // Step 5. If an error occurred, return a Promise rejected with
+    //     // normalizedSharedKeyAlgorithm.
+    //     let normalized_shared_key_algorithm =
+    //         match normalize_algorithm::<ImportKeyOperation>(cx, &shared_key_algorithm) {
+    //             Ok(normalized_algorithm) => normalized_algorithm,
+    //             Err(error) => {
+    //                 let promise = Promise::new_in_realm(cx);
+    //                 promise.reject_error(cx, error);
+    //                 return promise;
+    //             },
+    //         };
+    //
+    //     // Step 6. Let ciphertext be the result of getting a copy of the bytes held by the
+    //     // ciphertext parameter passed to the decapsulateKey() method.
+    //     let ciphertext = get_buffer_source_copy((&ciphertext).into());
+    //
+    //     // Step 7. Let realm be the relevant realm of this.
+    //     // Step 8. Let promise be a new Promise.
+    //     let promise = Promise::new_in_realm(cx);
+    //
+    //     // Step 9. Return promise and perform the remaining steps in parallel.
+    //     let trusted_subtle = Trusted::new(self);
+    //     let trusted_decapsulation_key = Trusted::new(decapsulation_key);
+    //     let trusted_promise = TrustedPromise::from(&promise);
+    //     self.global()
+    //         .task_manager()
+    //         .dom_manipulation_task_source()
+    //         .queue(task!(decapsulate_key: move |cx| {
+    //             let subtle = trusted_subtle.root();
+    //             let promise = &trusted_promise.root(cx);
+    //             let decapsulation_key = trusted_decapsulation_key.root();
+    //
+    //             // Step 10. If the following steps or referenced procedures say to throw an error,
+    //             // queue a global task on the crypto task source, given realm's global object, to
+    //             // reject promise with the returned error; and then terminate the algorithm.
+    //
+    //             // Step 11. If the name member of normalizedDecapsulationAlgorithm is not equal to
+    //             // the name attribute of the [[algorithm]] internal slot of decapsulationKey then
+    //             // throw an InvalidAccessError.
+    //             if normalized_decapsulation_algorithm.name() != decapsulation_key.algorithm().name() {
+    //                 subtle.reject_promise_with_error(promise, Error::InvalidAccess(Some(
+    //                     "[[algorithm]] internal slot of decapsulationKey is not equal to \
+    //                     normalizedDecapsulationAlgorithm".to_string()
+    //                 )));
+    //                 return;
+    //             }
+    //
+    //             // Step 12. If the [[usages]] internal slot of decapsulationKey does not contain an
+    //             // entry that is "decapsulateKey", then throw an InvalidAccessError.
+    //             if !decapsulation_key.usages().contains(&KeyUsage::DecapsulateKey) {
+    //                 subtle.reject_promise_with_error(promise, Error::InvalidAccess(Some(
+    //                     "[[usages]] internal slot of decapsulationKey does not contain an \
+    //                     entry that is \"decapsulateBits\"".to_string(),
+    //                 )));
+    //                 return;
+    //             }
+    //
+    //             // Step 13. Let decapsulatedBits be the result of performing the decapsulate
+    //             // operation specified by the [[algorithm]] internal slot of decapsulationKey using
+    //             // decapsulationKey and ciphertext.
+    //             // NOTE: Step 11 guarantees normalizedDecapsulationAlgorithm specifies the same
+    //             // algorithm as the [[algorithm]] internal slot of decapsulationKey.
+    //             let decapsulated_bits_result =
+    //                 normalized_decapsulation_algorithm.decapsulate(&decapsulation_key, &ciphertext);
+    //             let decapsulated_bits = match decapsulated_bits_result {
+    //                 Ok(decapsulated_bits) => Zeroizing::new(decapsulated_bits),
+    //                 Err(error) => {
+    //                     subtle.reject_promise_with_error(promise, error);
+    //                     return;
+    //                 },
+    //             };
+    //
+    //
+    //             // Step 14. Let sharedKey be the result of performing the import key operation
+    //             // specified by normalizedSharedKeyAlgorithm using "raw-secret" as format, the
+    //             // decapsulatedBits as keyData, sharedKeyAlgorithm as algorithm and using
+    //             // extractable and usages.
+    //             // Step 15. Set the [[extractable]] internal slot of sharedKey to extractable.
+    //             // Step 16. Set the [[usages]] internal slot of sharedKey to the normalized value
+    //             // of usages.
+    //             // NOTE: Step 15 and 16 are done by the importKey operation in Step 14.
+    //             let shared_key_result = normalized_shared_key_algorithm.import_key(
+    //                 cx,
+    //                 &subtle.global(),
+    //                 KeyFormat::Raw_secret,
+    //                 &decapsulated_bits,
+    //                 extractable,
+    //                 usages.clone(),
+    //             );
+    //             let shared_key = match shared_key_result {
+    //                 Ok(shared_key) => shared_key,
+    //                 Err(error) => {
+    //                     subtle.reject_promise_with_error(promise, error);
+    //                     return;
+    //                 },
+    //             };
+    //
+    //             // Step 17. Queue a global task on the crypto task source, given realm's global
+    //             // object, to perform the remaining steps.
+    //             // Step 18. Let result be the result of converting sharedKey to an ECMAScript
+    //             // Object in realm, as defined by [WebIDL].
+    //             // Step 19. Resolve promise with result.
+    //             subtle.resolve_promise_with_key(promise, &shared_key);
+    //         }));
+    //     promise
+    // }
+    //
+    // /// <https://wicg.github.io/webcrypto-modern-algos/#SubtleCrypto-method-decapsulateBits>
+    // fn DecapsulateBits(
+    //     &self,
+    //     cx: &mut CurrentRealm,
+    //     decapsulation_algorithm: AlgorithmIdentifier,
+    //     decapsulation_key: &CryptoKey,
+    //     ciphertext: ArrayBufferViewOrArrayBuffer,
+    // ) -> RootedPromise {
+    //     // Step 1. Let decapsulationAlgorithm and decapsulationKey be the decapsulationAlgorithm
+    //     // and decapsulationKey parameters passed to the decapsulateBits() method, respectively.
+    //
+    //     // Step 2. Let normalizedDecapsulationAlgorithm be the result of normalizing an algorithm,
+    //     // with alg set to decapsulationAlgorithm and op set to "decapsulate".
+    //     // Step 3. If an error occurred, return a Promise rejected with
+    //     // normalizedDecapsulationAlgorithm.
+    //     let normalized_decapsulation_algorithm =
+    //         match normalize_algorithm::<DecapsulateOperation>(cx, &decapsulation_algorithm) {
+    //             Ok(normalized_algorithm) => normalized_algorithm,
+    //             Err(error) => {
+    //                 let promise = Promise::new_in_realm(cx);
+    //                 promise.reject_error(cx, error);
+    //                 return promise;
+    //             },
+    //         };
+    //
+    //     // Step 4. Let ciphertext be the result of getting a copy of the bytes held by the
+    //     // ciphertext parameter passed to the decapsulateBits() method.
+    //     let ciphertext = get_buffer_source_copy((&ciphertext).into());
+    //
+    //     // Step 5. Let realm be the relevant realm of this.
+    //     // Step 6. Let promise be a new Promise.
+    //     let promise = Promise::new_in_realm(cx);
+    //
+    //     // Step 7. Return promise and perform the remaining steps in parallel.
+    //     let trusted_subtle = Trusted::new(self);
+    //     let trusted_decapsulation_key = Trusted::new(decapsulation_key);
+    //     let trusted_promise = TrustedPromise::from(&promise);
+    //     self.global()
+    //         .task_manager()
+    //         .dom_manipulation_task_source()
+    //         .queue(task!(decapsulate_bits: move |cx| {
+    //             let subtle = trusted_subtle.root();
+    //             let promise = &trusted_promise.root(cx);
+    //             let decapsulation_key = trusted_decapsulation_key.root();
+    //
+    //             // Step 8. If the following steps or referenced procedures say to throw an error,
+    //             // queue a global task on the crypto task source, given realm's global object, to
+    //             // reject promise with the returned error; and then terminate the algorithm.
+    //
+    //             // Step 9. If the name member of normalizedDecapsulationAlgorithm is not equal to
+    //             // the name attribute of the [[algorithm]] internal slot of decapsulationKey then
+    //             // throw an InvalidAccessError.
+    //             if normalized_decapsulation_algorithm.name() != decapsulation_key.algorithm().name() {
+    //                 subtle.reject_promise_with_error(promise, Error::InvalidAccess(Some(
+    //                     "[[algorithm]] internal slot of decapsulationKey is not equal to \
+    //                     normalizedDecapsulationAlgorithm".to_string()
+    //                 )));
+    //                 return;
+    //             }
+    //
+    //             // Step 10. If the [[usages]] internal slot of decapsulationKey does not contain an
+    //             // entry that is "decapsulateBits", then throw an InvalidAccessError.
+    //             if !decapsulation_key.usages().contains(&KeyUsage::DecapsulateBits) {
+    //                 subtle.reject_promise_with_error(promise, Error::InvalidAccess(Some(
+    //                     "[[usages]] internal slot of decapsulationKey does not contain an \
+    //                     entry that is \"decapsulateBits\"".to_string(),
+    //                 )));
+    //                 return;
+    //             }
+    //
+    //             // Step 11. Let decapsulatedBits be the result of performing the decapsulate
+    //             // operation specified by the [[algorithm]] internal slot of decapsulationKey using
+    //             // decapsulationKey and ciphertext.
+    //             // NOTE: Step 9 guarantees normalizedDecapsulationAlgorithm specifies the same
+    //             // algorithm as the [[algorithm]] internal slot of decapsulationKey.
+    //             let decapsulated_bits_result =
+    //                 normalized_decapsulation_algorithm.decapsulate(&decapsulation_key, &ciphertext);
+    //             let decapsulated_bits = match decapsulated_bits_result {
+    //                 Ok(decapsulated_bits) => Zeroizing::new(decapsulated_bits),
+    //                 Err(error) => {
+    //                     subtle.reject_promise_with_error(promise, error);
+    //                     return;
+    //                 },
+    //             };
+    //
+    //             // Step 12. Queue a global task on the crypto task source, given realm's global
+    //             // object, to perform the remaining steps.
+    //             // Step 13. Let result be the result of creating an ArrayBuffer in realm,
+    //             // containing decapsulatedBits.
+    //             // Step 14. Resolve promise with result.
+    //             subtle.resolve_promise_with_data(promise, decapsulated_bits);
+    //         }));
+    //     promise
+    // }
+    //
+    // /// <https://wicg.github.io/webcrypto-modern-algos/#SubtleCrypto-method-getPublicKey>
+    // fn GetPublicKey(
+    //     &self,
+    //     cx: &mut CurrentRealm,
+    //     key: &CryptoKey,
+    //     usages: Vec<KeyUsage>,
+    // ) -> RootedPromise {
+    //     // Step 1. Let key and usages be the key and keyUsages parameters passed to the
+    //     // getPublicKey() method, respectively.
+    //
+    //     // Step 2. Let algorithm be the [[algorithm]] internal slot of key.
+    //     let algorithm = key.algorithm();
+    //
+    //     // Step 3. If the cryptographic algorithm identified by algorithm does not support deriving
+    //     // a public key from a private key, then return a Promise rejected with a
+    //     // NotSupportedError.
+    //     //
+    //     // NOTE: We rely on [`normalize_algorithm`] to check whether the algorithm supports the
+    //     // getPublicKey operation.
+    //     let get_public_key_algorithm = match normalize_algorithm::<GetPublicKeyOperation>(
+    //         cx,
+    //         &AlgorithmIdentifier::String(DOMString::from_static(algorithm.name().as_str())),
+    //     ) {
+    //         Ok(normalized_algorithm) => normalized_algorithm,
+    //         Err(error) => {
+    //             let promise = Promise::new_in_realm(cx);
+    //             promise.reject_error(cx, error);
+    //             return promise;
+    //         },
+    //     };
+    //
+    //     // Step 4. Let realm be the relevant realm of this.
+    //     // Step 5. Let promise be a new Promise.
+    //     let promise = Promise::new_in_realm(cx);
+    //
+    //     // Step 6. Return promise and perform the remaining steps in parallel.
+    //     let trusted_subtle = Trusted::new(self);
+    //     let trusted_promise = TrustedPromise::from(&promise);
+    //     let trusted_key = Trusted::new(key);
+    //     self.global()
+    //         .task_manager()
+    //         .dom_manipulation_task_source()
+    //         .queue(task!(get_public_key: move |cx| {
+    //             let subtle = trusted_subtle.root();
+    //             let promise = &trusted_promise.root(cx);
+    //             let key = trusted_key.root();
+    //
+    //             // Step 7. If the following steps or referenced procedures say to throw an error,
+    //             // queue a global task on the crypto task source, given realm's global object, to
+    //             // reject promise with the returned error; and then terminate the algorithm.
+    //
+    //             // Step 8. If the [[type]] internal slot of key is not "private", then throw an
+    //             // InvalidAccessError.
+    //             if let Err(error) = key.ensure_type(KeyType::Private) {
+    //                 subtle.reject_promise_with_error(promise, error);
+    //                 return;
+    //             }
+    //
+    //             // Step 9. If usages contains an entry which is not supported for a public key by
+    //             // the algorithm identified by algorithm, then throw a SyntaxError.
+    //             // Step 10. Let publicKey be a new CryptoKey representing the public key
+    //             // corresponding to the private key represented by the [[handle]] internal slot of
+    //             // key.
+    //             // Step 11. If an error occurred, then throw a OperationError.
+    //             // Step 12. Set the [[type]] internal slot of publicKey to "public".
+    //             // Step 13. Set the [[algorithm]] internal slot of publicKey to algorithm.
+    //             // Step 14. Set the [[extractable]] internal slot of publicKey to true.
+    //             // Step 15. Set the [[usages]] internal slot of publicKey to usages.
+    //             //
+    //             // NOTE: We run these steps in the "getPublicKey" operations of the supported
+    //             // cryptographic algorithms.
+    //             let result = match get_public_key_algorithm.get_public_key(
+    //                 cx,
+    //                 &subtle.global(),
+    //                 &key,
+    //                 key.algorithm(),
+    //                 usages.clone(),
+    //             ) {
+    //                 Ok(public_key) => public_key,
+    //                 Err(error) => {
+    //                     subtle.reject_promise_with_error(promise, error);
+    //                     return;
+    //                 },
+    //             };
+    //
+    //             // Step 16. Queue a global task on the crypto task source, given realm's global
+    //             // object, to perform the remaining steps.
+    //             // Step 17. Let result be the result of converting publicKey to an ECMAScript
+    //             // Object in realm, as defined by [WebIDL].
+    //             // Step 18. Resolve promise with result.
+    //             subtle.resolve_promise_with_key(promise, &result);
+    //         }));
+    //     promise
+    // }
+
     /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-SubtleCrypto-method-supports>
     fn Supports(
         cx: &mut JSContext,
@@ -248,7 +2142,172 @@ where
         length: Option<u32>,
     ) -> bool {
         todo!()
+        // // Step 1. If operation is not one of "encrypt", "decrypt", "sign", "verify", "digest",
+        // // "generateKey", "deriveKey", "deriveBits", "importKey", "exportKey", "wrapKey",
+        // // "unwrapKey", "encapsulateKey", "encapsulateBits", "decapsulateKey", "decapsulateBits" or
+        // // "getPublicKey", return false.
+        // let operation = &*operation.str();
+        // if !matches!(
+        //     operation,
+        //     "encrypt" |
+        //         "decrypt" |
+        //         "sign" |
+        //         "verify" |
+        //         "digest" |
+        //         "generateKey" |
+        //         "deriveKey" |
+        //         "deriveBits" |
+        //         "importKey" |
+        //         "exportKey" |
+        //         "wrapKey" |
+        //         "unwrapKey" |
+        //         "encapsulateKey" |
+        //         "encapsulateBits" |
+        //         "decapsulateKey" |
+        //         "decapsulateBits" |
+        //         "getPublicKey"
+        // ) {
+        //     return false;
+        // }
+        //
+        // // Step 2. Return the result of checking support for an algorithm, with op set to
+        // // operation, alg set to algorithm, and length set to length.
+        // check_support_for_algorithm(cx, operation, &algorithm, length)
     }
+
+    // /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-SubtleCrypto-method-supports-additionalAlgorithm>
+    // fn Supports_(
+    //     cx: &mut JSContext,
+    //     _global: &GlobalScope,
+    //     operation: DOMString,
+    //     algorithm: AlgorithmIdentifier,
+    //     additional_algorithm: AlgorithmIdentifier,
+    // ) -> bool {
+    //     // Step 1. If operation is not one of "encrypt", "decrypt", "sign", "verify", "digest",
+    //     // "generateKey", "deriveKey", "deriveBits", "importKey", "exportKey", "wrapKey",
+    //     // "unwrapKey", "encapsulateKey", "encapsulateBits", "decapsulateKey", "decapsulateBits" or
+    //     // "getPublicKey", return false.
+    //     let mut operation = &*operation.str();
+    //     if !matches!(
+    //         operation,
+    //         "encrypt" |
+    //             "decrypt" |
+    //             "sign" |
+    //             "verify" |
+    //             "digest" |
+    //             "generateKey" |
+    //             "deriveKey" |
+    //             "deriveBits" |
+    //             "importKey" |
+    //             "exportKey" |
+    //             "wrapKey" |
+    //             "unwrapKey" |
+    //             "encapsulateKey" |
+    //             "encapsulateBits" |
+    //             "decapsulateKey" |
+    //             "decapsulateBits" |
+    //             "getPublicKey"
+    //     ) {
+    //         return false;
+    //     }
+    //
+    //     // Step 2.
+    //     // If operation is "deriveKey" or "unwrapKey":
+    //     //     If the result of checking support for an algorithm with op set to "importKey" and
+    //     //     alg set to additionalAlgorithm is false, return false.
+    //     // If operation is "wrapKey":
+    //     //     If the result of checking support for an algorithm with op set to "exportKey" and
+    //     //     alg set to additionalAlgorithm is false, return false.
+    //     if matches!(operation, "deriveKey" | "unwrapKey") &&
+    //         !check_support_for_algorithm(cx, "importKey", &additional_algorithm, None)
+    //     {
+    //         return false;
+    //     }
+    //     if operation == "wrapKey" &&
+    //         !check_support_for_algorithm(cx, "exportKey", &additional_algorithm, None)
+    //     {
+    //         return false;
+    //     }
+    //
+    //     // Step 3. If operation is "encapsulateKey" or "decapsulateKey":
+    //     if matches!(operation, "encapsulateKey" | "decapsulateKey") {
+    //         // Step 3.1. Let normalizedAlgorithm be the result of normalizing an algorithm, with alg
+    //         // set to algorithm and op set to "get shared key length".
+    //         // Step 3.2. If an error occurred, return false.
+    //         let Ok(normalized_algorithm) =
+    //             normalize_algorithm::<GetSharedKeyLengthOperation>(cx, &algorithm)
+    //         else {
+    //             return false;
+    //         };
+    //
+    //         // Step 3.3. Let sharedKeyLength be the result of performing the get shared key length
+    //         // algorithm specified by normalizedAlgorithm using algorithm.
+    //         let shared_key_length = normalized_algorithm.get_shared_key_length();
+    //
+    //         // Step 3.4. Let normalizedAdditionalAlgorithm be the result of normalizing an
+    //         // algorithm, with alg set to additionalAlgorithm and op set to "importKey".
+    //         // Step 3.5. If an error occurred, return false.
+    //         let Ok(normalized_additional_algorithm) =
+    //             normalize_algorithm::<ImportKeyOperation>(cx, &additional_algorithm)
+    //         else {
+    //             return false;
+    //         };
+    //
+    //         // Step 3.6. If the result of determining support from operation steps with op set to
+    //         // "importKey" and normalizedAlgorithm set to normalizedAdditionalAlgorithm, and length
+    //         // set to null is false, return false.
+    //         //
+    //         // NOTE: normalized_additional_algorithm is an ImportKeyAlgorithm value, so we don't
+    //         // need to explicitly set op to "importKey" when we call the
+    //         // determine_support_from_operation_steps method.
+    //         if !normalized_additional_algorithm.determine_support_from_operation_steps(None) {
+    //             return false;
+    //         }
+    //
+    //         // Step 3.7. If the import key operation specified by normalizedAdditionalAlgorithm
+    //         // would throw an error for every value of keyData that is a byte sequence whose length
+    //         // in bits is sharedKeyLength when format is "raw-secret", return false.
+    //         if normalized_additional_algorithm.will_throw_for_key_data_length(shared_key_length) {
+    //             return false;
+    //         }
+    //     }
+    //
+    //     // Step 4. Let length be null.
+    //     let mut length = None;
+    //
+    //     // Step 5. If operation is "deriveKey":
+    //     if operation == "deriveKey" {
+    //         // Step 5.1. If the result of checking support for an algorithm with op set to "get key
+    //         // length" and alg set to additionalAlgorithm is false, return false.
+    //         if !check_support_for_algorithm(cx, "get key length", &additional_algorithm, None) {
+    //             return false;
+    //         }
+    //
+    //         // Step 5.2. Let normalizedAdditionalAlgorithm be the result of normalizing an
+    //         // algorithm, with alg set to additionalAlgorithm and op set to "get key length".
+    //         let Ok(normalized_additional_algorithm) =
+    //             normalize_algorithm::<GetKeyLengthOperation>(cx, &additional_algorithm)
+    //         else {
+    //             return false;
+    //         };
+    //
+    //         // Step 5.3. Let length be the result of performing the get key length algorithm
+    //         // specified by additionalAlgorithm using normalizedAdditionalAlgorithm.'
+    //         match normalized_additional_algorithm.get_key_length() {
+    //             Ok(key_length) => {
+    //                 length = key_length;
+    //             },
+    //             Err(_) => return false,
+    //         };
+    //
+    //         // Step 5.4. Set operation to "deriveBits".
+    //         operation = "deriveBits";
+    //     }
+    //
+    //     // Step 6. Return the result of checking support for an algorithm, with op set to
+    //     // operation, alg set to algorithm, and length set to length.
+    //     check_support_for_algorithm(cx, operation, &algorithm, length)
+    // }
 }
 
 // /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-check-support-for-algorithm>

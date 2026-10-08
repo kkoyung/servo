@@ -27,9 +27,9 @@ interface SubtleCrypto {
 //                       CryptoKey key,
 //                       BufferSource signature,
 //                       BufferSource data);
-//   Promise<any> digest(AlgorithmIdentifier algorithm,
-//                       BufferSource data);
-//
+  Promise<any> digest(AlgorithmIdentifier algorithm,
+                      BufferSource data);
+
 //   Promise<any> generateKey(AlgorithmIdentifier algorithm,
 //                           boolean extractable,
 //                           sequence<KeyUsage> keyUsages );
