@@ -22,7 +22,7 @@ use script_bindings::structuredclone::StructuredData;
 use script_bindings::DomTypes;
 use servo_base::id::{CryptoKeyId, CryptoKeyIndex};
 use servo_constellation_traits::{SerializableCryptoKey, SerializableCryptoKeyHandle};
-// use strum::VariantArray;
+use strum::VariantArray;
 use zeroize::Zeroizing;
 use script_bindings::codegen::GenericBindings::CryptoKeyBinding::{
     CryptoKeyMethods, CryptoKeyPair, KeyType, KeyUsage, Wrap as CryptoKeyWrap,
@@ -685,6 +685,62 @@ impl TryFrom<&Handle> for SerializableCryptoKeyHandle {
             Handle::Argon2Password(password) => Ok(SerializableCryptoKeyHandle::Argon2Password(
                 password.to_vec(),
             )),
+        }
+    }
+}
+
+
+/// The trait providing helper functions for `&[KeyUsage]`
+pub(crate) trait KeyUsageSliceHelper {
+    /// <https://w3c.github.io/webcrypto/#concept-usage-intersection>
+    fn usage_intersection(&self, other: &[KeyUsage]) -> Vec<KeyUsage>;
+
+    /// <https://w3c.github.io/webcrypto/#concept-normalized-usages>
+    fn normalized_value(&self) -> Vec<KeyUsage>;
+
+    /// Ensure that the key usage list only contains entries which are in `allowed`. If the key
+    /// usage list contains an entry which is not in `allowed`, then throw a SyntaxError. Note that,
+    /// if `allowed` is set to empty, it throws a SyntaxError when the key usage list is not empty.
+    fn ensure_only_contain_entries_from(&self, allowed: &[KeyUsage]) -> ErrorResult;
+}
+
+impl KeyUsageSliceHelper for [KeyUsage] {
+    fn usage_intersection(&self, other: &[KeyUsage]) -> Vec<KeyUsage> {
+        // When this specification says to calculate the usage intersection of two sequences, a and
+        // b the result shall be a sequence containing each recognized key usage value that appears
+        // in both a and b, in the order listed in the list of recognized key usage values, where a
+        // value is said to appear in a sequence if an element of the sequence exists that is a
+        // case-sensitive string match for that value.
+        let mut intersection = self
+            .iter()
+            .filter(|usage| other.contains(usage))
+            .cloned()
+            .collect::<Vec<KeyUsage>>();
+        intersection.sort();
+        intersection.dedup();
+
+        intersection
+    }
+
+    fn normalized_value(&self) -> Vec<KeyUsage> {
+        // When this specification says to calculate the normalized value of a usages list, usages
+        // the result shall be the usage intersection of usages and a sequence containing all
+        // recognized key usage values.
+        self.usage_intersection(KeyUsage::VARIANTS)
+    }
+
+    fn ensure_only_contain_entries_from(&self, allowed: &[KeyUsage]) -> ErrorResult {
+        if self.iter().all(|usage| allowed.contains(usage)) {
+            Ok(())
+        } else {
+            Err(Error::Syntax(Some(if allowed.is_empty() {
+                "Usages is not empty".into()
+            } else {
+                format!(
+                    "Usages contains an entry which is not {}",
+                    allowed.iter().map(|usage| usage.as_ref()).join(" or "),
+                )
+            })))
         }
     }
 }
