@@ -3,7 +3,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 use std::marker::PhantomData;
-// use std::str::FromStr;
+use std::str::FromStr;
 
 use dom_struct::dom_struct;
 use itertools::Itertools;
@@ -248,26 +248,26 @@ where
 
     /// <https://w3c.github.io/webcrypto/#cryptokey-interface-serializable>
     fn serialize(&self, _no_gc: &NoGC) -> Result<(CryptoKeyId, Self::Data), ()> {
-        // // Step 1. Set serialized.[[Type]] to the [[type]] internal slot of value.
-        // // Step 2. Set serialized.[[Extractable]] to the [[extractable]] internal slot of value.
-        // // Step 3. Set serialized.[[Algorithm]] to the sub-serialization of the [[algorithm]]
-        // // internal slot of value.
-        // // Step 4. Set serialized.[[Usages]] to the sub-serialization of the [[usages]] internal
-        // // slot of value.
-        // // Step 5. Set serialized.[[Handle]] to the [[handle]] internal slot of value.
-        // let serialized = SerializableCryptoKey {
-        //     key_type: self.key_type.as_str().into(),
-        //     extractable: self.extractable,
-        //     algorithm: (&self.algorithm).into(),
-        //     usages: self
-        //         .usages
-        //         .iter()
-        //         .map(|usage| usage.as_str().into())
-        //         .collect(),
-        //     handle: (&self.handle).try_into()?,
-        // };
-        // Ok((CryptoKeyId::new(), serialized))
-        todo!()
+        // Step 1. Set serialized.[[Type]] to the [[type]] internal slot of value.
+        // Step 2. Set serialized.[[Extractable]] to the [[extractable]] internal slot of value.
+        // Step 3. Set serialized.[[Algorithm]] to the sub-serialization of the [[algorithm]]
+        // internal slot of value.
+        // Step 4. Set serialized.[[Usages]] to the sub-serialization of the [[usages]] internal
+        // slot of value.
+        // Step 5. Set serialized.[[Handle]] to the [[handle]] internal slot of value.
+        let serialized = SerializableCryptoKey {
+            key_type: self.key_type.as_str().into(),
+            extractable: self.extractable,
+            // algorithm: (&self.algorithm).into(),
+            algorithm: todo!(),
+            usages: self
+                .usages
+                .iter()
+                .map(|usage| usage.as_str().into())
+                .collect(),
+            handle: (&self.handle).try_into()?,
+        };
+        Ok((CryptoKeyId::new(), serialized))
     }
 
     /// <https://w3c.github.io/webcrypto/#cryptokey-interface-serializable>
@@ -276,38 +276,36 @@ where
         owner: &D::GlobalScope,
         serialized: Self::Data,
     ) -> Result<DomRoot<Self>, ()> {
-        // // Step 1. Initialize the [[type]] internal slot of value to serialized.[[Type]].
-        // // Step 2. Initialize the [[extractable]] internal slot of value to
-        // // serialized.[[Extractable]].
-        // // Step 3. Initialize the [[algorithm]] internal slot of value to the sub-deserialization of
-        // // serialized.[[Algorithm]].
-        // // Step 4. Initialize the [[usages]] internal slot of value to the sub-deserialization of
-        // // serialized.[[Usages]].
-        // // Step 5. Initialize the [[handle]] internal slot of value to serialized.[[Handle]].
-        // Ok(CryptoKey::new(
-        //     cx,
-        //     owner,
-        //     KeyType::from_str(&serialized.key_type)?,
-        //     serialized.extractable,
-        //     serialized.algorithm.try_into()?,
-        //     serialized
-        //         .usages
-        //         .iter()
-        //         .map(|usage| KeyUsage::from_str(usage))
-        //         .collect::<Result<Vec<_>, _>>()?,
-        //     serialized.handle.try_into()?,
-        // ))
-        todo!()
+        // Step 1. Initialize the [[type]] internal slot of value to serialized.[[Type]].
+        // Step 2. Initialize the [[extractable]] internal slot of value to
+        // serialized.[[Extractable]].
+        // Step 3. Initialize the [[algorithm]] internal slot of value to the sub-deserialization of
+        // serialized.[[Algorithm]].
+        // Step 4. Initialize the [[usages]] internal slot of value to the sub-deserialization of
+        // serialized.[[Usages]].
+        // Step 5. Initialize the [[handle]] internal slot of value to serialized.[[Handle]].
+        Ok(CryptoKey::new(
+            cx,
+            owner,
+            KeyType::from_str(&serialized.key_type)?,
+            serialized.extractable,
+            // serialized.algorithm.try_into()?,
+            serialized
+                .usages
+                .iter()
+                .map(|usage| KeyUsage::from_str(usage))
+                .collect::<Result<Vec<_>, _>>()?,
+            serialized.handle.try_into()?,
+        ))
     }
 
     fn serialized_storage<'a>(
         reader: StructuredData<'a, '_>,
     ) -> &'a mut Option<FxHashMap<CryptoKeyId, Self::Data>> {
-        // match reader {
-        //     StructuredData::Reader(reader) => &mut reader.crypto_keys,
-        //     StructuredData::Writer(writer) => &mut writer.crypto_keys,
-        // }
-        todo!()
+        match reader {
+            StructuredData::Reader(reader) => &mut reader.crypto_keys,
+            StructuredData::Writer(writer) => &mut writer.crypto_keys,
+        }
     }
 }
 
