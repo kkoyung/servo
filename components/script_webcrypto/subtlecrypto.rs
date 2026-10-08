@@ -29,7 +29,7 @@
 // mod rsa_pss_operation;
 // mod rsassa_pkcs1_v1_5_operation;
 // mod sha3_operation;
-// mod sha_operation;
+mod sha_operation;
 // mod turboshake_operation;
 // mod x25519_operation;
 // mod x448_operation;
@@ -3056,99 +3056,100 @@ trait NormalizedAlgorithm: Sized {
 //         }
 //     }
 // }
-//
-// /// The value of the key "digest" in the internal object supportedAlgorithms
-// struct DigestOperation {}
-//
-// impl Operation for DigestOperation {
-//     type RegisteredAlgorithm = DigestAlgorithm;
-// }
-//
-// /// Normalized algorithm for the "digest" operation, used as output of
-// /// <https://w3c.github.io/webcrypto/#dfn-normalize-an-algorithm>
-// #[derive(Clone, MallocSizeOf)]
-// enum DigestAlgorithm {
-//     Sha(Algorithm),
-//     Sha3(Algorithm),
-//     CShake(CShakeParams),
-//     TurboShake(TurboShakeParams),
-//     KangarooTwelve(KangarooTwelveParams),
-// }
-//
-// impl NormalizedAlgorithm for DigestAlgorithm {
-//     fn from_object(
-//         cx: &mut JSContext,
-//         algorithm_name: CryptoAlgorithm,
-//         object: HandleObject,
-//     ) -> Fallible<Self> {
-//         match algorithm_name {
-//             CryptoAlgorithm::Sha1 |
-//             CryptoAlgorithm::Sha256 |
-//             CryptoAlgorithm::Sha384 |
-//             CryptoAlgorithm::Sha512 => Ok(DigestAlgorithm::Sha(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::Sha3_256 | CryptoAlgorithm::Sha3_384 | CryptoAlgorithm::Sha3_512 => {
-//                 Ok(DigestAlgorithm::Sha3(
-//                     object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//                 ))
-//             },
-//             CryptoAlgorithm::CShake128 | CryptoAlgorithm::CShake256 => Ok(DigestAlgorithm::CShake(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::TurboShake128 | CryptoAlgorithm::TurboShake256 => Ok(
-//                 DigestAlgorithm::TurboShake(object.try_into_with_cx_and_name(cx, algorithm_name)?),
-//             ),
-//             CryptoAlgorithm::Kt128 | CryptoAlgorithm::Kt256 => Ok(DigestAlgorithm::KangarooTwelve(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             _ => Err(Error::NotSupported(Some(format!(
-//                 "{} does not support \"digest\" operation",
-//                 algorithm_name.as_str()
-//             )))),
-//         }
-//     }
-//
-//     fn name(&self) -> CryptoAlgorithm {
-//         match self {
-//             DigestAlgorithm::Sha(algorithm) => algorithm.name,
-//             DigestAlgorithm::Sha3(algorithm) => algorithm.name,
-//             DigestAlgorithm::CShake(algorithm) => algorithm.name,
-//             DigestAlgorithm::TurboShake(algorithm) => algorithm.name,
-//             DigestAlgorithm::KangarooTwelve(algorithm) => algorithm.name,
-//         }
-//     }
-//
-//     fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
-//         match self {
-//             DigestAlgorithm::Sha(_) |
-//             DigestAlgorithm::Sha3(_) |
-//             DigestAlgorithm::CShake(_) |
-//             DigestAlgorithm::TurboShake(_) => true,
-//             DigestAlgorithm::KangarooTwelve(normalized_algorithm) => {
-//                 normalized_algorithm.output_length != 0 &&
-//                     normalized_algorithm.output_length.is_multiple_of(8)
-//             },
-//         }
-//     }
-// }
-//
-// impl DigestAlgorithm {
-//     fn digest(&self, message: &[u8]) -> Result<Vec<u8>, Error> {
-//         match self {
-//             DigestAlgorithm::Sha(algorithm) => sha_operation::digest(algorithm, message),
-//             DigestAlgorithm::Sha3(algorithm) => sha3_operation::digest(algorithm, message),
-//             DigestAlgorithm::CShake(algorithm) => cshake_operation::digest(algorithm, message),
-//             DigestAlgorithm::TurboShake(algorithm) => {
-//                 turboshake_operation::digest(algorithm, message)
-//             },
-//             DigestAlgorithm::KangarooTwelve(algorithm) => {
-//                 kangarootwelve_operation::digest(algorithm, message)
-//             },
-//         }
-//     }
-// }
-//
+
+/// The value of the key "digest" in the internal object supportedAlgorithms
+struct DigestOperation {}
+
+impl Operation for DigestOperation {
+    type RegisteredAlgorithm = DigestAlgorithm;
+}
+
+/// Normalized algorithm for the "digest" operation, used as output of
+/// <https://w3c.github.io/webcrypto/#dfn-normalize-an-algorithm>
+#[derive(Clone, MallocSizeOf)]
+enum DigestAlgorithm {
+    Sha(Algorithm),
+    // Sha3(Algorithm),
+    // CShake(CShakeParams),
+    // TurboShake(TurboShakeParams),
+    // KangarooTwelve(KangarooTwelveParams),
+}
+
+impl NormalizedAlgorithm for DigestAlgorithm {
+    fn from_object(
+        cx: &mut JSContext,
+        algorithm_name: CryptoAlgorithm,
+        object: HandleObject,
+    ) -> Fallible<Self> {
+        match algorithm_name {
+            CryptoAlgorithm::Sha1 |
+            CryptoAlgorithm::Sha256 |
+            CryptoAlgorithm::Sha384 |
+            CryptoAlgorithm::Sha512 => Ok(DigestAlgorithm::Sha(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            // CryptoAlgorithm::Sha3_256 | CryptoAlgorithm::Sha3_384 | CryptoAlgorithm::Sha3_512 => {
+            //     Ok(DigestAlgorithm::Sha3(
+            //         object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            //     ))
+            // },
+            // CryptoAlgorithm::CShake128 | CryptoAlgorithm::CShake256 => Ok(DigestAlgorithm::CShake(
+            //     object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            // )),
+            // CryptoAlgorithm::TurboShake128 | CryptoAlgorithm::TurboShake256 => Ok(
+            //     DigestAlgorithm::TurboShake(object.try_into_with_cx_and_name(cx, algorithm_name)?),
+            // ),
+            // CryptoAlgorithm::Kt128 | CryptoAlgorithm::Kt256 => Ok(DigestAlgorithm::KangarooTwelve(
+            //     object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            // )),
+            _ => Err(Error::NotSupported(Some(format!(
+                "{} does not support \"digest\" operation",
+                algorithm_name.as_str()
+            )))),
+        }
+    }
+
+    fn name(&self) -> CryptoAlgorithm {
+        match self {
+            DigestAlgorithm::Sha(algorithm) => algorithm.name,
+            // DigestAlgorithm::Sha3(algorithm) => algorithm.name,
+            // DigestAlgorithm::CShake(algorithm) => algorithm.name,
+            // DigestAlgorithm::TurboShake(algorithm) => algorithm.name,
+            // DigestAlgorithm::KangarooTwelve(algorithm) => algorithm.name,
+        }
+    }
+
+    fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
+        match self {
+            DigestAlgorithm::Sha(_) => true,
+            // DigestAlgorithm::Sha(_) |
+            // DigestAlgorithm::Sha3(_) |
+            // DigestAlgorithm::CShake(_) |
+            // DigestAlgorithm::TurboShake(_) => true,
+            // DigestAlgorithm::KangarooTwelve(normalized_algorithm) => {
+            //     normalized_algorithm.output_length != 0 &&
+            //         normalized_algorithm.output_length.is_multiple_of(8)
+            // },
+        }
+    }
+}
+
+impl DigestAlgorithm {
+    fn digest(&self, message: &[u8]) -> Result<Vec<u8>, Error> {
+        match self {
+            DigestAlgorithm::Sha(algorithm) => sha_operation::digest(algorithm, message),
+            // DigestAlgorithm::Sha3(algorithm) => sha3_operation::digest(algorithm, message),
+            // DigestAlgorithm::CShake(algorithm) => cshake_operation::digest(algorithm, message),
+            // DigestAlgorithm::TurboShake(algorithm) => {
+            //     turboshake_operation::digest(algorithm, message)
+            // },
+            // DigestAlgorithm::KangarooTwelve(algorithm) => {
+            //     kangarootwelve_operation::digest(algorithm, message)
+            // },
+        }
+    }
+}
+
 // impl TryFrom<SerializableDigestAlgorithm> for DigestAlgorithm {
 //     type Error = ();
 //
