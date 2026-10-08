@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
+use std::marker::PhantomData;
 use std::str::FromStr;
 
 use dom_struct::dom_struct;
@@ -15,7 +16,7 @@ use jstraceable_derive::JSTraceable;
 use malloc_size_of::MallocSizeOf;
 use malloc_size_of_derive::MallocSizeOf;
 use rustc_hash::FxHashMap;
-use script_bindings::reflector::{Reflector, reflect_dom_object};
+use script_bindings::reflector::{Reflector, reflect_dom_object_with_wrap};
 use script_bindings::serializable::Serializable;
 use script_bindings::structuredclone::StructuredData;
 use script_bindings::DomTypes;
@@ -25,7 +26,7 @@ use strum::VariantArray;
 use zeroize::Zeroizing;
 
 use script_bindings::codegen::GenericBindings::CryptoKeyBinding::{
-    CryptoKeyMethods, CryptoKeyPair, KeyType, KeyUsage,
+    CryptoKeyMethods, CryptoKeyPair, KeyType, KeyUsage, Wrap as CryptoKeyWrap,
 };
 use script_bindings::error::{Error, ErrorResult};
 use script_bindings::root::DomRoot;
@@ -118,11 +119,14 @@ pub(crate) struct CryptoKey<D: DomTypes> {
     /// <https://w3c.github.io/webcrypto/#dfn-CryptoKey-slot-handle>
     #[no_trace]
     handle: Handle,
+
+    #[no_trace = "PhantomData does not exist"]
+    phantom: PhantomData<D>,
 }
 
 impl<D> CryptoKey<D>
 where
-    D: Equivalence,
+    D: Equivalence + DomTypes,
 {
     fn new_inherited(
         key_type: KeyType,
@@ -140,6 +144,7 @@ where
             usages,
             usages_cached: Heap::default(),
             handle,
+            phantom: PhantomData,
         }
     }
 
@@ -152,7 +157,7 @@ where
         usages: Vec<KeyUsage>,
         handle: Handle,
     ) -> DomRoot<CryptoKey<D>> {
-        let crypto_key = reflect_dom_object(
+        let crypto_key = reflect_dom_object_with_wrap::<D, _, _>(
             cx,
             Box::new(CryptoKey::new_inherited(
                 key_type,
@@ -162,6 +167,7 @@ where
                 handle,
             )),
             global,
+            CryptoKeyWrap::<D>,
         );
 
         // Create and store a cached object of algorithm
@@ -241,7 +247,7 @@ where
 
 impl<D> Serializable<D> for CryptoKey<D>
 where
-    D: Equivalence,
+    D: Equivalence + DomTypes,
 {
     type Index = CryptoKeyIndex;
     type Data = SerializableCryptoKey;

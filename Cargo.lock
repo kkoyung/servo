@@ -9531,6 +9531,7 @@ dependencies = [
  "aes-gcm",
  "aes-kw",
  "argon2",
+ "aws-lc-rs",
  "base64ct",
  "cbc",
  "chacha20poly1305",

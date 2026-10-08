@@ -12,26 +12,33 @@
 use script_bindings::DomTypes;
 // use script_bindings::callback::{CallbackContainer, HasCallbackHolder, RootedCallback};
 // use script_bindings::error::{Error, Fallible};
-// use script_bindings::reflector::{DomGlobalGeneric, DomObject};
-// use script_bindings::tasks::TaskOnce;
-// use serde_core::Serialize;
-// use servo_base::generic_channel::GenericCallback;
+use script_bindings::reflector::{DomGlobalGeneric, DomObject};
+use script_bindings::tasks::TaskOnce;
+use serde_core::Serialize;
+use servo_base::generic_channel::GenericCallback;
 // use servo_url::MutableOrigin;
 
 use crate::cryptokey::CryptoKey;
-// use crate::subtlecrypto::SubtleCrypto;
+use crate::subtlecrypto::SubtleCrypto;
 
 // This trait enforces the equivalence of all local types with the types in DomTypes.
 trait_set::trait_set! {
     pub trait Equivalence = DomTypes<
         CryptoKey = CryptoKey<Self>,
-        SubtleCrypto = SubtleCrypto<Self>>;
+        SubtleCrypto = SubtleCrypto<Self>,
+        // General Bounds
+        GlobalScope: WebCryptoGlobalTrait<Self>>;
 
-    // pub trait WebCryptoPromise<D: DomTypes> =
-    //     WebCryptoPromiseCallbackTrait<D, SubtleCrypto<D>, ()>;
+    pub trait WebCryptoPromise<D: DomTypes> =
+        WebCryptoPromiseCallbackTrait<D, SubtleCrypto<D>, ()>;
 }
 
-// /// Trait for sending Promise callbacks
-// pub trait WebCryptoPromiseCallbackTrait<D: DomTypes, S, T: Serialize + 'static + Send> {
-//     fn callback_promise_dom_manipulation_task_source(&self, d: &S) -> GenericCallback<T>;
-// }
+/// Trait for sending Promise callbacks
+pub trait WebCryptoPromiseCallbackTrait<D: DomTypes, S, T: Serialize + 'static + Send> {
+    fn callback_promise_dom_manipulation_task_source(&self, d: &S) -> GenericCallback<T>;
+}
+
+pub trait WebCryptoGlobalTrait<D: DomTypes>: Sized + DomObject {
+    fn queue_crypto_task_source(&self, task: impl TaskOnce + 'static);
+    fn queue_dom_manipulation_task_source(&self, task: impl TaskOnce + 'static);
+}
