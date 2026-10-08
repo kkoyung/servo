@@ -2,6 +2,38 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
+// mod aes_cbc_operation;
+// mod aes_common;
+// mod aes_ctr_operation;
+// mod aes_gcm_operation;
+// mod aes_kw_operation;
+// mod aes_ocb_operation;
+// mod argon2_operation;
+// mod chacha20_poly1305_operation;
+// mod cshake_operation;
+// mod ec_common;
+// mod ecdh_operation;
+// mod ecdsa_operation;
+// mod ed25519_operation;
+// mod ed448_operation;
+// mod hkdf_operation;
+// mod hmac_operation;
+// mod hybrid_kem_operation;
+// mod kangarootwelve_operation;
+// mod kmac_operation;
+// mod ml_dsa_operation;
+// mod ml_kem_operation;
+// mod pbkdf2_operation;
+// mod rsa_common;
+// mod rsa_oaep_operation;
+// mod rsa_pss_operation;
+// mod rsassa_pkcs1_v1_5_operation;
+// mod sha3_operation;
+// mod sha_operation;
+// mod turboshake_operation;
+// mod x25519_operation;
+// mod x448_operation;
+
 use std::fmt::Display;
 use std::marker::PhantomData;
 use std::ptr;
@@ -64,6 +96,120 @@ use script_bindings::interfaces::HeapTracedPromiseHelpers;
 use script_bindings::reflector::DomGlobalGeneric;
 
 use crate::traits::Equivalence;
+
+// Named elliptic curves
+const NAMED_CURVE_P256: &str = "P-256";
+const NAMED_CURVE_P384: &str = "P-384";
+const NAMED_CURVE_P521: &str = "P-521";
+
+static SUPPORTED_CURVES: &[&str] = &[NAMED_CURVE_P256, NAMED_CURVE_P384, NAMED_CURVE_P521];
+
+#[derive(EnumString, VariantArray, IntoStaticStr, PartialEq, Clone, Copy, MallocSizeOf)]
+enum CryptoAlgorithm {
+    #[strum(serialize = "RSASSA-PKCS1-v1_5")]
+    RsassaPkcs1V1_5,
+    #[strum(serialize = "RSA-PSS")]
+    RsaPss,
+    #[strum(serialize = "RSA-OAEP")]
+    RsaOaep,
+    #[strum(serialize = "ECDSA")]
+    Ecdsa,
+    #[strum(serialize = "ECDH")]
+    Ecdh,
+    #[strum(serialize = "Ed25519")]
+    Ed25519,
+    #[strum(serialize = "X25519")]
+    X25519,
+    #[strum(serialize = "Ed448")]
+    Ed448,
+    #[strum(serialize = "X448")]
+    X448,
+    #[strum(serialize = "AES-CTR")]
+    AesCtr,
+    #[strum(serialize = "AES-CBC")]
+    AesCbc,
+    #[strum(serialize = "AES-GCM")]
+    AesGcm,
+    #[strum(serialize = "AES-KW")]
+    AesKw,
+    #[strum(serialize = "HMAC")]
+    Hmac,
+    #[strum(serialize = "SHA-1")]
+    Sha1,
+    #[strum(serialize = "SHA-256")]
+    Sha256,
+    #[strum(serialize = "SHA-384")]
+    Sha384,
+    #[strum(serialize = "SHA-512")]
+    Sha512,
+    #[strum(serialize = "HKDF")]
+    Hkdf,
+    #[strum(serialize = "PBKDF2")]
+    Pbkdf2,
+    #[strum(serialize = "ML-KEM-512")]
+    MlKem512,
+    #[strum(serialize = "ML-KEM-768")]
+    MlKem768,
+    #[strum(serialize = "ML-KEM-1024")]
+    MlKem1024,
+    #[strum(serialize = "MLKEM768-X25519")]
+    MlKem768X25519,
+    #[strum(serialize = "ML-DSA-44")]
+    MlDsa44,
+    #[strum(serialize = "ML-DSA-65")]
+    MlDsa65,
+    #[strum(serialize = "ML-DSA-87")]
+    MlDsa87,
+    #[strum(serialize = "AES-OCB")]
+    AesOcb,
+    #[strum(serialize = "ChaCha20-Poly1305")]
+    ChaCha20Poly1305,
+    #[strum(serialize = "SHA3-256")]
+    Sha3_256,
+    #[strum(serialize = "SHA3-384")]
+    Sha3_384,
+    #[strum(serialize = "SHA3-512")]
+    Sha3_512,
+    #[strum(serialize = "cSHAKE128")]
+    CShake128,
+    #[strum(serialize = "cSHAKE256")]
+    CShake256,
+    #[strum(serialize = "TurboSHAKE128")]
+    TurboShake128,
+    #[strum(serialize = "TurboSHAKE256")]
+    TurboShake256,
+    #[strum(serialize = "KT128")]
+    Kt128,
+    #[strum(serialize = "KT256")]
+    Kt256,
+    #[strum(serialize = "KMAC128")]
+    Kmac128,
+    #[strum(serialize = "KMAC256")]
+    Kmac256,
+    #[strum(serialize = "Argon2d")]
+    Argon2D,
+    #[strum(serialize = "Argon2i")]
+    Argon2I,
+    #[strum(serialize = "Argon2id")]
+    Argon2ID,
+}
+
+impl CryptoAlgorithm {
+    /// <https://w3c.github.io/webcrypto/#recognized-algorithm-name>
+    fn as_str(&self) -> &'static str {
+        (*self).into()
+    }
+
+    fn from_str_ignore_case(algorithm_name: &str) -> Fallible<CryptoAlgorithm> {
+        Self::VARIANTS
+            .iter()
+            .find(|algorithm| algorithm.as_str().eq_ignore_ascii_case(algorithm_name))
+            .cloned()
+            .ok_or(Error::NotSupported(Some(format!(
+                "Unsupported algorithm: {algorithm_name}"
+            ))))
+    }
+}
 
 /// <https://w3c.github.io/webcrypto/#subtlecrypto-interface>
 #[dom_struct]
