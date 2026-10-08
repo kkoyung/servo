@@ -125,7 +125,7 @@ pub struct CryptoKey<D: DomTypes> {
 
 impl<D> CryptoKey<D>
 where
-    D: Equivalence,
+    D: DomTypes + Equivalence,
 {
     fn new_inherited(
         key_type: KeyType,
@@ -246,7 +246,7 @@ where
 
 impl<D> Serializable<D> for CryptoKey<D>
 where
-    D: Equivalence,
+    D: DomTypes + Equivalence,
 {
     type Index = CryptoKeyIndex;
     type Data = SerializableCryptoKey;
