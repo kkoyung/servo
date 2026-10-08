@@ -39,14 +39,18 @@ pub(crate) mod codegen {
         // use script_bindings::root::{Dom, DomRoot, Root};
         use script_bindings::utils::DOMClass;
         // use script_bindings::weakref::WeakReferenceable;
-        //
+
+        use crate::cryptokey::CryptoKey;
         // use crate::subtlecrypto::SubtleCrypto;
-        // use crate::cryptokey::CryptoKey;
-        // use crate::traits::Equivalence;
+        use crate::traits::Equivalence;
+        include!(concat!(
+            env!("OUT_DIR"),
+            "/ConcreteBindings/CryptoKeyBinding.rs"
+        ));
         // include!(concat!(
         //     env!("OUT_DIR"),
-        //     "/ConcreteBindings/CryptoKeyBinding.rs"
+        //     "/ConcreteBindings/SubtleCryptoBinding.rs"
         // ));
-        // include!(concat!(env!("OUT_DIR"), "/ConcreteInheritTypes.rs"));
+        include!(concat!(env!("OUT_DIR"), "/ConcreteInheritTypes.rs"));
     }
 }

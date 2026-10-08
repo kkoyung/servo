@@ -87,7 +87,7 @@ pub(crate) enum Handle {
 
 /// <https://w3c.github.io/webcrypto/#cryptokey-interface>
 #[dom_struct]
-pub(crate) struct CryptoKey<D: DomTypes> {
+pub struct CryptoKey<D: DomTypes> {
     reflector_: Reflector,
 
     /// <https://w3c.github.io/webcrypto/#dfn-CryptoKey-slot-type>
@@ -148,7 +148,7 @@ where
         }
     }
 
-    pub(crate) fn new(
+    pub fn new(
         cx: &mut js::context::JSContext,
         global: &D::GlobalScope,
         key_type: KeyType,
@@ -216,7 +216,7 @@ where
 
 impl<D> CryptoKeyMethods<D> for CryptoKey<D>
 where
-    D: Equivalence,
+    D: Equivalence + DomTypes,
 {
     /// <https://w3c.github.io/webcrypto/#dom-cryptokey-type>
     fn Type(&self) -> KeyType {

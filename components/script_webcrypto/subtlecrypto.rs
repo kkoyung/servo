@@ -97,7 +97,7 @@ use script_bindings::reflector::DomGlobalGeneric;
 use crate::cryptokey::{CryptoKey, CryptoKeyOrCryptoKeyPair};
 use crate::traits::Equivalence;
 use crate::traits::WebCryptoGlobalTrait;
-use crate::traits::WebCryptoPromise;
+// use crate::traits::WebCryptoPromise;
 // use crate::dom::globalscope::GlobalScope;
 // use crate::dom::promise::{Promise, RootedPromise};
 
@@ -217,7 +217,7 @@ impl CryptoAlgorithm {
 
 /// <https://w3c.github.io/webcrypto/#subtlecrypto-interface>
 #[dom_struct]
-pub(crate) struct SubtleCrypto<D: DomTypes> {
+pub struct SubtleCrypto<D: DomTypes> {
     reflector_: Reflector,
     #[no_trace = "PhantomData does not exist"]
     phantom: PhantomData<D>,
@@ -226,9 +226,6 @@ pub(crate) struct SubtleCrypto<D: DomTypes> {
 impl<D> SubtleCrypto<D>
 where
     D: Equivalence + DomTypes,
-    <D::Promise as PromiseHelpers<D>>::StackRoot: WebCryptoPromise<D>,
-    <D::Promise as PromiseHelpers<D>>::HeapTraced: HeapTracedPromiseHelpers<D> + Send,
-    Self: DomGlobalGeneric<D>,
 {
     fn new_inherited() -> SubtleCrypto<D> {
         SubtleCrypto {
@@ -237,28 +234,37 @@ where
         }
     }
 
-    pub(crate) fn new(cx: &mut JSContext, global: &D::GlobalScope) -> DomRoot<SubtleCrypto<D>> {
+    pub fn new(cx: &mut JSContext, global: &D::GlobalScope) -> DomRoot<SubtleCrypto<D>> {
         reflect_dom_object_with_wrap::<D, _, _>(cx, Box::new(SubtleCrypto::new_inherited()), global, SubtleCryptoWrap::<D>)
     }
+}
 
+impl<D> SubtleCrypto<D>
+where
+    D: Equivalence + DomTypes,
+    // <D::Promise as PromiseHelpers<D>>::StackRoot: WebCryptoPromise<D>,
+    // <D::Promise as PromiseHelpers<D>>::HeapTraced: HeapTracedPromiseHelpers<D> + Send,
+    <D::Promise as PromiseHelpers<D>>::HeapTraced: HeapTracedPromiseHelpers<D>,
+    Self: DomGlobalGeneric<D>,
+{
     /// Queue a global task on the crypto task source, given realm's global object, to resolve
     /// promise with the result of creating an ArrayBuffer in realm, containing data. If it fails
     /// to create buffer source, reject promise with a JSFailedError.
     fn resolve_promise_with_data(&self, promise: &<D::Promise as PromiseHelpers<D>>::StackRoot, data: Zeroizing<Vec<u8>>) {
         let trusted_promise = promise.to_traced();
-        self.global_from_reflector()
-            .queue_crypto_task_source(task!(resolve_data: move |cx| {
-                let promise = trusted_promise.root(cx);
-
-                rooted!(&in(cx) let mut array_buffer_ptr = ptr::null_mut::<JSObject>());
-                match create_buffer_source::<ArrayBufferU8>(cx,
-                    &data,
-                    array_buffer_ptr.handle_mut(),
-                ) {
-                    Ok(_) => promise.resolve_native(cx, &*array_buffer_ptr),
-                    Err(_) => promise.reject_error(cx, Error::JSFailed),
-                }
-            }));
+        // self.global_from_reflector()
+        //     .queue_crypto_task_source(task!(resolve_data: move |cx| {
+        //         let promise = trusted_promise.root(cx);
+        //
+        //         rooted!(&in(cx) let mut array_buffer_ptr = ptr::null_mut::<JSObject>());
+        //         match create_buffer_source::<ArrayBufferU8>(cx,
+        //             &data,
+        //             array_buffer_ptr.handle_mut(),
+        //         ) {
+        //             Ok(_) => promise.resolve_native(cx, &*array_buffer_ptr),
+        //             Err(_) => promise.reject_error(cx, Error::JSFailed),
+        //         }
+        //     }));
     }
 
     // /// Queue a global task on the crypto task source, given realm's global object, to resolve
@@ -355,11 +361,11 @@ where
     /// promise with an error.
     fn reject_promise_with_error(&self, promise: &<D::Promise as PromiseHelpers<D>>::StackRoot, error: Error) {
         let trusted_promise = promise.to_traced();
-        self.global_from_reflector()
-            .queue_crypto_task_source(task!(reject_error: move |cx| {
-                let promise = trusted_promise.root(cx);
-                promise.reject_error(cx, error);
-            }));
+        // self.global_from_reflector()
+        //     .queue_crypto_task_source(task!(reject_error: move |cx| {
+        //         let promise = trusted_promise.root(cx);
+        //         promise.reject_error(cx, error);
+        //     }));
     }
 
     // /// Queue a global task on the crypto task source, given realm's global object, to resolve
@@ -400,8 +406,9 @@ where
 impl<D> SubtleCryptoMethods<D> for SubtleCrypto<D>
 where
     D: Equivalence + DomTypes,
-    <D::Promise as PromiseHelpers<D>>::StackRoot: WebCryptoPromise<D>,
-    <D::Promise as PromiseHelpers<D>>::HeapTraced: HeapTracedPromiseHelpers<D> + Send,
+    // <D::Promise as PromiseHelpers<D>>::StackRoot: WebCryptoPromise<D>,
+    // <D::Promise as PromiseHelpers<D>>::HeapTraced: HeapTracedPromiseHelpers<D> + Send,
+    <D::Promise as PromiseHelpers<D>>::HeapTraced: HeapTracedPromiseHelpers<D>,
     Self: DomGlobalGeneric<D>,
 {
     // /// <https://w3c.github.io/webcrypto/#SubtleCrypto-method-encrypt>
@@ -775,32 +782,32 @@ where
         // Step 7. Return promise and perform the remaining steps in parallel.
         let this = Trusted::new(self);
         let trusted_promise = promise.to_traced();
-        self.global_from_reflector()
-            .queue_dom_manipulation_task_source(task!(digest_: move |cx| {
-                let subtle = this.root();
-                let promise = &trusted_promise.root(cx);
-
-                // Step 8. If the following steps or referenced procedures say to throw an error,
-                // queue a global task on the crypto task source, given realm's global object, to
-                // reject promise with the returned error; and then terminate the algorithm.
-
-                // Step 9. Let digest be the result of performing the digest operation specified by
-                // normalizedAlgorithm using algorithm, with data as message.
-                let digest = match normalized_algorithm.digest(&data) {
-                    Ok(digest) => digest,
-                    Err(error) => {
-                        subtle.reject_promise_with_error(promise, error);
-                        return;
-                    }
-                };
-
-                // Step 10. Queue a global task on the crypto task source, given realm's global
-                // object, to perform the remaining steps.
-                // Step 11. Let result be the result of creating an ArrayBuffer in realm,
-                // containing digest.
-                // Step 12. Resolve promise with result.
-                subtle.resolve_promise_with_data(promise, digest.into());
-            }));
+        // self.global_from_reflector()
+        //     .queue_dom_manipulation_task_source(task!(digest_: move |cx| {
+        //         let subtle = this.root();
+        //         let promise = &trusted_promise.root(cx);
+        //
+        //         // Step 8. If the following steps or referenced procedures say to throw an error,
+        //         // queue a global task on the crypto task source, given realm's global object, to
+        //         // reject promise with the returned error; and then terminate the algorithm.
+        //
+        //         // Step 9. Let digest be the result of performing the digest operation specified by
+        //         // normalizedAlgorithm using algorithm, with data as message.
+        //         let digest = match normalized_algorithm.digest(&data) {
+        //             Ok(digest) => digest,
+        //             Err(error) => {
+        //                 subtle.reject_promise_with_error(promise, error);
+        //                 return;
+        //             }
+        //         };
+        //
+        //         // Step 10. Queue a global task on the crypto task source, given realm's global
+        //         // object, to perform the remaining steps.
+        //         // Step 11. Let result be the result of creating an ArrayBuffer in realm,
+        //         // containing digest.
+        //         // Step 12. Resolve promise with result.
+        //         subtle.resolve_promise_with_data(promise, digest.into());
+        //     }));
         promise
     }
 

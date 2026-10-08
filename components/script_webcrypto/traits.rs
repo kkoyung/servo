@@ -7,7 +7,7 @@
 // use std::sync::Arc;
 //
 // use euclid::default::Size2D;
-// use js::context::NoGC;
+use js::context::JSContext;
 // use pixels::Snapshot;
 use script_bindings::DomTypes;
 // use script_bindings::callback::{CallbackContainer, HasCallbackHolder, RootedCallback};
@@ -29,8 +29,9 @@ trait_set::trait_set! {
         // General Bounds
         GlobalScope: WebCryptoGlobalTrait<Self>>;
 
-    pub trait WebCryptoPromise<D: DomTypes> =
-        WebCryptoPromiseCallbackTrait<D, SubtleCrypto<D>, ()>;
+    // pub trait WebCryptoPromise<D: DomTypes>;
+    // pub trait WebCryptoPromise<D: DomTypes> =
+    //     WebCryptoPromiseCallbackTrait<D, SubtleCrypto<D>, ()>;
 }
 
 /// Trait for sending Promise callbacks
@@ -42,3 +43,7 @@ pub trait WebCryptoGlobalTrait<D: DomTypes>: Sized + DomObject {
     fn queue_crypto_task_source(&self, task: impl TaskOnce + 'static);
     fn queue_dom_manipulation_task_source(&self, task: impl TaskOnce + 'static);
 }
+
+// pub trait SubtleCryptoTrait<D: DomTypes> {
+//     fn new(cx: &mut JSContext, global: &D::GlobalScope) -> Self;
+// }
