@@ -14,52 +14,52 @@
 
 [SecureContext,Exposed=(Window,Worker),Pref="dom_crypto_subtle_enabled"]
 interface SubtleCrypto {
-  Promise<any> encrypt(AlgorithmIdentifier algorithm,
-                       CryptoKey key,
-                       BufferSource data);
-  Promise<any> decrypt(AlgorithmIdentifier algorithm,
-                       CryptoKey key,
-                       BufferSource data);
-  Promise<any> sign(AlgorithmIdentifier algorithm,
-                    CryptoKey key,
-                    BufferSource data);
-  Promise<any> verify(AlgorithmIdentifier algorithm,
-                      CryptoKey key,
-                      BufferSource signature,
-                      BufferSource data);
-  Promise<any> digest(AlgorithmIdentifier algorithm,
-                      BufferSource data);
-
-  Promise<any> generateKey(AlgorithmIdentifier algorithm,
-                          boolean extractable,
-                          sequence<KeyUsage> keyUsages );
-  Promise<any> deriveKey(AlgorithmIdentifier algorithm,
-                         CryptoKey baseKey,
-                         AlgorithmIdentifier derivedKeyType,
-                         boolean extractable,
-                         sequence<KeyUsage> keyUsages );
-  Promise<ArrayBuffer> deriveBits(AlgorithmIdentifier algorithm,
-                          CryptoKey baseKey,
-                          optional [EnforceRange] unsigned long? length = null);
-
-  Promise<CryptoKey> importKey(KeyFormat format,
-                         (BufferSource or JsonWebKey) keyData,
-                         AlgorithmIdentifier algorithm,
-                         boolean extractable,
-                         sequence<KeyUsage> keyUsages );
-  Promise<any> exportKey(KeyFormat format, CryptoKey key);
-
-  Promise<any> wrapKey(KeyFormat format,
-                       CryptoKey key,
-                       CryptoKey wrappingKey,
-                       AlgorithmIdentifier wrapAlgorithm);
-  Promise<CryptoKey> unwrapKey(KeyFormat format,
-                         BufferSource wrappedKey,
-                         CryptoKey unwrappingKey,
-                         AlgorithmIdentifier unwrapAlgorithm,
-                         AlgorithmIdentifier unwrappedKeyAlgorithm,
-                         boolean extractable,
-                         sequence<KeyUsage> keyUsages );
+//   Promise<any> encrypt(AlgorithmIdentifier algorithm,
+//                        CryptoKey key,
+//                        BufferSource data);
+//   Promise<any> decrypt(AlgorithmIdentifier algorithm,
+//                        CryptoKey key,
+//                        BufferSource data);
+//   Promise<any> sign(AlgorithmIdentifier algorithm,
+//                     CryptoKey key,
+//                     BufferSource data);
+//   Promise<any> verify(AlgorithmIdentifier algorithm,
+//                       CryptoKey key,
+//                       BufferSource signature,
+//                       BufferSource data);
+//   Promise<any> digest(AlgorithmIdentifier algorithm,
+//                       BufferSource data);
+//
+//   Promise<any> generateKey(AlgorithmIdentifier algorithm,
+//                           boolean extractable,
+//                           sequence<KeyUsage> keyUsages );
+//   Promise<any> deriveKey(AlgorithmIdentifier algorithm,
+//                          CryptoKey baseKey,
+//                          AlgorithmIdentifier derivedKeyType,
+//                          boolean extractable,
+//                          sequence<KeyUsage> keyUsages );
+//   Promise<ArrayBuffer> deriveBits(AlgorithmIdentifier algorithm,
+//                           CryptoKey baseKey,
+//                           optional [EnforceRange] unsigned long? length = null);
+// 
+//   Promise<CryptoKey> importKey(KeyFormat format,
+//                          (BufferSource or JsonWebKey) keyData,
+//                          AlgorithmIdentifier algorithm,
+//                          boolean extractable,
+//                          sequence<KeyUsage> keyUsages );
+//   Promise<any> exportKey(KeyFormat format, CryptoKey key);
+//
+//   Promise<any> wrapKey(KeyFormat format,
+//                        CryptoKey key,
+//                        CryptoKey wrappingKey,
+//                        AlgorithmIdentifier wrapAlgorithm);
+//   Promise<CryptoKey> unwrapKey(KeyFormat format,
+//                          BufferSource wrappedKey,
+//                          CryptoKey unwrappingKey,
+//                          AlgorithmIdentifier unwrapAlgorithm,
+//                          AlgorithmIdentifier unwrappedKeyAlgorithm,
+//                          boolean extractable,
+//                          sequence<KeyUsage> keyUsages );
 };
 
 // https://w3c.github.io/webcrypto/#big-integer
@@ -245,43 +245,43 @@ dictionary JsonWebKey {
 // https://wicg.github.io/webcrypto-modern-algos/#partial-subtlecrypto-interface
 [SecureContext,Exposed=(Window,Worker)]
 partial interface SubtleCrypto {
-  Promise<EncapsulatedKey> encapsulateKey(
-    AlgorithmIdentifier encapsulationAlgorithm,
-    CryptoKey encapsulationKey,
-    AlgorithmIdentifier sharedKeyAlgorithm,
-    boolean extractable,
-    sequence<KeyUsage> keyUsages
-  );
-  Promise<EncapsulatedBits> encapsulateBits(
-    AlgorithmIdentifier encapsulationAlgorithm,
-    CryptoKey encapsulationKey
-  );
-
-  Promise<CryptoKey> decapsulateKey(
-    AlgorithmIdentifier decapsulationAlgorithm,
-    CryptoKey decapsulationKey,
-    BufferSource ciphertext,
-    AlgorithmIdentifier sharedKeyAlgorithm,
-    boolean extractable,
-    sequence<KeyUsage> keyUsages
-  );
-  Promise<ArrayBuffer> decapsulateBits(
-    AlgorithmIdentifier decapsulationAlgorithm,
-    CryptoKey decapsulationKey,
-    BufferSource ciphertext
-  );
-
-  Promise<CryptoKey> getPublicKey(
-    CryptoKey key,
-    sequence<KeyUsage> keyUsages
-  );
-
+//   Promise<EncapsulatedKey> encapsulateKey(
+//     AlgorithmIdentifier encapsulationAlgorithm,
+//     CryptoKey encapsulationKey,
+//     AlgorithmIdentifier sharedKeyAlgorithm,
+//     boolean extractable,
+//     sequence<KeyUsage> keyUsages
+//   );
+//   Promise<EncapsulatedBits> encapsulateBits(
+//     AlgorithmIdentifier encapsulationAlgorithm,
+//     CryptoKey encapsulationKey
+//   );
+//
+//   Promise<CryptoKey> decapsulateKey(
+//     AlgorithmIdentifier decapsulationAlgorithm,
+//     CryptoKey decapsulationKey,
+//     BufferSource ciphertext,
+//     AlgorithmIdentifier sharedKeyAlgorithm,
+//     boolean extractable,
+//     sequence<KeyUsage> keyUsages
+//   );
+//   Promise<ArrayBuffer> decapsulateBits(
+//     AlgorithmIdentifier decapsulationAlgorithm,
+//     CryptoKey decapsulationKey,
+//     BufferSource ciphertext
+//   );
+//
+//   Promise<CryptoKey> getPublicKey(
+//     CryptoKey key,
+//     sequence<KeyUsage> keyUsages
+//   );
+//
   static boolean supports(DOMString operation,
                    AlgorithmIdentifier algorithm,
                    optional [EnforceRange] unsigned long? length = null);
-  static boolean supports(DOMString operation,
-                   AlgorithmIdentifier algorithm,
-                   AlgorithmIdentifier additionalAlgorithm);
+//   static boolean supports(DOMString operation,
+//                    AlgorithmIdentifier algorithm,
+//                    AlgorithmIdentifier additionalAlgorithm);
 };
 
 // https://wicg.github.io/webcrypto-modern-algos/#subtlecrypto-interface-keyformat

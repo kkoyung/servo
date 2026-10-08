@@ -11,10 +11,10 @@ enum KeyType { "public", "private", "secret" };
 
 [SecureContext, Exposed=(Window,Worker), Serializable, Pref="dom_crypto_subtle_enabled"]
 interface CryptoKey {
-  readonly attribute KeyType type;
-  readonly attribute boolean extractable;
-  readonly attribute object algorithm;
-  readonly attribute object usages;
+   readonly attribute KeyType type;
+   readonly attribute boolean extractable;
+   readonly attribute object algorithm;
+   readonly attribute object usages;
 };
 
 // https://w3c.github.io/webcrypto/#keypair

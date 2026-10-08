@@ -3,5 +3,9 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 pub(crate) mod crypto;
-pub(crate) mod cryptokey;
-pub(crate) mod subtlecrypto;
+pub(crate) mod cryptokey {
+    pub(crate) type CryptoKey = script_webcrypto::cryptokey::CryptoKey<crate::DomTypeHolder>;
+}
+pub(crate) mod subtlecrypto {
+    pub(crate) type SubtleCrypto = script_webcrypto::subtlecrypto::SubtleCrypto<crate::DomTypeHolder>;
+}
