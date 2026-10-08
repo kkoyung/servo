@@ -8062,10 +8062,10 @@ class CGStructuredCloneMarker(CGThing):
     def define(self) -> str:
         ifaceName = self.descriptor.interface.identifier.name
         return f"""
-impl script_bindings::structuredclone::MarkedAs{self.marker}InIdl for {ifaceName} {{
+impl<D: Equivalence> script_bindings::structuredclone::MarkedAs{self.marker}InIdl for {ifaceName}<D> {{
     #[allow(path_statements)]
     fn assert_{self.marker_lower}() {{
-        crate::dom::bindings::{self.marker_lower}::assert_{self.marker_lower}::<Self>;
+        crate::dom::bindings::{self.marker_lower}::assert_{self.marker_lower}::<Self, D>;
     }}
 }}
 """
