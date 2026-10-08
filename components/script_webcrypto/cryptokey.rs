@@ -32,6 +32,11 @@ use script_bindings::root::DomRoot;
 
 use crate::traits::Equivalence;
 
+pub(crate) enum CryptoKeyOrCryptoKeyPair<D: DomTypes> {
+    CryptoKey(DomRoot<CryptoKey<D>>),
+    CryptoKeyPair(CryptoKeyPair<D>),
+}
+
 /// The underlying cryptographic data this key represents.
 ///
 /// Please make sure the inner types for secret variants implement the `zeroize::ZeroizeOnDrop`
