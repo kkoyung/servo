@@ -96,6 +96,7 @@ use script_bindings::interfaces::HeapTracedPromiseHelpers;
 use script_bindings::interfaces::ThreadTrustedPromiseHelpers;
 use script_bindings::reflector::DomGlobalGeneric;
 
+use crate::cryptokey::CryptoKey;
 use crate::traits::Equivalence;
 use crate::traits::WebCryptoGlobalTrait;
 
@@ -2693,934 +2694,934 @@ impl From<&Algorithm> for SerializableAlgorithm {
     }
 }
 
-// /// <https://w3c.github.io/webcrypto/#dfn-KeyAlgorithm>
-// #[derive(Clone, MallocSizeOf)]
-// pub(crate) struct KeyAlgorithm {
-//     /// <https://w3c.github.io/webcrypto/#dom-keyalgorithm-name>
-//     name: CryptoAlgorithm,
-// }
-//
-// impl ToJSValConvertible for KeyAlgorithm {
-//     #[expect(unsafe_code)]
-//     fn to_jsval(&self, cx: &mut JSContext, mut rval: MutableHandleValue) {
-//         rooted!(&in(cx) let mut object = unsafe { JS_NewObject(cx, ptr::null()) });
-//
-//         rooted!(&in(cx) let mut name_js = UndefinedValue());
-//         self.name.as_str().to_jsval(cx, name_js.handle_mut());
-//         set_dictionary_property(cx, object.handle(), c"name", name_js.handle())
-//             .expect("Failed to set name property of KeyAlgorithm");
-//
-//         rval.set(ObjectOrNullValue(object.get()));
-//     }
-// }
-//
-// impl TryFrom<SerializableKeyAlgorithm> for KeyAlgorithm {
-//     type Error = ();
-//
-//     fn try_from(value: SerializableKeyAlgorithm) -> Result<Self, Self::Error> {
-//         Ok(KeyAlgorithm {
-//             name: CryptoAlgorithm::from_str(&value.name).map_err(|_| ())?,
-//         })
-//     }
-// }
-//
-// impl From<&KeyAlgorithm> for SerializableKeyAlgorithm {
-//     fn from(value: &KeyAlgorithm) -> Self {
-//         SerializableKeyAlgorithm {
-//             name: value.name.as_str().into(),
-//         }
-//     }
-// }
-//
-// /// <https://w3c.github.io/webcrypto/#dfn-RsaHashedKeyGenParams>
-// #[derive(Clone, MallocSizeOf)]
-// pub(crate) struct RsaHashedKeyGenParams {
-//     /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
-//     name: CryptoAlgorithm,
-//
-//     /// <https://w3c.github.io/webcrypto/#dfn-RsaKeyGenParams-modulusLength>
-//     modulus_length: u32,
-//
-//     /// <https://w3c.github.io/webcrypto/#dfn-RsaKeyGenParams-publicExponent>
-//     public_exponent: Vec<u8>,
-//
-//     /// <https://w3c.github.io/webcrypto/#dfn-RsaHashedKeyGenParams-hash>
-//     hash: DigestAlgorithm,
-// }
-//
-// impl<'a> TryFromWithCxAndName<HandleObject<'a>> for RsaHashedKeyGenParams {
-//     type Error = Error;
-//
-//     fn try_from_with_cx_and_name(
-//         cx: &mut JSContext,
-//         algorithm_name: CryptoAlgorithm,
-//         object: HandleObject,
-//     ) -> Result<Self, Self::Error> {
-//         let hash = get_required_parameter(cx, object, c"hash", ())?;
-//
-//         Ok(RsaHashedKeyGenParams {
-//             name: algorithm_name,
-//             modulus_length: get_required_parameter(
-//                 cx,
-//                 object,
-//                 c"modulusLength",
-//                 ConversionBehavior::EnforceRange,
-//             )?,
-//             public_exponent: get_required_parameter_in_box::<HeapUint8Array>(
-//                 cx,
-//                 object,
-//                 c"publicExponent",
-//                 (),
-//             )?
-//             .to_vec()
-//             .unwrap_or_default(),
-//             hash: normalize_algorithm::<DigestOperation>(cx, &hash)?,
-//         })
-//     }
-// }
-//
-// impl RsaHashedKeyGenParams {
-//     /// <https://w3c.github.io/webcrypto/#dfn-validate-rsa-key-generation-parameters>
-//     fn validate_parameters(&self) -> Result<(), Error> {
-//         // Step 1. Let modulusLength be the modulusLength member of normalizedAlgorithm.
-//         let modulus_length = self.modulus_length;
-//
-//         // Step 2. Let publicExponent be the result of converting the publicExponent member of
-//         // normalizedAlgorithm to a non-negative integer.
-//         let public_exponent = &self.public_exponent;
-//
-//         // Step 3. If modulusLength is less than 4, or if publicExponent is less than 3, is even, or
-//         // is greater than or equal to 2^modulusLength - 1, then throw an OperationError.
-//         let is_less_than_3 = |public_exponent: &[u8]| {
-//             let mut byte_iterator = public_exponent.iter().skip_while(|byte| **byte == 0);
-//             byte_iterator.next().is_none_or(|byte| *byte < 3) && byte_iterator.count() == 0
-//         };
-//         let is_even =
-//             |public_exponent: &[u8]| public_exponent.last().is_none_or(|byte| byte % 2 == 0);
-//         let upper_bound_first_byte = (1u8 << (modulus_length % 8)).wrapping_sub(1);
-//         let upper_bound_length_in_bytes = modulus_length.div_ceil(8) as usize;
-//         let is_greater_than_upper_bound = |public_exponent: &[u8]| {
-//             let mut byte_iterator = public_exponent.iter().skip_while(|byte| **byte == 0);
-//             byte_iterator
-//                 .next()
-//                 .is_some_and(|byte| *byte > upper_bound_first_byte) &&
-//                 byte_iterator.count() + 1 >= upper_bound_length_in_bytes
-//         };
-//         let is_equal_to_upper_bound = |public_exponent: &[u8]| {
-//             let mut byte_iterator = public_exponent.iter().skip_while(|byte| **byte == 0);
-//             byte_iterator
-//                 .next()
-//                 .is_some_and(|byte| *byte == upper_bound_first_byte) &&
-//                 byte_iterator.clone().all(|byte| *byte == 255) &&
-//                 byte_iterator.count() + 1 == upper_bound_length_in_bytes
-//         };
-//         if modulus_length < 4 ||
-//             is_less_than_3(public_exponent) ||
-//             is_even(public_exponent) ||
-//             is_greater_than_upper_bound(public_exponent) ||
-//             is_equal_to_upper_bound(public_exponent)
-//         {
-//             return Err(Error::Operation(Some(
-//                 "Invalid RsaHashedKeyGenParams".into(),
-//             )));
-//         }
-//
-//         Ok(())
-//     }
-// }
-//
-// /// <https://w3c.github.io/webcrypto/#dfn-RsaHashedKeyAlgorithm>
-// #[derive(Clone, MallocSizeOf)]
-// pub(crate) struct RsaHashedKeyAlgorithm {
-//     /// <https://w3c.github.io/webcrypto/#dom-keyalgorithm-name>
-//     name: CryptoAlgorithm,
-//
-//     /// <https://w3c.github.io/webcrypto/#dfn-RsaKeyAlgorithm-modulusLength>
-//     modulus_length: u32,
-//
-//     /// <https://w3c.github.io/webcrypto/#dfn-RsaKeyAlgorithm-publicExponent>
-//     public_exponent: Vec<u8>,
-//
-//     /// <https://w3c.github.io/webcrypto/#dfn-RsaHashedKeyAlgorithm-hash>
-//     hash: DigestAlgorithm,
-// }
-//
-// impl ToJSValConvertible for RsaHashedKeyAlgorithm {
-//     #[expect(unsafe_code)]
-//     fn to_jsval(&self, cx: &mut JSContext, mut rval: MutableHandleValue) {
-//         rooted!(&in(cx) let mut object = unsafe { JS_NewObject(cx, ptr::null()) });
-//
-//         rooted!(&in(cx) let mut name_js = UndefinedValue());
-//         self.name.as_str().to_jsval(cx, name_js.handle_mut());
-//         set_dictionary_property(cx, object.handle(), c"name", name_js.handle())
-//             .expect("Failed to set name property of RsaHashedKeyAlgorithm");
-//
-//         rooted!(&in(cx) let mut modulus_length_js = UndefinedValue());
-//         self.modulus_length
-//             .to_jsval(cx, modulus_length_js.handle_mut());
-//         set_dictionary_property(
-//             cx,
-//             object.handle(),
-//             c"modulusLength",
-//             modulus_length_js.handle(),
-//         )
-//         .expect("Failed to set modulusLength property of RsaHashedKeyAlgorithm");
-//
-//         rooted!(&in(cx) let mut public_exponent_js = UndefinedValue());
-//         rooted!(&in(cx) let mut public_exponent_js_object = ptr::null_mut::<JSObject>());
-//         let public_exponent = create_buffer_source::<ArrayBufferU8>(
-//             cx,
-//             &self.public_exponent,
-//             public_exponent_js_object.handle_mut(),
-//         )
-//         .expect("Failed to convert publicExponent to Uint8Array");
-//         public_exponent.to_jsval(cx, public_exponent_js.handle_mut());
-//         set_dictionary_property(
-//             cx,
-//             object.handle(),
-//             c"publicExponent",
-//             public_exponent_js.handle(),
-//         )
-//         .expect("Failed to set publicExponent property of RsaHashedKeyAlgorithm");
-//
-//         rooted!(&in(cx) let mut hash_js = UndefinedValue());
-//         let hash = KeyAlgorithm {
-//             name: self.hash.name(),
-//         };
-//         hash.to_jsval(cx, hash_js.handle_mut());
-//         set_dictionary_property(cx, object.handle(), c"hash", hash_js.handle())
-//             .expect("Failed to set hash property of RsaHashedKeyAlgorithm");
-//
-//         rval.set(ObjectOrNullValue(object.get()));
-//     }
-// }
-//
-// impl TryFrom<SerializableRsaHashedKeyAlgorithm> for RsaHashedKeyAlgorithm {
-//     type Error = ();
-//
-//     fn try_from(value: SerializableRsaHashedKeyAlgorithm) -> Result<Self, Self::Error> {
-//         Ok(RsaHashedKeyAlgorithm {
-//             name: CryptoAlgorithm::from_str(&value.name).map_err(|_| ())?,
-//             modulus_length: value.modulus_length,
-//             public_exponent: value.public_exponent,
-//             hash: value.hash.try_into()?,
-//         })
-//     }
-// }
-//
-// impl From<&RsaHashedKeyAlgorithm> for SerializableRsaHashedKeyAlgorithm {
-//     fn from(value: &RsaHashedKeyAlgorithm) -> Self {
-//         SerializableRsaHashedKeyAlgorithm {
-//             name: value.name.as_str().into(),
-//             modulus_length: value.modulus_length,
-//             public_exponent: value.public_exponent.clone(),
-//             hash: (&value.hash).into(),
-//         }
-//     }
-// }
-//
-// /// <https://w3c.github.io/webcrypto/#dfn-RsaHashedImportParams>
-// #[derive(Clone, MallocSizeOf)]
-// struct RsaHashedImportParams {
-//     /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
-//     name: CryptoAlgorithm,
-//
-//     /// <https://w3c.github.io/webcrypto/#dfn-RsaHashedImportParams-hash>
-//     hash: DigestAlgorithm,
-// }
-//
-// impl<'a> TryFromWithCxAndName<HandleObject<'a>> for RsaHashedImportParams {
-//     type Error = Error;
-//
-//     fn try_from_with_cx_and_name(
-//         cx: &mut JSContext,
-//         algorithm_name: CryptoAlgorithm,
-//         object: HandleObject,
-//     ) -> Result<Self, Self::Error> {
-//         let hash = get_required_parameter(cx, object, c"hash", ())?;
-//
-//         Ok(RsaHashedImportParams {
-//             name: algorithm_name,
-//             hash: normalize_algorithm::<DigestOperation>(cx, &hash)?,
-//         })
-//     }
-// }
-//
-// /// <https://w3c.github.io/webcrypto/#dfn-RsaPssParams>
-// #[derive(Clone, MallocSizeOf)]
-// struct RsaPssParams {
-//     /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
-//     name: CryptoAlgorithm,
-//
-//     /// <https://w3c.github.io/webcrypto/#dfn-RsaPssParams-saltLength>
-//     salt_length: u32,
-// }
-//
-// impl<'a> TryFromWithCxAndName<HandleObject<'a>> for RsaPssParams {
-//     type Error = Error;
-//
-//     fn try_from_with_cx_and_name(
-//         cx: &mut JSContext,
-//         algorithm_name: CryptoAlgorithm,
-//         object: HandleObject,
-//     ) -> Result<Self, Self::Error> {
-//         Ok(RsaPssParams {
-//             name: algorithm_name,
-//             salt_length: get_required_parameter(
-//                 cx,
-//                 object,
-//                 c"saltLength",
-//                 ConversionBehavior::EnforceRange,
-//             )?,
-//         })
-//     }
-// }
-//
-// /// <https://w3c.github.io/webcrypto/#dfn-RsaOaepParams>
-// #[derive(Clone, MallocSizeOf)]
-// struct RsaOaepParams {
-//     /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
-//     name: CryptoAlgorithm,
-//
-//     /// <https://w3c.github.io/webcrypto/#dfn-RsaOaepParams-label>
-//     label: Option<Vec<u8>>,
-// }
-//
-// impl<'a> TryFromWithCxAndName<HandleObject<'a>> for RsaOaepParams {
-//     type Error = Error;
-//
-//     fn try_from_with_cx_and_name(
-//         cx: &mut JSContext,
-//         algorithm_name: CryptoAlgorithm,
-//         object: HandleObject<'a>,
-//     ) -> Result<Self, Self::Error> {
-//         Ok(RsaOaepParams {
-//             name: algorithm_name,
-//             label: get_optional_buffer_source(cx, object, c"label")?,
-//         })
-//     }
-// }
-//
-// /// <https://w3c.github.io/webcrypto/#dfn-EcdsaParams>
-// #[derive(Clone, MallocSizeOf)]
-// struct EcdsaParams {
-//     /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
-//     name: CryptoAlgorithm,
-//
-//     /// <https://w3c.github.io/webcrypto/#dfn-EcdsaParams-hash>
-//     hash: DigestAlgorithm,
-// }
-//
-// impl<'a> TryFromWithCxAndName<HandleObject<'a>> for EcdsaParams {
-//     type Error = Error;
-//
-//     fn try_from_with_cx_and_name(
-//         cx: &mut JSContext,
-//         algorithm_name: CryptoAlgorithm,
-//         object: HandleObject<'a>,
-//     ) -> Result<Self, Self::Error> {
-//         let hash = get_required_parameter(cx, object, c"hash", ())?;
-//
-//         Ok(EcdsaParams {
-//             name: algorithm_name,
-//             hash: normalize_algorithm::<DigestOperation>(cx, &hash)?,
-//         })
-//     }
-// }
-//
-// /// <https://w3c.github.io/webcrypto/#dfn-EcKeyGenParams>
-// #[derive(Clone, MallocSizeOf)]
-// struct EcKeyGenParams {
-//     /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
-//     name: CryptoAlgorithm,
-//
-//     /// <https://w3c.github.io/webcrypto/#dfn-EcKeyGenParams-namedCurve>
-//     named_curve: String,
-// }
-//
-// impl<'a> TryFromWithCxAndName<HandleObject<'a>> for EcKeyGenParams {
-//     type Error = Error;
-//
-//     fn try_from_with_cx_and_name(
-//         cx: &mut JSContext,
-//         algorithm_name: CryptoAlgorithm,
-//         object: HandleObject<'a>,
-//     ) -> Result<Self, Self::Error> {
-//         Ok(EcKeyGenParams {
-//             name: algorithm_name,
-//             named_curve: String::from(get_required_parameter::<DOMString>(
-//                 cx,
-//                 object,
-//                 c"namedCurve",
-//                 StringificationBehavior::Default,
-//             )?),
-//         })
-//     }
-// }
-//
-// /// <https://w3c.github.io/webcrypto/#dfn-EcKeyAlgorithm>
-// #[derive(Clone, MallocSizeOf)]
-// pub(crate) struct EcKeyAlgorithm {
-//     /// <https://w3c.github.io/webcrypto/#dom-keyalgorithm-name>
-//     name: CryptoAlgorithm,
-//
-//     /// <https://w3c.github.io/webcrypto/#dfn-EcKeyAlgorithm-namedCurve>
-//     named_curve: String,
-// }
-//
-// impl ToJSValConvertible for EcKeyAlgorithm {
-//     #[expect(unsafe_code)]
-//     fn to_jsval(&self, cx: &mut JSContext, mut rval: MutableHandleValue) {
-//         rooted!(&in(cx) let mut object = unsafe { JS_NewObject(cx, ptr::null()) });
-//
-//         rooted!(&in(cx) let mut name_js = UndefinedValue());
-//         self.name.as_str().to_jsval(cx, name_js.handle_mut());
-//         set_dictionary_property(cx, object.handle(), c"name", name_js.handle())
-//             .expect("Failed to set name property of EcKeyAlgorithm");
-//
-//         rooted!(&in(cx) let mut named_curve_js = UndefinedValue());
-//         self.named_curve.to_jsval(cx, named_curve_js.handle_mut());
-//         set_dictionary_property(cx, object.handle(), c"namedCurve", named_curve_js.handle())
-//             .expect("Failed to set namedCurve property of EcKeyAlgorithm");
-//
-//         rval.set(ObjectOrNullValue(object.get()));
-//     }
-// }
-//
-// impl TryFrom<SerializableEcKeyAlgorithm> for EcKeyAlgorithm {
-//     type Error = ();
-//
-//     fn try_from(value: SerializableEcKeyAlgorithm) -> Result<Self, Self::Error> {
-//         Ok(EcKeyAlgorithm {
-//             name: CryptoAlgorithm::from_str(&value.name).map_err(|_| ())?,
-//             named_curve: value.named_curve,
-//         })
-//     }
-// }
-//
-// impl From<&EcKeyAlgorithm> for SerializableEcKeyAlgorithm {
-//     fn from(value: &EcKeyAlgorithm) -> Self {
-//         SerializableEcKeyAlgorithm {
-//             name: value.name.as_str().into(),
-//             named_curve: value.named_curve.clone(),
-//         }
-//     }
-// }
-//
-// /// <https://w3c.github.io/webcrypto/#dfn-EcKeyImportParams>
-// #[derive(Clone, MallocSizeOf)]
-// struct EcKeyImportParams {
-//     /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
-//     name: CryptoAlgorithm,
-//
-//     /// <https://w3c.github.io/webcrypto/#dfn-EcKeyImportParams-namedCurve>
-//     named_curve: String,
-// }
-//
-// impl<'a> TryFromWithCxAndName<HandleObject<'a>> for EcKeyImportParams {
-//     type Error = Error;
-//
-//     fn try_from_with_cx_and_name(
-//         cx: &mut JSContext,
-//         algorithm_name: CryptoAlgorithm,
-//         object: HandleObject<'a>,
-//     ) -> Result<Self, Self::Error> {
-//         Ok(EcKeyImportParams {
-//             name: algorithm_name,
-//             named_curve: String::from(get_required_parameter::<DOMString>(
-//                 cx,
-//                 object,
-//                 c"namedCurve",
-//                 StringificationBehavior::Default,
-//             )?),
-//         })
-//     }
-// }
-//
-// /// <https://w3c.github.io/webcrypto/#dfn-EcdhKeyDeriveParams>
-// #[derive(Clone, MallocSizeOf)]
-// struct EcdhKeyDeriveParams {
-//     /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
-//     name: CryptoAlgorithm,
-//
-//     /// <https://w3c.github.io/webcrypto/#dfn-EcdhKeyDeriveParams-public>
-//     public: Trusted<CryptoKey>,
-// }
-//
-// impl<'a> TryFromWithCxAndName<HandleObject<'a>> for EcdhKeyDeriveParams {
-//     type Error = Error;
-//
-//     fn try_from_with_cx_and_name(
-//         cx: &mut JSContext,
-//         algorithm_name: CryptoAlgorithm,
-//         object: HandleObject<'a>,
-//     ) -> Result<Self, Self::Error> {
-//         let public = get_required_parameter::<DomRoot<CryptoKey>>(cx, object, c"public", ())?;
-//
-//         Ok(EcdhKeyDeriveParams {
-//             name: algorithm_name,
-//             public: Trusted::new(&public),
-//         })
-//     }
-// }
-//
-// /// <https://w3c.github.io/webcrypto/#dfn-AesCtrParams>
-// #[derive(Clone, MallocSizeOf)]
-// struct AesCtrParams {
-//     /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
-//     name: CryptoAlgorithm,
-//
-//     /// <https://w3c.github.io/webcrypto/#dfn-AesCtrParams-counter>
-//     counter: Vec<u8>,
-//
-//     /// <https://w3c.github.io/webcrypto/#dfn-AesCtrParams-length>
-//     length: u8,
-// }
-//
-// impl<'a> TryFromWithCxAndName<HandleObject<'a>> for AesCtrParams {
-//     type Error = Error;
-//
-//     fn try_from_with_cx_and_name(
-//         cx: &mut JSContext,
-//         algorithm_name: CryptoAlgorithm,
-//         object: HandleObject<'a>,
-//     ) -> Result<Self, Self::Error> {
-//         Ok(AesCtrParams {
-//             name: algorithm_name,
-//             counter: get_required_buffer_source(cx, object, c"counter")?,
-//             length: get_required_parameter(
-//                 cx,
-//                 object,
-//                 c"length",
-//                 ConversionBehavior::EnforceRange,
-//             )?,
-//         })
-//     }
-// }
-//
-// /// <https://w3c.github.io/webcrypto/#dfn-AesKeyAlgorithm>
-// #[derive(Clone, MallocSizeOf)]
-// pub(crate) struct AesKeyAlgorithm {
-//     /// <https://w3c.github.io/webcrypto/#dom-keyalgorithm-name>
-//     name: CryptoAlgorithm,
-//
-//     /// <https://w3c.github.io/webcrypto/#dfn-AesKeyAlgorithm-length>
-//     length: u16,
-// }
-//
-// impl ToJSValConvertible for AesKeyAlgorithm {
-//     #[expect(unsafe_code)]
-//     fn to_jsval(&self, cx: &mut JSContext, mut rval: MutableHandleValue) {
-//         rooted!(&in(cx) let mut object = unsafe { JS_NewObject(cx, ptr::null()) });
-//
-//         rooted!(&in(cx) let mut name_js = UndefinedValue());
-//         self.name.as_str().to_jsval(cx, name_js.handle_mut());
-//         set_dictionary_property(cx, object.handle(), c"name", name_js.handle())
-//             .expect("Failed to set name property of AesKeyAlgorithm");
-//
-//         rooted!(&in(cx) let mut length_js = UndefinedValue());
-//         self.length.to_jsval(cx, length_js.handle_mut());
-//         set_dictionary_property(cx, object.handle(), c"length", length_js.handle())
-//             .expect("Failed to set length property of AesKeyAlgorithm");
-//
-//         rval.set(ObjectOrNullValue(object.get()));
-//     }
-// }
-//
-// impl TryFrom<SerializableAesKeyAlgorithm> for AesKeyAlgorithm {
-//     type Error = ();
-//
-//     fn try_from(value: SerializableAesKeyAlgorithm) -> Result<Self, Self::Error> {
-//         Ok(AesKeyAlgorithm {
-//             name: CryptoAlgorithm::from_str(&value.name).map_err(|_| ())?,
-//             length: value.length,
-//         })
-//     }
-// }
-//
-// impl From<&AesKeyAlgorithm> for SerializableAesKeyAlgorithm {
-//     fn from(value: &AesKeyAlgorithm) -> Self {
-//         SerializableAesKeyAlgorithm {
-//             name: value.name.as_str().into(),
-//             length: value.length,
-//         }
-//     }
-// }
-//
-// /// <https://w3c.github.io/webcrypto/#dfn-AesKeyGenParams>
-// #[derive(Clone, MallocSizeOf)]
-// struct AesKeyGenParams {
-//     /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
-//     name: CryptoAlgorithm,
-//
-//     /// <https://w3c.github.io/webcrypto/#dfn-AesKeyGenParams-length>
-//     length: u16,
-// }
-//
-// impl<'a> TryFromWithCxAndName<HandleObject<'a>> for AesKeyGenParams {
-//     type Error = Error;
-//
-//     fn try_from_with_cx_and_name(
-//         cx: &mut JSContext,
-//         algorithm_name: CryptoAlgorithm,
-//         object: HandleObject<'a>,
-//     ) -> Result<Self, Self::Error> {
-//         Ok(AesKeyGenParams {
-//             name: algorithm_name,
-//             length: get_required_parameter(
-//                 cx,
-//                 object,
-//                 c"length",
-//                 ConversionBehavior::EnforceRange,
-//             )?,
-//         })
-//     }
-// }
-//
-// /// <https://w3c.github.io/webcrypto/#dfn-AesDerivedKeyParams>
-// #[derive(Clone, MallocSizeOf)]
-// struct AesDerivedKeyParams {
-//     /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
-//     name: CryptoAlgorithm,
-//
-//     /// <https://w3c.github.io/webcrypto/#dfn-AesDerivedKeyParams-length>
-//     length: u16,
-// }
-//
-// impl<'a> TryFromWithCxAndName<HandleObject<'a>> for AesDerivedKeyParams {
-//     type Error = Error;
-//
-//     fn try_from_with_cx_and_name(
-//         cx: &mut JSContext,
-//         algorithm_name: CryptoAlgorithm,
-//         object: HandleObject<'a>,
-//     ) -> Result<Self, Self::Error> {
-//         Ok(AesDerivedKeyParams {
-//             name: algorithm_name,
-//             length: get_required_parameter(
-//                 cx,
-//                 object,
-//                 c"length",
-//                 ConversionBehavior::EnforceRange,
-//             )?,
-//         })
-//     }
-// }
-//
-// /// <https://w3c.github.io/webcrypto/#dfn-AesCbcParams>
-// #[derive(Clone, MallocSizeOf)]
-// struct AesCbcParams {
-//     /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
-//     name: CryptoAlgorithm,
-//
-//     /// <https://w3c.github.io/webcrypto/#dfn-AesCbcParams-iv>
-//     iv: Vec<u8>,
-// }
-//
-// impl<'a> TryFromWithCxAndName<HandleObject<'a>> for AesCbcParams {
-//     type Error = Error;
-//
-//     fn try_from_with_cx_and_name(
-//         cx: &mut JSContext,
-//         algorithm_name: CryptoAlgorithm,
-//         object: HandleObject<'a>,
-//     ) -> Result<Self, Self::Error> {
-//         Ok(AesCbcParams {
-//             name: algorithm_name,
-//             iv: get_required_buffer_source(cx, object, c"iv")?,
-//         })
-//     }
-// }
-//
-// /// <https://w3c.github.io/webcrypto/#dfn-AesGcmParams>
-// #[derive(Clone, MallocSizeOf)]
-// struct AesGcmParams {
-//     /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
-//     name: CryptoAlgorithm,
-//
-//     /// <https://w3c.github.io/webcrypto/#dfn-AesGcmParams-iv>
-//     iv: Vec<u8>,
-//
-//     /// <https://w3c.github.io/webcrypto/#dfn-AesGcmParams-additionalData>
-//     additional_data: Option<Vec<u8>>,
-//
-//     /// <https://w3c.github.io/webcrypto/#dfn-AesGcmParams-tagLength>
-//     tag_length: Option<u8>,
-// }
-//
-// impl<'a> TryFromWithCxAndName<HandleObject<'a>> for AesGcmParams {
-//     type Error = Error;
-//
-//     fn try_from_with_cx_and_name(
-//         cx: &mut JSContext,
-//         algorithm_name: CryptoAlgorithm,
-//         object: HandleObject<'a>,
-//     ) -> Result<Self, Self::Error> {
-//         Ok(AesGcmParams {
-//             name: algorithm_name,
-//             iv: get_required_buffer_source(cx, object, c"iv")?,
-//             additional_data: get_optional_buffer_source(cx, object, c"additionalData")?,
-//             tag_length: get_property(cx, object, c"tagLength", ConversionBehavior::EnforceRange)?,
-//         })
-//     }
-// }
-//
-// /// <https://w3c.github.io/webcrypto/#dfn-HmacImportParams>
-// #[derive(Clone, MallocSizeOf)]
-// struct HmacImportParams {
-//     /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
-//     name: CryptoAlgorithm,
-//
-//     /// <https://w3c.github.io/webcrypto/#dfn-HmacImportParams-hash>
-//     hash: DigestAlgorithm,
-//
-//     /// <https://w3c.github.io/webcrypto/#dfn-HmacImportParams-length>
-//     length: Option<u32>,
-// }
-//
-// impl<'a> TryFromWithCxAndName<HandleObject<'a>> for HmacImportParams {
-//     type Error = Error;
-//
-//     fn try_from_with_cx_and_name(
-//         cx: &mut JSContext,
-//         algorithm_name: CryptoAlgorithm,
-//         object: HandleObject<'a>,
-//     ) -> Result<Self, Self::Error> {
-//         let hash = get_required_parameter(cx, object, c"hash", ())?;
-//
-//         Ok(HmacImportParams {
-//             name: algorithm_name,
-//             hash: normalize_algorithm::<DigestOperation>(cx, &hash)?,
-//             length: get_property(cx, object, c"length", ConversionBehavior::EnforceRange)?,
-//         })
-//     }
-// }
-//
-// /// <https://w3c.github.io/webcrypto/#dfn-HmacKeyAlgorithm>
-// #[derive(Clone, MallocSizeOf)]
-// pub(crate) struct HmacKeyAlgorithm {
-//     /// <https://w3c.github.io/webcrypto/#dom-keyalgorithm-name>
-//     name: CryptoAlgorithm,
-//
-//     /// <https://w3c.github.io/webcrypto/#dfn-HmacKeyAlgorithm-hash>
-//     hash: DigestAlgorithm,
-//
-//     /// <https://w3c.github.io/webcrypto/#dfn-HmacKeyGenParams-length>
-//     length: u32,
-// }
-//
-// impl ToJSValConvertible for HmacKeyAlgorithm {
-//     #[expect(unsafe_code)]
-//     fn to_jsval(&self, cx: &mut JSContext, mut rval: MutableHandleValue) {
-//         rooted!(&in(cx) let mut object = unsafe { JS_NewObject(cx, ptr::null()) });
-//
-//         rooted!(&in(cx) let mut name_js = UndefinedValue());
-//         self.name.as_str().to_jsval(cx, name_js.handle_mut());
-//         set_dictionary_property(cx, object.handle(), c"name", name_js.handle())
-//             .expect("Failed to set name property of HmacKeyAlgorithm");
-//
-//         rooted!(&in(cx) let mut hash_js = UndefinedValue());
-//         let hash = KeyAlgorithm {
-//             name: self.hash.name(),
-//         };
-//         hash.to_jsval(cx, hash_js.handle_mut());
-//         set_dictionary_property(cx, object.handle(), c"hash", hash_js.handle())
-//             .expect("Failed to set hash property of HmacKeyAlgorithm");
-//
-//         rooted!(&in(cx) let mut length_js = UndefinedValue());
-//         self.length.to_jsval(cx, length_js.handle_mut());
-//         set_dictionary_property(cx, object.handle(), c"length", length_js.handle())
-//             .expect("Failed to set length property of HmacKeyAlgorithm");
-//
-//         rval.set(ObjectOrNullValue(object.get()));
-//     }
-// }
-//
-// impl TryFrom<SerializableHmacKeyAlgorithm> for HmacKeyAlgorithm {
-//     type Error = ();
-//
-//     fn try_from(value: SerializableHmacKeyAlgorithm) -> Result<Self, Self::Error> {
-//         Ok(HmacKeyAlgorithm {
-//             name: CryptoAlgorithm::from_str(&value.name).map_err(|_| ())?,
-//             hash: value.hash.try_into()?,
-//             length: value.length,
-//         })
-//     }
-// }
-//
-// impl From<&HmacKeyAlgorithm> for SerializableHmacKeyAlgorithm {
-//     fn from(value: &HmacKeyAlgorithm) -> Self {
-//         SerializableHmacKeyAlgorithm {
-//             name: value.name.as_str().into(),
-//             hash: (&value.hash).into(),
-//             length: value.length,
-//         }
-//     }
-// }
-//
-// /// <https://w3c.github.io/webcrypto/#dfn-HmacKeyGenParams>
-// #[derive(Clone, MallocSizeOf)]
-// struct HmacKeyGenParams {
-//     /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
-//     name: CryptoAlgorithm,
-//
-//     /// <https://w3c.github.io/webcrypto/#dfn-HmacKeyGenParams-hash>
-//     hash: DigestAlgorithm,
-//
-//     /// <https://w3c.github.io/webcrypto/#dfn-HmacKeyGenParams-length>
-//     length: Option<u32>,
-// }
-//
-// impl<'a> TryFromWithCxAndName<HandleObject<'a>> for HmacKeyGenParams {
-//     type Error = Error;
-//
-//     fn try_from_with_cx_and_name(
-//         cx: &mut JSContext,
-//         algorithm_name: CryptoAlgorithm,
-//         object: HandleObject<'a>,
-//     ) -> Result<Self, Self::Error> {
-//         let hash = get_required_parameter(cx, object, c"hash", ())?;
-//
-//         Ok(HmacKeyGenParams {
-//             name: algorithm_name,
-//             hash: normalize_algorithm::<DigestOperation>(cx, &hash)?,
-//             length: get_property(cx, object, c"length", ConversionBehavior::EnforceRange)?,
-//         })
-//     }
-// }
-//
-// /// <https://w3c.github.io/webcrypto/#dfn-HkdfParams>
-// #[derive(Clone, MallocSizeOf)]
-// pub(crate) struct HkdfParams {
-//     /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
-//     name: CryptoAlgorithm,
-//
-//     /// <https://w3c.github.io/webcrypto/#dfn-HkdfParams-hash>
-//     hash: DigestAlgorithm,
-//
-//     /// <https://w3c.github.io/webcrypto/#dfn-HkdfParams-salt>
-//     salt: Vec<u8>,
-//
-//     /// <https://w3c.github.io/webcrypto/#dfn-HkdfParams-info>
-//     info: Vec<u8>,
-// }
-//
-// impl<'a> TryFromWithCxAndName<HandleObject<'a>> for HkdfParams {
-//     type Error = Error;
-//
-//     fn try_from_with_cx_and_name(
-//         cx: &mut JSContext,
-//         algorithm_name: CryptoAlgorithm,
-//         object: HandleObject<'a>,
-//     ) -> Result<Self, Self::Error> {
-//         let hash = get_required_parameter(cx, object, c"hash", ())?;
-//
-//         Ok(HkdfParams {
-//             name: algorithm_name,
-//             hash: normalize_algorithm::<DigestOperation>(cx, &hash)?,
-//             salt: get_required_buffer_source(cx, object, c"salt")?,
-//             info: get_required_buffer_source(cx, object, c"info")?,
-//         })
-//     }
-// }
-//
-// /// <https://w3c.github.io/webcrypto/#dfn-Pbkdf2Params>
-// #[derive(Clone, MallocSizeOf)]
-// pub(crate) struct Pbkdf2Params {
-//     /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
-//     name: CryptoAlgorithm,
-//
-//     /// <https://w3c.github.io/webcrypto/#dfn-Pbkdf2Params-salt>
-//     salt: Vec<u8>,
-//
-//     /// <https://w3c.github.io/webcrypto/#dfn-Pbkdf2Params-iterations>
-//     iterations: u32,
-//
-//     /// <https://w3c.github.io/webcrypto/#dfn-Pbkdf2Params-hash>
-//     hash: DigestAlgorithm,
-// }
-//
-// impl<'a> TryFromWithCxAndName<HandleObject<'a>> for Pbkdf2Params {
-//     type Error = Error;
-//
-//     fn try_from_with_cx_and_name(
-//         cx: &mut JSContext,
-//         algorithm_name: CryptoAlgorithm,
-//         object: HandleObject<'a>,
-//     ) -> Result<Self, Self::Error> {
-//         let hash = get_required_parameter(cx, object, c"hash", ())?;
-//
-//         Ok(Pbkdf2Params {
-//             name: algorithm_name,
-//             salt: get_required_buffer_source(cx, object, c"salt")?,
-//             iterations: get_required_parameter(
-//                 cx,
-//                 object,
-//                 c"iterations",
-//                 ConversionBehavior::EnforceRange,
-//             )?,
-//             hash: normalize_algorithm::<DigestOperation>(cx, &hash)?,
-//         })
-//     }
-// }
-//
-// /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-ContextParams>
-// #[derive(Clone, MallocSizeOf)]
-// struct ContextParams {
-//     /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
-//     name: CryptoAlgorithm,
-//
-//     /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-ContextParams-context>
-//     context: Option<Vec<u8>>,
-// }
-//
-// impl<'a> TryFromWithCxAndName<HandleObject<'a>> for ContextParams {
-//     type Error = Error;
-//
-//     fn try_from_with_cx_and_name(
-//         cx: &mut JSContext,
-//         algorithm_name: CryptoAlgorithm,
-//         object: HandleObject<'a>,
-//     ) -> Result<Self, Self::Error> {
-//         Ok(ContextParams {
-//             name: algorithm_name,
-//             context: get_optional_buffer_source(cx, object, c"context")?,
-//         })
-//     }
-// }
-//
-// /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-AeadParams>
-// #[derive(Clone, MallocSizeOf)]
-// struct AeadParams {
-//     /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
-//     name: CryptoAlgorithm,
-//
-//     /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-AeadParams-iv>
-//     iv: Vec<u8>,
-//
-//     /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-AeadParams-additionalData>
-//     additional_data: Option<Vec<u8>>,
-//
-//     /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-AeadParams-tagLength>
-//     tag_length: Option<u8>,
-// }
-//
-// impl<'a> TryFromWithCxAndName<HandleObject<'a>> for AeadParams {
-//     type Error = Error;
-//
-//     fn try_from_with_cx_and_name(
-//         cx: &mut JSContext,
-//         algorithm_name: CryptoAlgorithm,
-//         object: HandleObject<'a>,
-//     ) -> Result<Self, Self::Error> {
-//         Ok(AeadParams {
-//             name: algorithm_name,
-//             iv: get_required_buffer_source(cx, object, c"iv")?,
-//             additional_data: get_optional_buffer_source(cx, object, c"additionalData")?,
-//             tag_length: get_property(cx, object, c"tagLength", ConversionBehavior::EnforceRange)?,
-//         })
-//     }
-// }
+/// <https://w3c.github.io/webcrypto/#dfn-KeyAlgorithm>
+#[derive(Clone, MallocSizeOf)]
+pub(crate) struct KeyAlgorithm {
+    /// <https://w3c.github.io/webcrypto/#dom-keyalgorithm-name>
+    name: CryptoAlgorithm,
+}
+
+impl ToJSValConvertible for KeyAlgorithm {
+    #[expect(unsafe_code)]
+    fn to_jsval(&self, cx: &mut JSContext, mut rval: MutableHandleValue) {
+        rooted!(&in(cx) let mut object = unsafe { JS_NewObject(cx, ptr::null()) });
+
+        rooted!(&in(cx) let mut name_js = UndefinedValue());
+        self.name.as_str().to_jsval(cx, name_js.handle_mut());
+        set_dictionary_property(cx, object.handle(), c"name", name_js.handle())
+            .expect("Failed to set name property of KeyAlgorithm");
+
+        rval.set(ObjectOrNullValue(object.get()));
+    }
+}
+
+impl TryFrom<SerializableKeyAlgorithm> for KeyAlgorithm {
+    type Error = ();
+
+    fn try_from(value: SerializableKeyAlgorithm) -> Result<Self, Self::Error> {
+        Ok(KeyAlgorithm {
+            name: CryptoAlgorithm::from_str(&value.name).map_err(|_| ())?,
+        })
+    }
+}
+
+impl From<&KeyAlgorithm> for SerializableKeyAlgorithm {
+    fn from(value: &KeyAlgorithm) -> Self {
+        SerializableKeyAlgorithm {
+            name: value.name.as_str().into(),
+        }
+    }
+}
+
+/// <https://w3c.github.io/webcrypto/#dfn-RsaHashedKeyGenParams>
+#[derive(Clone, MallocSizeOf)]
+pub(crate) struct RsaHashedKeyGenParams {
+    /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
+    name: CryptoAlgorithm,
+
+    /// <https://w3c.github.io/webcrypto/#dfn-RsaKeyGenParams-modulusLength>
+    modulus_length: u32,
+
+    /// <https://w3c.github.io/webcrypto/#dfn-RsaKeyGenParams-publicExponent>
+    public_exponent: Vec<u8>,
+
+    /// <https://w3c.github.io/webcrypto/#dfn-RsaHashedKeyGenParams-hash>
+    hash: DigestAlgorithm,
+}
+
+impl<'a> TryFromWithCxAndName<HandleObject<'a>> for RsaHashedKeyGenParams {
+    type Error = Error;
+
+    fn try_from_with_cx_and_name(
+        cx: &mut JSContext,
+        algorithm_name: CryptoAlgorithm,
+        object: HandleObject,
+    ) -> Result<Self, Self::Error> {
+        let hash = get_required_parameter(cx, object, c"hash", ())?;
+
+        Ok(RsaHashedKeyGenParams {
+            name: algorithm_name,
+            modulus_length: get_required_parameter(
+                cx,
+                object,
+                c"modulusLength",
+                ConversionBehavior::EnforceRange,
+            )?,
+            public_exponent: get_required_parameter_in_box::<HeapUint8Array>(
+                cx,
+                object,
+                c"publicExponent",
+                (),
+            )?
+            .to_vec()
+            .unwrap_or_default(),
+            hash: normalize_algorithm::<DigestOperation>(cx, &hash)?,
+        })
+    }
+}
+
+impl RsaHashedKeyGenParams {
+    /// <https://w3c.github.io/webcrypto/#dfn-validate-rsa-key-generation-parameters>
+    fn validate_parameters(&self) -> Result<(), Error> {
+        // Step 1. Let modulusLength be the modulusLength member of normalizedAlgorithm.
+        let modulus_length = self.modulus_length;
+
+        // Step 2. Let publicExponent be the result of converting the publicExponent member of
+        // normalizedAlgorithm to a non-negative integer.
+        let public_exponent = &self.public_exponent;
+
+        // Step 3. If modulusLength is less than 4, or if publicExponent is less than 3, is even, or
+        // is greater than or equal to 2^modulusLength - 1, then throw an OperationError.
+        let is_less_than_3 = |public_exponent: &[u8]| {
+            let mut byte_iterator = public_exponent.iter().skip_while(|byte| **byte == 0);
+            byte_iterator.next().is_none_or(|byte| *byte < 3) && byte_iterator.count() == 0
+        };
+        let is_even =
+            |public_exponent: &[u8]| public_exponent.last().is_none_or(|byte| byte % 2 == 0);
+        let upper_bound_first_byte = (1u8 << (modulus_length % 8)).wrapping_sub(1);
+        let upper_bound_length_in_bytes = modulus_length.div_ceil(8) as usize;
+        let is_greater_than_upper_bound = |public_exponent: &[u8]| {
+            let mut byte_iterator = public_exponent.iter().skip_while(|byte| **byte == 0);
+            byte_iterator
+                .next()
+                .is_some_and(|byte| *byte > upper_bound_first_byte) &&
+                byte_iterator.count() + 1 >= upper_bound_length_in_bytes
+        };
+        let is_equal_to_upper_bound = |public_exponent: &[u8]| {
+            let mut byte_iterator = public_exponent.iter().skip_while(|byte| **byte == 0);
+            byte_iterator
+                .next()
+                .is_some_and(|byte| *byte == upper_bound_first_byte) &&
+                byte_iterator.clone().all(|byte| *byte == 255) &&
+                byte_iterator.count() + 1 == upper_bound_length_in_bytes
+        };
+        if modulus_length < 4 ||
+            is_less_than_3(public_exponent) ||
+            is_even(public_exponent) ||
+            is_greater_than_upper_bound(public_exponent) ||
+            is_equal_to_upper_bound(public_exponent)
+        {
+            return Err(Error::Operation(Some(
+                "Invalid RsaHashedKeyGenParams".into(),
+            )));
+        }
+
+        Ok(())
+    }
+}
+
+/// <https://w3c.github.io/webcrypto/#dfn-RsaHashedKeyAlgorithm>
+#[derive(Clone, MallocSizeOf)]
+pub(crate) struct RsaHashedKeyAlgorithm {
+    /// <https://w3c.github.io/webcrypto/#dom-keyalgorithm-name>
+    name: CryptoAlgorithm,
+
+    /// <https://w3c.github.io/webcrypto/#dfn-RsaKeyAlgorithm-modulusLength>
+    modulus_length: u32,
+
+    /// <https://w3c.github.io/webcrypto/#dfn-RsaKeyAlgorithm-publicExponent>
+    public_exponent: Vec<u8>,
+
+    /// <https://w3c.github.io/webcrypto/#dfn-RsaHashedKeyAlgorithm-hash>
+    hash: DigestAlgorithm,
+}
+
+impl ToJSValConvertible for RsaHashedKeyAlgorithm {
+    #[expect(unsafe_code)]
+    fn to_jsval(&self, cx: &mut JSContext, mut rval: MutableHandleValue) {
+        rooted!(&in(cx) let mut object = unsafe { JS_NewObject(cx, ptr::null()) });
+
+        rooted!(&in(cx) let mut name_js = UndefinedValue());
+        self.name.as_str().to_jsval(cx, name_js.handle_mut());
+        set_dictionary_property(cx, object.handle(), c"name", name_js.handle())
+            .expect("Failed to set name property of RsaHashedKeyAlgorithm");
+
+        rooted!(&in(cx) let mut modulus_length_js = UndefinedValue());
+        self.modulus_length
+            .to_jsval(cx, modulus_length_js.handle_mut());
+        set_dictionary_property(
+            cx,
+            object.handle(),
+            c"modulusLength",
+            modulus_length_js.handle(),
+        )
+        .expect("Failed to set modulusLength property of RsaHashedKeyAlgorithm");
+
+        rooted!(&in(cx) let mut public_exponent_js = UndefinedValue());
+        rooted!(&in(cx) let mut public_exponent_js_object = ptr::null_mut::<JSObject>());
+        let public_exponent = create_buffer_source::<ArrayBufferU8>(
+            cx,
+            &self.public_exponent,
+            public_exponent_js_object.handle_mut(),
+        )
+        .expect("Failed to convert publicExponent to Uint8Array");
+        public_exponent.to_jsval(cx, public_exponent_js.handle_mut());
+        set_dictionary_property(
+            cx,
+            object.handle(),
+            c"publicExponent",
+            public_exponent_js.handle(),
+        )
+        .expect("Failed to set publicExponent property of RsaHashedKeyAlgorithm");
+
+        rooted!(&in(cx) let mut hash_js = UndefinedValue());
+        let hash = KeyAlgorithm {
+            name: self.hash.name(),
+        };
+        hash.to_jsval(cx, hash_js.handle_mut());
+        set_dictionary_property(cx, object.handle(), c"hash", hash_js.handle())
+            .expect("Failed to set hash property of RsaHashedKeyAlgorithm");
+
+        rval.set(ObjectOrNullValue(object.get()));
+    }
+}
+
+impl TryFrom<SerializableRsaHashedKeyAlgorithm> for RsaHashedKeyAlgorithm {
+    type Error = ();
+
+    fn try_from(value: SerializableRsaHashedKeyAlgorithm) -> Result<Self, Self::Error> {
+        Ok(RsaHashedKeyAlgorithm {
+            name: CryptoAlgorithm::from_str(&value.name).map_err(|_| ())?,
+            modulus_length: value.modulus_length,
+            public_exponent: value.public_exponent,
+            hash: value.hash.try_into()?,
+        })
+    }
+}
+
+impl From<&RsaHashedKeyAlgorithm> for SerializableRsaHashedKeyAlgorithm {
+    fn from(value: &RsaHashedKeyAlgorithm) -> Self {
+        SerializableRsaHashedKeyAlgorithm {
+            name: value.name.as_str().into(),
+            modulus_length: value.modulus_length,
+            public_exponent: value.public_exponent.clone(),
+            hash: (&value.hash).into(),
+        }
+    }
+}
+
+/// <https://w3c.github.io/webcrypto/#dfn-RsaHashedImportParams>
+#[derive(Clone, MallocSizeOf)]
+struct RsaHashedImportParams {
+    /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
+    name: CryptoAlgorithm,
+
+    /// <https://w3c.github.io/webcrypto/#dfn-RsaHashedImportParams-hash>
+    hash: DigestAlgorithm,
+}
+
+impl<'a> TryFromWithCxAndName<HandleObject<'a>> for RsaHashedImportParams {
+    type Error = Error;
+
+    fn try_from_with_cx_and_name(
+        cx: &mut JSContext,
+        algorithm_name: CryptoAlgorithm,
+        object: HandleObject,
+    ) -> Result<Self, Self::Error> {
+        let hash = get_required_parameter(cx, object, c"hash", ())?;
+
+        Ok(RsaHashedImportParams {
+            name: algorithm_name,
+            hash: normalize_algorithm::<DigestOperation>(cx, &hash)?,
+        })
+    }
+}
+
+/// <https://w3c.github.io/webcrypto/#dfn-RsaPssParams>
+#[derive(Clone, MallocSizeOf)]
+struct RsaPssParams {
+    /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
+    name: CryptoAlgorithm,
+
+    /// <https://w3c.github.io/webcrypto/#dfn-RsaPssParams-saltLength>
+    salt_length: u32,
+}
+
+impl<'a> TryFromWithCxAndName<HandleObject<'a>> for RsaPssParams {
+    type Error = Error;
+
+    fn try_from_with_cx_and_name(
+        cx: &mut JSContext,
+        algorithm_name: CryptoAlgorithm,
+        object: HandleObject,
+    ) -> Result<Self, Self::Error> {
+        Ok(RsaPssParams {
+            name: algorithm_name,
+            salt_length: get_required_parameter(
+                cx,
+                object,
+                c"saltLength",
+                ConversionBehavior::EnforceRange,
+            )?,
+        })
+    }
+}
+
+/// <https://w3c.github.io/webcrypto/#dfn-RsaOaepParams>
+#[derive(Clone, MallocSizeOf)]
+struct RsaOaepParams {
+    /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
+    name: CryptoAlgorithm,
+
+    /// <https://w3c.github.io/webcrypto/#dfn-RsaOaepParams-label>
+    label: Option<Vec<u8>>,
+}
+
+impl<'a> TryFromWithCxAndName<HandleObject<'a>> for RsaOaepParams {
+    type Error = Error;
+
+    fn try_from_with_cx_and_name(
+        cx: &mut JSContext,
+        algorithm_name: CryptoAlgorithm,
+        object: HandleObject<'a>,
+    ) -> Result<Self, Self::Error> {
+        Ok(RsaOaepParams {
+            name: algorithm_name,
+            label: get_optional_buffer_source(cx, object, c"label")?,
+        })
+    }
+}
+
+/// <https://w3c.github.io/webcrypto/#dfn-EcdsaParams>
+#[derive(Clone, MallocSizeOf)]
+struct EcdsaParams {
+    /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
+    name: CryptoAlgorithm,
+
+    /// <https://w3c.github.io/webcrypto/#dfn-EcdsaParams-hash>
+    hash: DigestAlgorithm,
+}
+
+impl<'a> TryFromWithCxAndName<HandleObject<'a>> for EcdsaParams {
+    type Error = Error;
+
+    fn try_from_with_cx_and_name(
+        cx: &mut JSContext,
+        algorithm_name: CryptoAlgorithm,
+        object: HandleObject<'a>,
+    ) -> Result<Self, Self::Error> {
+        let hash = get_required_parameter(cx, object, c"hash", ())?;
+
+        Ok(EcdsaParams {
+            name: algorithm_name,
+            hash: normalize_algorithm::<DigestOperation>(cx, &hash)?,
+        })
+    }
+}
+
+/// <https://w3c.github.io/webcrypto/#dfn-EcKeyGenParams>
+#[derive(Clone, MallocSizeOf)]
+struct EcKeyGenParams {
+    /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
+    name: CryptoAlgorithm,
+
+    /// <https://w3c.github.io/webcrypto/#dfn-EcKeyGenParams-namedCurve>
+    named_curve: String,
+}
+
+impl<'a> TryFromWithCxAndName<HandleObject<'a>> for EcKeyGenParams {
+    type Error = Error;
+
+    fn try_from_with_cx_and_name(
+        cx: &mut JSContext,
+        algorithm_name: CryptoAlgorithm,
+        object: HandleObject<'a>,
+    ) -> Result<Self, Self::Error> {
+        Ok(EcKeyGenParams {
+            name: algorithm_name,
+            named_curve: String::from(get_required_parameter::<DOMString>(
+                cx,
+                object,
+                c"namedCurve",
+                StringificationBehavior::Default,
+            )?),
+        })
+    }
+}
+
+/// <https://w3c.github.io/webcrypto/#dfn-EcKeyAlgorithm>
+#[derive(Clone, MallocSizeOf)]
+pub(crate) struct EcKeyAlgorithm {
+    /// <https://w3c.github.io/webcrypto/#dom-keyalgorithm-name>
+    name: CryptoAlgorithm,
+
+    /// <https://w3c.github.io/webcrypto/#dfn-EcKeyAlgorithm-namedCurve>
+    named_curve: String,
+}
+
+impl ToJSValConvertible for EcKeyAlgorithm {
+    #[expect(unsafe_code)]
+    fn to_jsval(&self, cx: &mut JSContext, mut rval: MutableHandleValue) {
+        rooted!(&in(cx) let mut object = unsafe { JS_NewObject(cx, ptr::null()) });
+
+        rooted!(&in(cx) let mut name_js = UndefinedValue());
+        self.name.as_str().to_jsval(cx, name_js.handle_mut());
+        set_dictionary_property(cx, object.handle(), c"name", name_js.handle())
+            .expect("Failed to set name property of EcKeyAlgorithm");
+
+        rooted!(&in(cx) let mut named_curve_js = UndefinedValue());
+        self.named_curve.to_jsval(cx, named_curve_js.handle_mut());
+        set_dictionary_property(cx, object.handle(), c"namedCurve", named_curve_js.handle())
+            .expect("Failed to set namedCurve property of EcKeyAlgorithm");
+
+        rval.set(ObjectOrNullValue(object.get()));
+    }
+}
+
+impl TryFrom<SerializableEcKeyAlgorithm> for EcKeyAlgorithm {
+    type Error = ();
+
+    fn try_from(value: SerializableEcKeyAlgorithm) -> Result<Self, Self::Error> {
+        Ok(EcKeyAlgorithm {
+            name: CryptoAlgorithm::from_str(&value.name).map_err(|_| ())?,
+            named_curve: value.named_curve,
+        })
+    }
+}
+
+impl From<&EcKeyAlgorithm> for SerializableEcKeyAlgorithm {
+    fn from(value: &EcKeyAlgorithm) -> Self {
+        SerializableEcKeyAlgorithm {
+            name: value.name.as_str().into(),
+            named_curve: value.named_curve.clone(),
+        }
+    }
+}
+
+/// <https://w3c.github.io/webcrypto/#dfn-EcKeyImportParams>
+#[derive(Clone, MallocSizeOf)]
+struct EcKeyImportParams {
+    /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
+    name: CryptoAlgorithm,
+
+    /// <https://w3c.github.io/webcrypto/#dfn-EcKeyImportParams-namedCurve>
+    named_curve: String,
+}
+
+impl<'a> TryFromWithCxAndName<HandleObject<'a>> for EcKeyImportParams {
+    type Error = Error;
+
+    fn try_from_with_cx_and_name(
+        cx: &mut JSContext,
+        algorithm_name: CryptoAlgorithm,
+        object: HandleObject<'a>,
+    ) -> Result<Self, Self::Error> {
+        Ok(EcKeyImportParams {
+            name: algorithm_name,
+            named_curve: String::from(get_required_parameter::<DOMString>(
+                cx,
+                object,
+                c"namedCurve",
+                StringificationBehavior::Default,
+            )?),
+        })
+    }
+}
+
+/// <https://w3c.github.io/webcrypto/#dfn-EcdhKeyDeriveParams>
+#[derive(Clone, MallocSizeOf)]
+struct EcdhKeyDeriveParams<D: DomTypes> {
+    /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
+    name: CryptoAlgorithm,
+
+    /// <https://w3c.github.io/webcrypto/#dfn-EcdhKeyDeriveParams-public>
+    public: Trusted<CryptoKey<D>>,
+}
+
+impl<'a, D: DomTypes> TryFromWithCxAndName<HandleObject<'a>> for EcdhKeyDeriveParams<D> {
+    type Error = Error;
+
+    fn try_from_with_cx_and_name(
+        cx: &mut JSContext,
+        algorithm_name: CryptoAlgorithm,
+        object: HandleObject<'a>,
+    ) -> Result<Self, Self::Error> {
+        let public = get_required_parameter::<DomRoot<CryptoKey<D>>>(cx, object, c"public", ())?;
+
+        Ok(EcdhKeyDeriveParams {
+            name: algorithm_name,
+            public: Trusted::new(&public),
+        })
+    }
+}
+
+/// <https://w3c.github.io/webcrypto/#dfn-AesCtrParams>
+#[derive(Clone, MallocSizeOf)]
+struct AesCtrParams {
+    /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
+    name: CryptoAlgorithm,
+
+    /// <https://w3c.github.io/webcrypto/#dfn-AesCtrParams-counter>
+    counter: Vec<u8>,
+
+    /// <https://w3c.github.io/webcrypto/#dfn-AesCtrParams-length>
+    length: u8,
+}
+
+impl<'a> TryFromWithCxAndName<HandleObject<'a>> for AesCtrParams {
+    type Error = Error;
+
+    fn try_from_with_cx_and_name(
+        cx: &mut JSContext,
+        algorithm_name: CryptoAlgorithm,
+        object: HandleObject<'a>,
+    ) -> Result<Self, Self::Error> {
+        Ok(AesCtrParams {
+            name: algorithm_name,
+            counter: get_required_buffer_source(cx, object, c"counter")?,
+            length: get_required_parameter(
+                cx,
+                object,
+                c"length",
+                ConversionBehavior::EnforceRange,
+            )?,
+        })
+    }
+}
+
+/// <https://w3c.github.io/webcrypto/#dfn-AesKeyAlgorithm>
+#[derive(Clone, MallocSizeOf)]
+pub(crate) struct AesKeyAlgorithm {
+    /// <https://w3c.github.io/webcrypto/#dom-keyalgorithm-name>
+    name: CryptoAlgorithm,
+
+    /// <https://w3c.github.io/webcrypto/#dfn-AesKeyAlgorithm-length>
+    length: u16,
+}
+
+impl ToJSValConvertible for AesKeyAlgorithm {
+    #[expect(unsafe_code)]
+    fn to_jsval(&self, cx: &mut JSContext, mut rval: MutableHandleValue) {
+        rooted!(&in(cx) let mut object = unsafe { JS_NewObject(cx, ptr::null()) });
+
+        rooted!(&in(cx) let mut name_js = UndefinedValue());
+        self.name.as_str().to_jsval(cx, name_js.handle_mut());
+        set_dictionary_property(cx, object.handle(), c"name", name_js.handle())
+            .expect("Failed to set name property of AesKeyAlgorithm");
+
+        rooted!(&in(cx) let mut length_js = UndefinedValue());
+        self.length.to_jsval(cx, length_js.handle_mut());
+        set_dictionary_property(cx, object.handle(), c"length", length_js.handle())
+            .expect("Failed to set length property of AesKeyAlgorithm");
+
+        rval.set(ObjectOrNullValue(object.get()));
+    }
+}
+
+impl TryFrom<SerializableAesKeyAlgorithm> for AesKeyAlgorithm {
+    type Error = ();
+
+    fn try_from(value: SerializableAesKeyAlgorithm) -> Result<Self, Self::Error> {
+        Ok(AesKeyAlgorithm {
+            name: CryptoAlgorithm::from_str(&value.name).map_err(|_| ())?,
+            length: value.length,
+        })
+    }
+}
+
+impl From<&AesKeyAlgorithm> for SerializableAesKeyAlgorithm {
+    fn from(value: &AesKeyAlgorithm) -> Self {
+        SerializableAesKeyAlgorithm {
+            name: value.name.as_str().into(),
+            length: value.length,
+        }
+    }
+}
+
+/// <https://w3c.github.io/webcrypto/#dfn-AesKeyGenParams>
+#[derive(Clone, MallocSizeOf)]
+struct AesKeyGenParams {
+    /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
+    name: CryptoAlgorithm,
+
+    /// <https://w3c.github.io/webcrypto/#dfn-AesKeyGenParams-length>
+    length: u16,
+}
+
+impl<'a> TryFromWithCxAndName<HandleObject<'a>> for AesKeyGenParams {
+    type Error = Error;
+
+    fn try_from_with_cx_and_name(
+        cx: &mut JSContext,
+        algorithm_name: CryptoAlgorithm,
+        object: HandleObject<'a>,
+    ) -> Result<Self, Self::Error> {
+        Ok(AesKeyGenParams {
+            name: algorithm_name,
+            length: get_required_parameter(
+                cx,
+                object,
+                c"length",
+                ConversionBehavior::EnforceRange,
+            )?,
+        })
+    }
+}
+
+/// <https://w3c.github.io/webcrypto/#dfn-AesDerivedKeyParams>
+#[derive(Clone, MallocSizeOf)]
+struct AesDerivedKeyParams {
+    /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
+    name: CryptoAlgorithm,
+
+    /// <https://w3c.github.io/webcrypto/#dfn-AesDerivedKeyParams-length>
+    length: u16,
+}
+
+impl<'a> TryFromWithCxAndName<HandleObject<'a>> for AesDerivedKeyParams {
+    type Error = Error;
+
+    fn try_from_with_cx_and_name(
+        cx: &mut JSContext,
+        algorithm_name: CryptoAlgorithm,
+        object: HandleObject<'a>,
+    ) -> Result<Self, Self::Error> {
+        Ok(AesDerivedKeyParams {
+            name: algorithm_name,
+            length: get_required_parameter(
+                cx,
+                object,
+                c"length",
+                ConversionBehavior::EnforceRange,
+            )?,
+        })
+    }
+}
+
+/// <https://w3c.github.io/webcrypto/#dfn-AesCbcParams>
+#[derive(Clone, MallocSizeOf)]
+struct AesCbcParams {
+    /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
+    name: CryptoAlgorithm,
+
+    /// <https://w3c.github.io/webcrypto/#dfn-AesCbcParams-iv>
+    iv: Vec<u8>,
+}
+
+impl<'a> TryFromWithCxAndName<HandleObject<'a>> for AesCbcParams {
+    type Error = Error;
+
+    fn try_from_with_cx_and_name(
+        cx: &mut JSContext,
+        algorithm_name: CryptoAlgorithm,
+        object: HandleObject<'a>,
+    ) -> Result<Self, Self::Error> {
+        Ok(AesCbcParams {
+            name: algorithm_name,
+            iv: get_required_buffer_source(cx, object, c"iv")?,
+        })
+    }
+}
+
+/// <https://w3c.github.io/webcrypto/#dfn-AesGcmParams>
+#[derive(Clone, MallocSizeOf)]
+struct AesGcmParams {
+    /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
+    name: CryptoAlgorithm,
+
+    /// <https://w3c.github.io/webcrypto/#dfn-AesGcmParams-iv>
+    iv: Vec<u8>,
+
+    /// <https://w3c.github.io/webcrypto/#dfn-AesGcmParams-additionalData>
+    additional_data: Option<Vec<u8>>,
+
+    /// <https://w3c.github.io/webcrypto/#dfn-AesGcmParams-tagLength>
+    tag_length: Option<u8>,
+}
+
+impl<'a> TryFromWithCxAndName<HandleObject<'a>> for AesGcmParams {
+    type Error = Error;
+
+    fn try_from_with_cx_and_name(
+        cx: &mut JSContext,
+        algorithm_name: CryptoAlgorithm,
+        object: HandleObject<'a>,
+    ) -> Result<Self, Self::Error> {
+        Ok(AesGcmParams {
+            name: algorithm_name,
+            iv: get_required_buffer_source(cx, object, c"iv")?,
+            additional_data: get_optional_buffer_source(cx, object, c"additionalData")?,
+            tag_length: get_property(cx, object, c"tagLength", ConversionBehavior::EnforceRange)?,
+        })
+    }
+}
+
+/// <https://w3c.github.io/webcrypto/#dfn-HmacImportParams>
+#[derive(Clone, MallocSizeOf)]
+struct HmacImportParams {
+    /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
+    name: CryptoAlgorithm,
+
+    /// <https://w3c.github.io/webcrypto/#dfn-HmacImportParams-hash>
+    hash: DigestAlgorithm,
+
+    /// <https://w3c.github.io/webcrypto/#dfn-HmacImportParams-length>
+    length: Option<u32>,
+}
+
+impl<'a> TryFromWithCxAndName<HandleObject<'a>> for HmacImportParams {
+    type Error = Error;
+
+    fn try_from_with_cx_and_name(
+        cx: &mut JSContext,
+        algorithm_name: CryptoAlgorithm,
+        object: HandleObject<'a>,
+    ) -> Result<Self, Self::Error> {
+        let hash = get_required_parameter(cx, object, c"hash", ())?;
+
+        Ok(HmacImportParams {
+            name: algorithm_name,
+            hash: normalize_algorithm::<DigestOperation>(cx, &hash)?,
+            length: get_property(cx, object, c"length", ConversionBehavior::EnforceRange)?,
+        })
+    }
+}
+
+/// <https://w3c.github.io/webcrypto/#dfn-HmacKeyAlgorithm>
+#[derive(Clone, MallocSizeOf)]
+pub(crate) struct HmacKeyAlgorithm {
+    /// <https://w3c.github.io/webcrypto/#dom-keyalgorithm-name>
+    name: CryptoAlgorithm,
+
+    /// <https://w3c.github.io/webcrypto/#dfn-HmacKeyAlgorithm-hash>
+    hash: DigestAlgorithm,
+
+    /// <https://w3c.github.io/webcrypto/#dfn-HmacKeyGenParams-length>
+    length: u32,
+}
+
+impl ToJSValConvertible for HmacKeyAlgorithm {
+    #[expect(unsafe_code)]
+    fn to_jsval(&self, cx: &mut JSContext, mut rval: MutableHandleValue) {
+        rooted!(&in(cx) let mut object = unsafe { JS_NewObject(cx, ptr::null()) });
+
+        rooted!(&in(cx) let mut name_js = UndefinedValue());
+        self.name.as_str().to_jsval(cx, name_js.handle_mut());
+        set_dictionary_property(cx, object.handle(), c"name", name_js.handle())
+            .expect("Failed to set name property of HmacKeyAlgorithm");
+
+        rooted!(&in(cx) let mut hash_js = UndefinedValue());
+        let hash = KeyAlgorithm {
+            name: self.hash.name(),
+        };
+        hash.to_jsval(cx, hash_js.handle_mut());
+        set_dictionary_property(cx, object.handle(), c"hash", hash_js.handle())
+            .expect("Failed to set hash property of HmacKeyAlgorithm");
+
+        rooted!(&in(cx) let mut length_js = UndefinedValue());
+        self.length.to_jsval(cx, length_js.handle_mut());
+        set_dictionary_property(cx, object.handle(), c"length", length_js.handle())
+            .expect("Failed to set length property of HmacKeyAlgorithm");
+
+        rval.set(ObjectOrNullValue(object.get()));
+    }
+}
+
+impl TryFrom<SerializableHmacKeyAlgorithm> for HmacKeyAlgorithm {
+    type Error = ();
+
+    fn try_from(value: SerializableHmacKeyAlgorithm) -> Result<Self, Self::Error> {
+        Ok(HmacKeyAlgorithm {
+            name: CryptoAlgorithm::from_str(&value.name).map_err(|_| ())?,
+            hash: value.hash.try_into()?,
+            length: value.length,
+        })
+    }
+}
+
+impl From<&HmacKeyAlgorithm> for SerializableHmacKeyAlgorithm {
+    fn from(value: &HmacKeyAlgorithm) -> Self {
+        SerializableHmacKeyAlgorithm {
+            name: value.name.as_str().into(),
+            hash: (&value.hash).into(),
+            length: value.length,
+        }
+    }
+}
+
+/// <https://w3c.github.io/webcrypto/#dfn-HmacKeyGenParams>
+#[derive(Clone, MallocSizeOf)]
+struct HmacKeyGenParams {
+    /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
+    name: CryptoAlgorithm,
+
+    /// <https://w3c.github.io/webcrypto/#dfn-HmacKeyGenParams-hash>
+    hash: DigestAlgorithm,
+
+    /// <https://w3c.github.io/webcrypto/#dfn-HmacKeyGenParams-length>
+    length: Option<u32>,
+}
+
+impl<'a> TryFromWithCxAndName<HandleObject<'a>> for HmacKeyGenParams {
+    type Error = Error;
+
+    fn try_from_with_cx_and_name(
+        cx: &mut JSContext,
+        algorithm_name: CryptoAlgorithm,
+        object: HandleObject<'a>,
+    ) -> Result<Self, Self::Error> {
+        let hash = get_required_parameter(cx, object, c"hash", ())?;
+
+        Ok(HmacKeyGenParams {
+            name: algorithm_name,
+            hash: normalize_algorithm::<DigestOperation>(cx, &hash)?,
+            length: get_property(cx, object, c"length", ConversionBehavior::EnforceRange)?,
+        })
+    }
+}
+
+/// <https://w3c.github.io/webcrypto/#dfn-HkdfParams>
+#[derive(Clone, MallocSizeOf)]
+pub(crate) struct HkdfParams {
+    /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
+    name: CryptoAlgorithm,
+
+    /// <https://w3c.github.io/webcrypto/#dfn-HkdfParams-hash>
+    hash: DigestAlgorithm,
+
+    /// <https://w3c.github.io/webcrypto/#dfn-HkdfParams-salt>
+    salt: Vec<u8>,
+
+    /// <https://w3c.github.io/webcrypto/#dfn-HkdfParams-info>
+    info: Vec<u8>,
+}
+
+impl<'a> TryFromWithCxAndName<HandleObject<'a>> for HkdfParams {
+    type Error = Error;
+
+    fn try_from_with_cx_and_name(
+        cx: &mut JSContext,
+        algorithm_name: CryptoAlgorithm,
+        object: HandleObject<'a>,
+    ) -> Result<Self, Self::Error> {
+        let hash = get_required_parameter(cx, object, c"hash", ())?;
+
+        Ok(HkdfParams {
+            name: algorithm_name,
+            hash: normalize_algorithm::<DigestOperation>(cx, &hash)?,
+            salt: get_required_buffer_source(cx, object, c"salt")?,
+            info: get_required_buffer_source(cx, object, c"info")?,
+        })
+    }
+}
+
+/// <https://w3c.github.io/webcrypto/#dfn-Pbkdf2Params>
+#[derive(Clone, MallocSizeOf)]
+pub(crate) struct Pbkdf2Params {
+    /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
+    name: CryptoAlgorithm,
+
+    /// <https://w3c.github.io/webcrypto/#dfn-Pbkdf2Params-salt>
+    salt: Vec<u8>,
+
+    /// <https://w3c.github.io/webcrypto/#dfn-Pbkdf2Params-iterations>
+    iterations: u32,
+
+    /// <https://w3c.github.io/webcrypto/#dfn-Pbkdf2Params-hash>
+    hash: DigestAlgorithm,
+}
+
+impl<'a> TryFromWithCxAndName<HandleObject<'a>> for Pbkdf2Params {
+    type Error = Error;
+
+    fn try_from_with_cx_and_name(
+        cx: &mut JSContext,
+        algorithm_name: CryptoAlgorithm,
+        object: HandleObject<'a>,
+    ) -> Result<Self, Self::Error> {
+        let hash = get_required_parameter(cx, object, c"hash", ())?;
+
+        Ok(Pbkdf2Params {
+            name: algorithm_name,
+            salt: get_required_buffer_source(cx, object, c"salt")?,
+            iterations: get_required_parameter(
+                cx,
+                object,
+                c"iterations",
+                ConversionBehavior::EnforceRange,
+            )?,
+            hash: normalize_algorithm::<DigestOperation>(cx, &hash)?,
+        })
+    }
+}
+
+/// <https://wicg.github.io/webcrypto-modern-algos/#dfn-ContextParams>
+#[derive(Clone, MallocSizeOf)]
+struct ContextParams {
+    /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
+    name: CryptoAlgorithm,
+
+    /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-ContextParams-context>
+    context: Option<Vec<u8>>,
+}
+
+impl<'a> TryFromWithCxAndName<HandleObject<'a>> for ContextParams {
+    type Error = Error;
+
+    fn try_from_with_cx_and_name(
+        cx: &mut JSContext,
+        algorithm_name: CryptoAlgorithm,
+        object: HandleObject<'a>,
+    ) -> Result<Self, Self::Error> {
+        Ok(ContextParams {
+            name: algorithm_name,
+            context: get_optional_buffer_source(cx, object, c"context")?,
+        })
+    }
+}
+
+/// <https://wicg.github.io/webcrypto-modern-algos/#dfn-AeadParams>
+#[derive(Clone, MallocSizeOf)]
+struct AeadParams {
+    /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
+    name: CryptoAlgorithm,
+
+    /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-AeadParams-iv>
+    iv: Vec<u8>,
+
+    /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-AeadParams-additionalData>
+    additional_data: Option<Vec<u8>>,
+
+    /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-AeadParams-tagLength>
+    tag_length: Option<u8>,
+}
+
+impl<'a> TryFromWithCxAndName<HandleObject<'a>> for AeadParams {
+    type Error = Error;
+
+    fn try_from_with_cx_and_name(
+        cx: &mut JSContext,
+        algorithm_name: CryptoAlgorithm,
+        object: HandleObject<'a>,
+    ) -> Result<Self, Self::Error> {
+        Ok(AeadParams {
+            name: algorithm_name,
+            iv: get_required_buffer_source(cx, object, c"iv")?,
+            additional_data: get_optional_buffer_source(cx, object, c"additionalData")?,
+            tag_length: get_property(cx, object, c"tagLength", ConversionBehavior::EnforceRange)?,
+        })
+    }
+}
 
 /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-CShakeParams>
 #[derive(Clone, MallocSizeOf)]
@@ -3801,318 +3802,318 @@ impl From<&KangarooTwelveParams> for SerializableKangarooTwelveParams {
     }
 }
 
-// /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-KmacKeyGenParams>
-// #[derive(Clone, MallocSizeOf)]
-// struct KmacKeyGenParams {
-//     /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
-//     name: CryptoAlgorithm,
-//
-//     /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-KmacKeyGenParams-length>
-//     length: Option<u32>,
-// }
-//
-// impl<'a> TryFromWithCxAndName<HandleObject<'a>> for KmacKeyGenParams {
-//     type Error = Error;
-//
-//     fn try_from_with_cx_and_name(
-//         cx: &mut JSContext,
-//         algorithm_name: CryptoAlgorithm,
-//         object: HandleObject,
-//     ) -> Result<Self, Self::Error> {
-//         Ok(KmacKeyGenParams {
-//             name: algorithm_name,
-//             length: get_property(cx, object, c"length", ConversionBehavior::EnforceRange)?,
-//         })
-//     }
-// }
-//
-// /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-KmacImportParams>
-// #[derive(Clone, MallocSizeOf)]
-// struct KmacImportParams {
-//     /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
-//     name: CryptoAlgorithm,
-//
-//     /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-KmacImportParams-length>
-//     length: Option<u32>,
-// }
-//
-// impl<'a> TryFromWithCxAndName<HandleObject<'a>> for KmacImportParams {
-//     type Error = Error;
-//
-//     fn try_from_with_cx_and_name(
-//         cx: &mut JSContext,
-//         algorithm_name: CryptoAlgorithm,
-//         object: HandleObject,
-//     ) -> Result<Self, Self::Error> {
-//         Ok(KmacImportParams {
-//             name: algorithm_name,
-//             length: get_property(cx, object, c"length", ConversionBehavior::EnforceRange)?,
-//         })
-//     }
-// }
-//
-// /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-KmacKeyAlgorithm>
-// #[derive(Clone, MallocSizeOf)]
-// pub(crate) struct KmacKeyAlgorithm {
-//     /// <https://w3c.github.io/webcrypto/#dom-keyalgorithm-name>
-//     name: CryptoAlgorithm,
-//
-//     /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-KmacKeyAlgorithm-length>
-//     length: u32,
-// }
-//
-// impl ToJSValConvertible for KmacKeyAlgorithm {
-//     #[expect(unsafe_code)]
-//     fn to_jsval(&self, cx: &mut JSContext, mut rval: MutableHandleValue) {
-//         rooted!(&in(cx) let mut object = unsafe { JS_NewObject(cx, ptr::null()) });
-//
-//         rooted!(&in(cx) let mut name_js = UndefinedValue());
-//         self.name.as_str().to_jsval(cx, name_js.handle_mut());
-//         set_dictionary_property(cx, object.handle(), c"name", name_js.handle())
-//             .expect("Failed to set name property of KmacKeyAlgorithm");
-//
-//         rooted!(&in(cx) let mut length_js = UndefinedValue());
-//         self.length.to_jsval(cx, length_js.handle_mut());
-//         set_dictionary_property(cx, object.handle(), c"length", length_js.handle())
-//             .expect("Failed to set length property of KmacKeyAlgorithm");
-//
-//         rval.set(ObjectOrNullValue(object.get()));
-//     }
-// }
-//
-// impl TryFrom<SerializableKmacKeyAlgorithm> for KmacKeyAlgorithm {
-//     type Error = ();
-//
-//     fn try_from(value: SerializableKmacKeyAlgorithm) -> Result<Self, Self::Error> {
-//         Ok(KmacKeyAlgorithm {
-//             name: CryptoAlgorithm::from_str(&value.name).map_err(|_| ())?,
-//             length: value.length,
-//         })
-//     }
-// }
-//
-// impl From<&KmacKeyAlgorithm> for SerializableKmacKeyAlgorithm {
-//     fn from(value: &KmacKeyAlgorithm) -> Self {
-//         SerializableKmacKeyAlgorithm {
-//             name: value.name.as_str().into(),
-//             length: value.length,
-//         }
-//     }
-// }
-//
-// /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-KmacParams>
-// struct KmacParams {
-//     /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
-//     name: CryptoAlgorithm,
-//
-//     /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-KmacParams-outputLength>
-//     output_length: u32,
-//
-//     /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-KmacParams-customization>
-//     customization: Option<Vec<u8>>,
-// }
-//
-// impl<'a> TryFromWithCxAndName<HandleObject<'a>> for KmacParams {
-//     type Error = Error;
-//
-//     fn try_from_with_cx_and_name(
-//         cx: &mut JSContext,
-//         algorithm_name: CryptoAlgorithm,
-//         object: HandleObject<'a>,
-//     ) -> Result<Self, Self::Error> {
-//         Ok(KmacParams {
-//             name: algorithm_name,
-//             output_length: get_required_parameter(
-//                 cx,
-//                 object,
-//                 c"outputLength",
-//                 ConversionBehavior::EnforceRange,
-//             )?,
-//             customization: get_optional_buffer_source(cx, object, c"customization")?,
-//         })
-//     }
-// }
-//
-// /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-Argon2Params>
-// #[derive(Clone, MallocSizeOf)]
-// struct Argon2Params {
-//     /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
-//     name: CryptoAlgorithm,
-//
-//     /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-Argon2Params-nonce>
-//     nonce: Vec<u8>,
-//
-//     /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-Argon2Params-parallelism>
-//     parallelism: u32,
-//
-//     /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-Argon2Params-memory>
-//     memory: u32,
-//
-//     /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-Argon2Params-passes>
-//     passes: u32,
-//
-//     /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-Argon2Params-version>
-//     version: Option<u8>,
-//
-//     /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-Argon2Params-secretValue>
-//     secret_value: Option<Vec<u8>>,
-//
-//     /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-Argon2Params-associatedData>
-//     associated_data: Option<Vec<u8>>,
-// }
-//
-// impl<'a> TryFromWithCxAndName<HandleObject<'a>> for Argon2Params {
-//     type Error = Error;
-//
-//     fn try_from_with_cx_and_name(
-//         cx: &mut JSContext,
-//         algorithm_name: CryptoAlgorithm,
-//         object: HandleObject<'a>,
-//     ) -> Result<Self, Self::Error> {
-//         Ok(Argon2Params {
-//             name: algorithm_name,
-//             nonce: get_required_buffer_source(cx, object, c"nonce")?,
-//             parallelism: get_required_parameter(
-//                 cx,
-//                 object,
-//                 c"parallelism",
-//                 ConversionBehavior::EnforceRange,
-//             )?,
-//             memory: get_required_parameter(
-//                 cx,
-//                 object,
-//                 c"memory",
-//                 ConversionBehavior::EnforceRange,
-//             )?,
-//             passes: get_required_parameter(
-//                 cx,
-//                 object,
-//                 c"passes",
-//                 ConversionBehavior::EnforceRange,
-//             )?,
-//             version: get_property(cx, object, c"version", ConversionBehavior::EnforceRange)?,
-//             secret_value: get_optional_buffer_source(cx, object, c"secretValue")?,
-//             associated_data: get_optional_buffer_source(cx, object, c"associatedData")?,
-//         })
-//     }
-// }
-//
-// /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-EncapsulatedKey>
-// struct EncapsulatedKey {
-//     /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-EncapsulatedKey-sharedKey>
-//     shared_key: Option<Trusted<CryptoKey>>,
-//
-//     /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-EncapsulatedKey-ciphertext>
-//     ciphertext: Option<Vec<u8>>,
-// }
-//
-// impl ToJSValConvertible for EncapsulatedKey {
-//     #[expect(unsafe_code)]
-//     fn to_jsval(&self, cx: &mut JSContext, mut rval: MutableHandleValue) {
-//         rooted!(&in(cx) let mut object = unsafe { JS_NewObject(cx, ptr::null()) });
-//
-//         rooted!(&in(cx) let mut shared_key_js = UndefinedValue());
-//         self.shared_key
-//             .as_ref()
-//             .map(|shared_key| shared_key.root())
-//             .to_jsval(cx, shared_key_js.handle_mut());
-//         set_dictionary_property(cx, object.handle(), c"sharedKey", shared_key_js.handle())
-//             .expect("Failed to set sharedKey property of EncapsulatedKey");
-//
-//         rooted!(&in(cx) let mut ciphertext_js = UndefinedValue());
-//         self.ciphertext
-//             .as_ref()
-//             .map(|ciphertext| {
-//                 rooted!(&in(cx) let mut ciphertext_js_object = ptr::null_mut::<JSObject>());
-//                 create_buffer_source::<ArrayBufferU8>(
-//                     cx,
-//                     ciphertext,
-//                     ciphertext_js_object.handle_mut(),
-//                 )
-//                 .expect("Failed to convert ciphertext to ArrayBufferU8")
-//             })
-//             .to_jsval(cx, ciphertext_js.handle_mut());
-//         set_dictionary_property(cx, object.handle(), c"ciphertext", ciphertext_js.handle())
-//             .expect("Failed to set ciphertext property of EncapsulatedKey");
-//
-//         rval.set(ObjectOrNullValue(object.get()));
-//     }
-// }
-//
-// /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-EncapsulatedBits>
-// struct EncapsulatedBits {
-//     /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-EncapsulatedBits-sharedKey>
-//     shared_key: Option<Zeroizing<Vec<u8>>>,
-//
-//     /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-EncapsulatedBits-ciphertext>
-//     ciphertext: Option<Vec<u8>>,
-// }
-//
-// impl ToJSValConvertible for EncapsulatedBits {
-//     #[expect(unsafe_code)]
-//     fn to_jsval(&self, cx: &mut JSContext, mut rval: MutableHandleValue) {
-//         rooted!(&in(cx) let mut object = unsafe { JS_NewObject(cx, ptr::null()) });
-//
-//         rooted!(&in(cx) let mut shared_key_js = UndefinedValue());
-//         self.shared_key
-//             .as_ref()
-//             .map(|shared_key| {
-//                 rooted!(&in(cx) let mut shared_key_js_object = ptr::null_mut::<JSObject>());
-//                 create_buffer_source::<ArrayBufferU8>(
-//                     cx,
-//                     shared_key,
-//                     shared_key_js_object.handle_mut(),
-//                 )
-//                 .expect("Failed to convert shared_key to ArrayBufferU8")
-//             })
-//             .to_jsval(cx, shared_key_js.handle_mut());
-//         set_dictionary_property(cx, object.handle(), c"sharedKey", shared_key_js.handle())
-//             .expect("Failed to set sharedKey property of EncapsulatedBits");
-//
-//         rooted!(&in(cx) let mut ciphertext_js = UndefinedValue());
-//         self.ciphertext
-//             .as_ref()
-//             .map(|ciphertext| {
-//                 rooted!(&in(cx) let mut ciphertext_js_object = ptr::null_mut::<JSObject>());
-//                 create_buffer_source::<ArrayBufferU8>(
-//                     cx,
-//                     ciphertext,
-//                     ciphertext_js_object.handle_mut(),
-//                 )
-//                 .expect("Failed to convert ciphertext to ArrayBufferU8")
-//             })
-//             .to_jsval(cx, ciphertext_js.handle_mut());
-//         set_dictionary_property(cx, object.handle(), c"ciphertext", ciphertext_js.handle())
-//             .expect("Failed to set ciphertext property of EncapsulatedBits");
-//
-//         rval.set(ObjectOrNullValue(object.get()));
-//     }
-// }
-//
-// /// <https://wicg.github.io/webcrypto-secure-curves/#dfn-Ed448Params>
-// #[derive(Clone, MallocSizeOf)]
-// struct SubtleEd448Params {
-//     /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
-//     name: CryptoAlgorithm,
-//
-//     /// <https://wicg.github.io/webcrypto-secure-curves/#dfn-Ed448Params-context>
-//     context: Option<Vec<u8>>,
-// }
-//
-// impl<'a> TryFromWithCxAndName<HandleObject<'a>> for SubtleEd448Params {
-//     type Error = Error;
-//
-//     fn try_from_with_cx_and_name(
-//         cx: &mut JSContext,
-//         algorithm_name: CryptoAlgorithm,
-//         object: HandleObject<'a>,
-//     ) -> Result<Self, Self::Error> {
-//         Ok(SubtleEd448Params {
-//             name: algorithm_name,
-//             context: get_optional_buffer_source(cx, object, c"context")?,
-//         })
-//     }
-// }
+/// <https://wicg.github.io/webcrypto-modern-algos/#dfn-KmacKeyGenParams>
+#[derive(Clone, MallocSizeOf)]
+struct KmacKeyGenParams {
+    /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
+    name: CryptoAlgorithm,
+
+    /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-KmacKeyGenParams-length>
+    length: Option<u32>,
+}
+
+impl<'a> TryFromWithCxAndName<HandleObject<'a>> for KmacKeyGenParams {
+    type Error = Error;
+
+    fn try_from_with_cx_and_name(
+        cx: &mut JSContext,
+        algorithm_name: CryptoAlgorithm,
+        object: HandleObject,
+    ) -> Result<Self, Self::Error> {
+        Ok(KmacKeyGenParams {
+            name: algorithm_name,
+            length: get_property(cx, object, c"length", ConversionBehavior::EnforceRange)?,
+        })
+    }
+}
+
+/// <https://wicg.github.io/webcrypto-modern-algos/#dfn-KmacImportParams>
+#[derive(Clone, MallocSizeOf)]
+struct KmacImportParams {
+    /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
+    name: CryptoAlgorithm,
+
+    /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-KmacImportParams-length>
+    length: Option<u32>,
+}
+
+impl<'a> TryFromWithCxAndName<HandleObject<'a>> for KmacImportParams {
+    type Error = Error;
+
+    fn try_from_with_cx_and_name(
+        cx: &mut JSContext,
+        algorithm_name: CryptoAlgorithm,
+        object: HandleObject,
+    ) -> Result<Self, Self::Error> {
+        Ok(KmacImportParams {
+            name: algorithm_name,
+            length: get_property(cx, object, c"length", ConversionBehavior::EnforceRange)?,
+        })
+    }
+}
+
+/// <https://wicg.github.io/webcrypto-modern-algos/#dfn-KmacKeyAlgorithm>
+#[derive(Clone, MallocSizeOf)]
+pub(crate) struct KmacKeyAlgorithm {
+    /// <https://w3c.github.io/webcrypto/#dom-keyalgorithm-name>
+    name: CryptoAlgorithm,
+
+    /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-KmacKeyAlgorithm-length>
+    length: u32,
+}
+
+impl ToJSValConvertible for KmacKeyAlgorithm {
+    #[expect(unsafe_code)]
+    fn to_jsval(&self, cx: &mut JSContext, mut rval: MutableHandleValue) {
+        rooted!(&in(cx) let mut object = unsafe { JS_NewObject(cx, ptr::null()) });
+
+        rooted!(&in(cx) let mut name_js = UndefinedValue());
+        self.name.as_str().to_jsval(cx, name_js.handle_mut());
+        set_dictionary_property(cx, object.handle(), c"name", name_js.handle())
+            .expect("Failed to set name property of KmacKeyAlgorithm");
+
+        rooted!(&in(cx) let mut length_js = UndefinedValue());
+        self.length.to_jsval(cx, length_js.handle_mut());
+        set_dictionary_property(cx, object.handle(), c"length", length_js.handle())
+            .expect("Failed to set length property of KmacKeyAlgorithm");
+
+        rval.set(ObjectOrNullValue(object.get()));
+    }
+}
+
+impl TryFrom<SerializableKmacKeyAlgorithm> for KmacKeyAlgorithm {
+    type Error = ();
+
+    fn try_from(value: SerializableKmacKeyAlgorithm) -> Result<Self, Self::Error> {
+        Ok(KmacKeyAlgorithm {
+            name: CryptoAlgorithm::from_str(&value.name).map_err(|_| ())?,
+            length: value.length,
+        })
+    }
+}
+
+impl From<&KmacKeyAlgorithm> for SerializableKmacKeyAlgorithm {
+    fn from(value: &KmacKeyAlgorithm) -> Self {
+        SerializableKmacKeyAlgorithm {
+            name: value.name.as_str().into(),
+            length: value.length,
+        }
+    }
+}
+
+/// <https://wicg.github.io/webcrypto-modern-algos/#dfn-KmacParams>
+struct KmacParams {
+    /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
+    name: CryptoAlgorithm,
+
+    /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-KmacParams-outputLength>
+    output_length: u32,
+
+    /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-KmacParams-customization>
+    customization: Option<Vec<u8>>,
+}
+
+impl<'a> TryFromWithCxAndName<HandleObject<'a>> for KmacParams {
+    type Error = Error;
+
+    fn try_from_with_cx_and_name(
+        cx: &mut JSContext,
+        algorithm_name: CryptoAlgorithm,
+        object: HandleObject<'a>,
+    ) -> Result<Self, Self::Error> {
+        Ok(KmacParams {
+            name: algorithm_name,
+            output_length: get_required_parameter(
+                cx,
+                object,
+                c"outputLength",
+                ConversionBehavior::EnforceRange,
+            )?,
+            customization: get_optional_buffer_source(cx, object, c"customization")?,
+        })
+    }
+}
+
+/// <https://wicg.github.io/webcrypto-modern-algos/#dfn-Argon2Params>
+#[derive(Clone, MallocSizeOf)]
+struct Argon2Params {
+    /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
+    name: CryptoAlgorithm,
+
+    /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-Argon2Params-nonce>
+    nonce: Vec<u8>,
+
+    /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-Argon2Params-parallelism>
+    parallelism: u32,
+
+    /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-Argon2Params-memory>
+    memory: u32,
+
+    /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-Argon2Params-passes>
+    passes: u32,
+
+    /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-Argon2Params-version>
+    version: Option<u8>,
+
+    /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-Argon2Params-secretValue>
+    secret_value: Option<Vec<u8>>,
+
+    /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-Argon2Params-associatedData>
+    associated_data: Option<Vec<u8>>,
+}
+
+impl<'a> TryFromWithCxAndName<HandleObject<'a>> for Argon2Params {
+    type Error = Error;
+
+    fn try_from_with_cx_and_name(
+        cx: &mut JSContext,
+        algorithm_name: CryptoAlgorithm,
+        object: HandleObject<'a>,
+    ) -> Result<Self, Self::Error> {
+        Ok(Argon2Params {
+            name: algorithm_name,
+            nonce: get_required_buffer_source(cx, object, c"nonce")?,
+            parallelism: get_required_parameter(
+                cx,
+                object,
+                c"parallelism",
+                ConversionBehavior::EnforceRange,
+            )?,
+            memory: get_required_parameter(
+                cx,
+                object,
+                c"memory",
+                ConversionBehavior::EnforceRange,
+            )?,
+            passes: get_required_parameter(
+                cx,
+                object,
+                c"passes",
+                ConversionBehavior::EnforceRange,
+            )?,
+            version: get_property(cx, object, c"version", ConversionBehavior::EnforceRange)?,
+            secret_value: get_optional_buffer_source(cx, object, c"secretValue")?,
+            associated_data: get_optional_buffer_source(cx, object, c"associatedData")?,
+        })
+    }
+}
+
+/// <https://wicg.github.io/webcrypto-modern-algos/#dfn-EncapsulatedKey>
+struct EncapsulatedKey<D: DomTypes> {
+    /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-EncapsulatedKey-sharedKey>
+    shared_key: Option<Trusted<CryptoKey<D>>>,
+
+    /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-EncapsulatedKey-ciphertext>
+    ciphertext: Option<Vec<u8>>,
+}
+
+impl<D: DomTypes> ToJSValConvertible for EncapsulatedKey<D> {
+    #[expect(unsafe_code)]
+    fn to_jsval(&self, cx: &mut JSContext, mut rval: MutableHandleValue) {
+        rooted!(&in(cx) let mut object = unsafe { JS_NewObject(cx, ptr::null()) });
+
+        rooted!(&in(cx) let mut shared_key_js = UndefinedValue());
+        self.shared_key
+            .as_ref()
+            .map(|shared_key| shared_key.root())
+            .to_jsval(cx, shared_key_js.handle_mut());
+        set_dictionary_property(cx, object.handle(), c"sharedKey", shared_key_js.handle())
+            .expect("Failed to set sharedKey property of EncapsulatedKey");
+
+        rooted!(&in(cx) let mut ciphertext_js = UndefinedValue());
+        self.ciphertext
+            .as_ref()
+            .map(|ciphertext| {
+                rooted!(&in(cx) let mut ciphertext_js_object = ptr::null_mut::<JSObject>());
+                create_buffer_source::<ArrayBufferU8>(
+                    cx,
+                    ciphertext,
+                    ciphertext_js_object.handle_mut(),
+                )
+                .expect("Failed to convert ciphertext to ArrayBufferU8")
+            })
+            .to_jsval(cx, ciphertext_js.handle_mut());
+        set_dictionary_property(cx, object.handle(), c"ciphertext", ciphertext_js.handle())
+            .expect("Failed to set ciphertext property of EncapsulatedKey");
+
+        rval.set(ObjectOrNullValue(object.get()));
+    }
+}
+
+/// <https://wicg.github.io/webcrypto-modern-algos/#dfn-EncapsulatedBits>
+struct EncapsulatedBits {
+    /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-EncapsulatedBits-sharedKey>
+    shared_key: Option<Zeroizing<Vec<u8>>>,
+
+    /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-EncapsulatedBits-ciphertext>
+    ciphertext: Option<Vec<u8>>,
+}
+
+impl ToJSValConvertible for EncapsulatedBits {
+    #[expect(unsafe_code)]
+    fn to_jsval(&self, cx: &mut JSContext, mut rval: MutableHandleValue) {
+        rooted!(&in(cx) let mut object = unsafe { JS_NewObject(cx, ptr::null()) });
+
+        rooted!(&in(cx) let mut shared_key_js = UndefinedValue());
+        self.shared_key
+            .as_ref()
+            .map(|shared_key| {
+                rooted!(&in(cx) let mut shared_key_js_object = ptr::null_mut::<JSObject>());
+                create_buffer_source::<ArrayBufferU8>(
+                    cx,
+                    shared_key,
+                    shared_key_js_object.handle_mut(),
+                )
+                .expect("Failed to convert shared_key to ArrayBufferU8")
+            })
+            .to_jsval(cx, shared_key_js.handle_mut());
+        set_dictionary_property(cx, object.handle(), c"sharedKey", shared_key_js.handle())
+            .expect("Failed to set sharedKey property of EncapsulatedBits");
+
+        rooted!(&in(cx) let mut ciphertext_js = UndefinedValue());
+        self.ciphertext
+            .as_ref()
+            .map(|ciphertext| {
+                rooted!(&in(cx) let mut ciphertext_js_object = ptr::null_mut::<JSObject>());
+                create_buffer_source::<ArrayBufferU8>(
+                    cx,
+                    ciphertext,
+                    ciphertext_js_object.handle_mut(),
+                )
+                .expect("Failed to convert ciphertext to ArrayBufferU8")
+            })
+            .to_jsval(cx, ciphertext_js.handle_mut());
+        set_dictionary_property(cx, object.handle(), c"ciphertext", ciphertext_js.handle())
+            .expect("Failed to set ciphertext property of EncapsulatedBits");
+
+        rval.set(ObjectOrNullValue(object.get()));
+    }
+}
+
+/// <https://wicg.github.io/webcrypto-secure-curves/#dfn-Ed448Params>
+#[derive(Clone, MallocSizeOf)]
+struct SubtleEd448Params {
+    /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
+    name: CryptoAlgorithm,
+
+    /// <https://wicg.github.io/webcrypto-secure-curves/#dfn-Ed448Params-context>
+    context: Option<Vec<u8>>,
+}
+
+impl<'a> TryFromWithCxAndName<HandleObject<'a>> for SubtleEd448Params {
+    type Error = Error;
+
+    fn try_from_with_cx_and_name(
+        cx: &mut JSContext,
+        algorithm_name: CryptoAlgorithm,
+        object: HandleObject<'a>,
+    ) -> Result<Self, Self::Error> {
+        Ok(SubtleEd448Params {
+            name: algorithm_name,
+            context: get_optional_buffer_source(cx, object, c"context")?,
+        })
+    }
+}
 
 /// Helper to retrieve a required paramter from WebIDL dictionary.
 fn get_required_parameter<T: FromJSValConvertible>(
@@ -4180,99 +4181,99 @@ fn get_required_buffer_source(
 //         ExportedKey::Jwk(Box::new(jwk))
 //     }
 // }
-//
-// /// Union type of KeyAlgorithm and IDL dictionary types derived from it. Note that we actually use
-// /// our "subtle" structs of the corresponding IDL dictionary types so that they can be easily
-// /// passed to another threads.
-// #[derive(Clone, MallocSizeOf)]
-// #[expect(clippy::enum_variant_names)]
-// pub(crate) enum KeyAlgorithmAndDerivatives {
-//     KeyAlgorithm(KeyAlgorithm),
-//     RsaHashedKeyAlgorithm(RsaHashedKeyAlgorithm),
-//     EcKeyAlgorithm(EcKeyAlgorithm),
-//     AesKeyAlgorithm(AesKeyAlgorithm),
-//     HmacKeyAlgorithm(HmacKeyAlgorithm),
-//     KmacKeyAlgorithm(KmacKeyAlgorithm),
-// }
-//
-// impl KeyAlgorithmAndDerivatives {
-//     fn name(&self) -> CryptoAlgorithm {
-//         match self {
-//             KeyAlgorithmAndDerivatives::KeyAlgorithm(algorithm) => algorithm.name,
-//             KeyAlgorithmAndDerivatives::RsaHashedKeyAlgorithm(algorithm) => algorithm.name,
-//             KeyAlgorithmAndDerivatives::EcKeyAlgorithm(algorithm) => algorithm.name,
-//             KeyAlgorithmAndDerivatives::AesKeyAlgorithm(algorithm) => algorithm.name,
-//             KeyAlgorithmAndDerivatives::HmacKeyAlgorithm(algorithm) => algorithm.name,
-//             KeyAlgorithmAndDerivatives::KmacKeyAlgorithm(algorithm) => algorithm.name,
-//         }
-//     }
-// }
-//
-// impl ToJSValConvertible for KeyAlgorithmAndDerivatives {
-//     fn to_jsval(&self, cx: &mut JSContext, rval: MutableHandleValue) {
-//         match self {
-//             KeyAlgorithmAndDerivatives::KeyAlgorithm(algo) => algo.to_jsval(cx, rval),
-//             KeyAlgorithmAndDerivatives::RsaHashedKeyAlgorithm(algo) => algo.to_jsval(cx, rval),
-//             KeyAlgorithmAndDerivatives::EcKeyAlgorithm(algo) => algo.to_jsval(cx, rval),
-//             KeyAlgorithmAndDerivatives::AesKeyAlgorithm(algo) => algo.to_jsval(cx, rval),
-//             KeyAlgorithmAndDerivatives::HmacKeyAlgorithm(algo) => algo.to_jsval(cx, rval),
-//             KeyAlgorithmAndDerivatives::KmacKeyAlgorithm(algo) => algo.to_jsval(cx, rval),
-//         }
-//     }
-// }
-//
-// impl TryFrom<SerializableKeyAlgorithmAndDerivatives> for KeyAlgorithmAndDerivatives {
-//     type Error = ();
-//
-//     fn try_from(value: SerializableKeyAlgorithmAndDerivatives) -> Result<Self, Self::Error> {
-//         match value {
-//             SerializableKeyAlgorithmAndDerivatives::KeyAlgorithm(algorithm) => Ok(
-//                 KeyAlgorithmAndDerivatives::KeyAlgorithm(algorithm.try_into()?),
-//             ),
-//             SerializableKeyAlgorithmAndDerivatives::RsaHashedKeyAlgorithm(algorithm) => Ok(
-//                 KeyAlgorithmAndDerivatives::RsaHashedKeyAlgorithm(algorithm.try_into()?),
-//             ),
-//             SerializableKeyAlgorithmAndDerivatives::EcKeyAlgorithm(algorithm) => Ok(
-//                 KeyAlgorithmAndDerivatives::EcKeyAlgorithm(algorithm.try_into()?),
-//             ),
-//             SerializableKeyAlgorithmAndDerivatives::AesKeyAlgorithm(algorithm) => Ok(
-//                 KeyAlgorithmAndDerivatives::AesKeyAlgorithm(algorithm.try_into()?),
-//             ),
-//             SerializableKeyAlgorithmAndDerivatives::HmacKeyAlgorithm(algorithm) => Ok(
-//                 KeyAlgorithmAndDerivatives::HmacKeyAlgorithm(algorithm.try_into()?),
-//             ),
-//             SerializableKeyAlgorithmAndDerivatives::KmacKeyAlgorithm(algorithm) => Ok(
-//                 KeyAlgorithmAndDerivatives::KmacKeyAlgorithm(algorithm.try_into()?),
-//             ),
-//         }
-//     }
-// }
-//
-// impl From<&KeyAlgorithmAndDerivatives> for SerializableKeyAlgorithmAndDerivatives {
-//     fn from(value: &KeyAlgorithmAndDerivatives) -> Self {
-//         match value {
-//             KeyAlgorithmAndDerivatives::KeyAlgorithm(algorithm) => {
-//                 SerializableKeyAlgorithmAndDerivatives::KeyAlgorithm(algorithm.into())
-//             },
-//             KeyAlgorithmAndDerivatives::RsaHashedKeyAlgorithm(algorithm) => {
-//                 SerializableKeyAlgorithmAndDerivatives::RsaHashedKeyAlgorithm(algorithm.into())
-//             },
-//             KeyAlgorithmAndDerivatives::EcKeyAlgorithm(algorithm) => {
-//                 SerializableKeyAlgorithmAndDerivatives::EcKeyAlgorithm(algorithm.into())
-//             },
-//             KeyAlgorithmAndDerivatives::AesKeyAlgorithm(algorithm) => {
-//                 SerializableKeyAlgorithmAndDerivatives::AesKeyAlgorithm(algorithm.into())
-//             },
-//             KeyAlgorithmAndDerivatives::HmacKeyAlgorithm(algorithm) => {
-//                 SerializableKeyAlgorithmAndDerivatives::HmacKeyAlgorithm(algorithm.into())
-//             },
-//             KeyAlgorithmAndDerivatives::KmacKeyAlgorithm(algorithm) => {
-//                 SerializableKeyAlgorithmAndDerivatives::KmacKeyAlgorithm(algorithm.into())
-//             },
-//         }
-//     }
-// }
-//
+
+/// Union type of KeyAlgorithm and IDL dictionary types derived from it. Note that we actually use
+/// our "subtle" structs of the corresponding IDL dictionary types so that they can be easily
+/// passed to another threads.
+#[derive(Clone, MallocSizeOf)]
+#[expect(clippy::enum_variant_names)]
+pub(crate) enum KeyAlgorithmAndDerivatives {
+    KeyAlgorithm(KeyAlgorithm),
+    RsaHashedKeyAlgorithm(RsaHashedKeyAlgorithm),
+    EcKeyAlgorithm(EcKeyAlgorithm),
+    AesKeyAlgorithm(AesKeyAlgorithm),
+    HmacKeyAlgorithm(HmacKeyAlgorithm),
+    KmacKeyAlgorithm(KmacKeyAlgorithm),
+}
+
+impl KeyAlgorithmAndDerivatives {
+    fn name(&self) -> CryptoAlgorithm {
+        match self {
+            KeyAlgorithmAndDerivatives::KeyAlgorithm(algorithm) => algorithm.name,
+            KeyAlgorithmAndDerivatives::RsaHashedKeyAlgorithm(algorithm) => algorithm.name,
+            KeyAlgorithmAndDerivatives::EcKeyAlgorithm(algorithm) => algorithm.name,
+            KeyAlgorithmAndDerivatives::AesKeyAlgorithm(algorithm) => algorithm.name,
+            KeyAlgorithmAndDerivatives::HmacKeyAlgorithm(algorithm) => algorithm.name,
+            KeyAlgorithmAndDerivatives::KmacKeyAlgorithm(algorithm) => algorithm.name,
+        }
+    }
+}
+
+impl ToJSValConvertible for KeyAlgorithmAndDerivatives {
+    fn to_jsval(&self, cx: &mut JSContext, rval: MutableHandleValue) {
+        match self {
+            KeyAlgorithmAndDerivatives::KeyAlgorithm(algo) => algo.to_jsval(cx, rval),
+            KeyAlgorithmAndDerivatives::RsaHashedKeyAlgorithm(algo) => algo.to_jsval(cx, rval),
+            KeyAlgorithmAndDerivatives::EcKeyAlgorithm(algo) => algo.to_jsval(cx, rval),
+            KeyAlgorithmAndDerivatives::AesKeyAlgorithm(algo) => algo.to_jsval(cx, rval),
+            KeyAlgorithmAndDerivatives::HmacKeyAlgorithm(algo) => algo.to_jsval(cx, rval),
+            KeyAlgorithmAndDerivatives::KmacKeyAlgorithm(algo) => algo.to_jsval(cx, rval),
+        }
+    }
+}
+
+impl TryFrom<SerializableKeyAlgorithmAndDerivatives> for KeyAlgorithmAndDerivatives {
+    type Error = ();
+
+    fn try_from(value: SerializableKeyAlgorithmAndDerivatives) -> Result<Self, Self::Error> {
+        match value {
+            SerializableKeyAlgorithmAndDerivatives::KeyAlgorithm(algorithm) => Ok(
+                KeyAlgorithmAndDerivatives::KeyAlgorithm(algorithm.try_into()?),
+            ),
+            SerializableKeyAlgorithmAndDerivatives::RsaHashedKeyAlgorithm(algorithm) => Ok(
+                KeyAlgorithmAndDerivatives::RsaHashedKeyAlgorithm(algorithm.try_into()?),
+            ),
+            SerializableKeyAlgorithmAndDerivatives::EcKeyAlgorithm(algorithm) => Ok(
+                KeyAlgorithmAndDerivatives::EcKeyAlgorithm(algorithm.try_into()?),
+            ),
+            SerializableKeyAlgorithmAndDerivatives::AesKeyAlgorithm(algorithm) => Ok(
+                KeyAlgorithmAndDerivatives::AesKeyAlgorithm(algorithm.try_into()?),
+            ),
+            SerializableKeyAlgorithmAndDerivatives::HmacKeyAlgorithm(algorithm) => Ok(
+                KeyAlgorithmAndDerivatives::HmacKeyAlgorithm(algorithm.try_into()?),
+            ),
+            SerializableKeyAlgorithmAndDerivatives::KmacKeyAlgorithm(algorithm) => Ok(
+                KeyAlgorithmAndDerivatives::KmacKeyAlgorithm(algorithm.try_into()?),
+            ),
+        }
+    }
+}
+
+impl From<&KeyAlgorithmAndDerivatives> for SerializableKeyAlgorithmAndDerivatives {
+    fn from(value: &KeyAlgorithmAndDerivatives) -> Self {
+        match value {
+            KeyAlgorithmAndDerivatives::KeyAlgorithm(algorithm) => {
+                SerializableKeyAlgorithmAndDerivatives::KeyAlgorithm(algorithm.into())
+            },
+            KeyAlgorithmAndDerivatives::RsaHashedKeyAlgorithm(algorithm) => {
+                SerializableKeyAlgorithmAndDerivatives::RsaHashedKeyAlgorithm(algorithm.into())
+            },
+            KeyAlgorithmAndDerivatives::EcKeyAlgorithm(algorithm) => {
+                SerializableKeyAlgorithmAndDerivatives::EcKeyAlgorithm(algorithm.into())
+            },
+            KeyAlgorithmAndDerivatives::AesKeyAlgorithm(algorithm) => {
+                SerializableKeyAlgorithmAndDerivatives::AesKeyAlgorithm(algorithm.into())
+            },
+            KeyAlgorithmAndDerivatives::HmacKeyAlgorithm(algorithm) => {
+                SerializableKeyAlgorithmAndDerivatives::HmacKeyAlgorithm(algorithm.into())
+            },
+            KeyAlgorithmAndDerivatives::KmacKeyAlgorithm(algorithm) => {
+                SerializableKeyAlgorithmAndDerivatives::KmacKeyAlgorithm(algorithm.into())
+            },
+        }
+    }
+}
+
 // #[derive(Clone, Copy)]
 // enum JwkStringField {
 //     X,
