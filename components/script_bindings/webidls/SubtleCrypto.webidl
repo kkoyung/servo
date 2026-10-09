@@ -14,19 +14,19 @@
 
 [SecureContext,Exposed=(Window,Worker),Pref="dom_crypto_subtle_enabled"]
 interface SubtleCrypto {
-//   Promise<any> encrypt(AlgorithmIdentifier algorithm,
-//                        CryptoKey key,
-//                        BufferSource data);
-//   Promise<any> decrypt(AlgorithmIdentifier algorithm,
-//                        CryptoKey key,
-//                        BufferSource data);
-//   Promise<any> sign(AlgorithmIdentifier algorithm,
-//                     CryptoKey key,
-//                     BufferSource data);
-//   Promise<any> verify(AlgorithmIdentifier algorithm,
-//                       CryptoKey key,
-//                       BufferSource signature,
-//                       BufferSource data);
+  Promise<any> encrypt(AlgorithmIdentifier algorithm,
+                       CryptoKey key,
+                       BufferSource data);
+  Promise<any> decrypt(AlgorithmIdentifier algorithm,
+                       CryptoKey key,
+                       BufferSource data);
+  Promise<any> sign(AlgorithmIdentifier algorithm,
+                    CryptoKey key,
+                    BufferSource data);
+  Promise<any> verify(AlgorithmIdentifier algorithm,
+                      CryptoKey key,
+                      BufferSource signature,
+                      BufferSource data);
   Promise<any> digest(AlgorithmIdentifier algorithm,
                       BufferSource data);
 
