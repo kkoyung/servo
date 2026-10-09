@@ -4170,23 +4170,23 @@ fn get_required_buffer_source(
         .ok_or(Error::Type(c"Missing required parameter".into()))
 }
 
-// /// The returned type of the successful export key operation. `Bytes` should be used when the key
-// /// is exported in "raw", "spki" or "pkcs8" format. `Jwk` should be used when the key is exported
-// /// in "jwk" format.
-// enum ExportedKey {
-//     Bytes(Zeroizing<Vec<u8>>),
-//     Jwk(Box<JsonWebKey>),
-// }
-//
-// impl ExportedKey {
-//     fn new_bytes(bytes: Vec<u8>) -> ExportedKey {
-//         ExportedKey::Bytes(Zeroizing::new(bytes))
-//     }
-//
-//     fn new_jwk(jwk: JsonWebKey) -> ExportedKey {
-//         ExportedKey::Jwk(Box::new(jwk))
-//     }
-// }
+/// The returned type of the successful export key operation. `Bytes` should be used when the key
+/// is exported in "raw", "spki" or "pkcs8" format. `Jwk` should be used when the key is exported
+/// in "jwk" format.
+enum ExportedKey {
+    Bytes(Zeroizing<Vec<u8>>),
+    Jwk(Box<JsonWebKey>),
+}
+
+impl ExportedKey {
+    fn new_bytes(bytes: Vec<u8>) -> ExportedKey {
+        ExportedKey::Bytes(Zeroizing::new(bytes))
+    }
+
+    fn new_jwk(jwk: JsonWebKey) -> ExportedKey {
+        ExportedKey::Jwk(Box::new(jwk))
+    }
+}
 
 /// Union type of KeyAlgorithm and IDL dictionary types derived from it. Note that we actually use
 /// our "subtle" structs of the corresponding IDL dictionary types so that they can be easily
