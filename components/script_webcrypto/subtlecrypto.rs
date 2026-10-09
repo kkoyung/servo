@@ -97,6 +97,7 @@ use script_bindings::interfaces::ThreadTrustedPromiseHelpers;
 use script_bindings::reflector::DomGlobalGeneric;
 
 use crate::cryptokey::CryptoKey;
+use crate::cryptokey::CryptoKeyOrCryptoKeyPair;
 use crate::traits::Equivalence;
 use crate::traits::WebCryptoGlobalTrait;
 
@@ -4821,478 +4822,478 @@ trait NormalizedAlgorithm: Sized {
     }
 }
 
-// /// The value of the key "encrypt" in the internal object supportedAlgorithms
-// struct EncryptOperation {}
-//
-// impl Operation for EncryptOperation {
-//     type RegisteredAlgorithm = EncryptAlgorithm;
-// }
-//
-// /// Normalized algorithm for the "encrypt" operation, used as output of
-// /// <https://w3c.github.io/webcrypto/#dfn-normalize-an-algorithm>
-// enum EncryptAlgorithm {
-//     RsaOaep(RsaOaepParams),
-//     AesCtr(AesCtrParams),
-//     AesCbc(AesCbcParams),
-//     AesGcm(AesGcmParams),
-//     AesOcb(AeadParams),
-//     ChaCha20Poly1305(AeadParams),
-// }
-//
-// impl NormalizedAlgorithm for EncryptAlgorithm {
-//     fn from_object(
-//         cx: &mut JSContext,
-//         algorithm_name: CryptoAlgorithm,
-//         object: HandleObject,
-//     ) -> Fallible<Self> {
-//         match algorithm_name {
-//             CryptoAlgorithm::RsaOaep => Ok(EncryptAlgorithm::RsaOaep(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::AesCtr => Ok(EncryptAlgorithm::AesCtr(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::AesCbc => Ok(EncryptAlgorithm::AesCbc(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::AesGcm => Ok(EncryptAlgorithm::AesGcm(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::AesOcb => Ok(EncryptAlgorithm::AesOcb(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::ChaCha20Poly1305 => Ok(EncryptAlgorithm::ChaCha20Poly1305(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             _ => Err(Error::NotSupported(Some(format!(
-//                 "{} does not support \"encrypt\" operation",
-//                 algorithm_name.as_str()
-//             )))),
-//         }
-//     }
-//
-//     fn name(&self) -> CryptoAlgorithm {
-//         match self {
-//             EncryptAlgorithm::RsaOaep(algorithm) => algorithm.name,
-//             EncryptAlgorithm::AesCtr(algorithm) => algorithm.name,
-//             EncryptAlgorithm::AesCbc(algorithm) => algorithm.name,
-//             EncryptAlgorithm::AesGcm(algorithm) => algorithm.name,
-//             EncryptAlgorithm::AesOcb(algorithm) => algorithm.name,
-//             EncryptAlgorithm::ChaCha20Poly1305(algorithm) => algorithm.name,
-//         }
-//     }
-//
-//     fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
-//         match self {
-//             EncryptAlgorithm::RsaOaep(_) => true,
-//             EncryptAlgorithm::AesCtr(normalized_algorithm) => {
-//                 normalized_algorithm.counter.len() == 16 &&
-//                     normalized_algorithm.length != 0 &&
-//                     normalized_algorithm.length <= 128
-//             },
-//             EncryptAlgorithm::AesCbc(normalized_algorithm) => normalized_algorithm.iv.len() == 16,
-//             EncryptAlgorithm::AesGcm(normalized_algorithm) => {
-//                 normalized_algorithm.iv.len() <= u64::MAX as usize &&
-//                     normalized_algorithm
-//                         .additional_data
-//                         .as_ref()
-//                         .is_none_or(|additional_data| additional_data.len() <= u64::MAX as usize) &&
-//                     normalized_algorithm.tag_length.is_none_or(|length| {
-//                         matches!(length, 32 | 64 | 96 | 104 | 112 | 120 | 128)
-//                     })
-//             },
-//             EncryptAlgorithm::AesOcb(normalized_algorithm) => {
-//                 normalized_algorithm.iv.len() <= 15 &&
-//                     normalized_algorithm
-//                         .tag_length
-//                         .is_none_or(|length| matches!(length, 64 | 96 | 128))
-//             },
-//             EncryptAlgorithm::ChaCha20Poly1305(normalized_algorithm) => {
-//                 normalized_algorithm.iv.len() == 12 &&
-//                     normalized_algorithm
-//                         .tag_length
-//                         .is_none_or(|length| length == 128)
-//             },
-//         }
-//     }
-// }
-//
-// impl EncryptAlgorithm {
-//     fn encrypt(&self, key: &CryptoKey, plaintext: &[u8]) -> Result<Vec<u8>, Error> {
-//         match self {
-//             EncryptAlgorithm::RsaOaep(algorithm) => {
-//                 rsa_oaep_operation::encrypt(algorithm, key, plaintext)
-//             },
-//             EncryptAlgorithm::AesCtr(algorithm) => {
-//                 aes_ctr_operation::encrypt(algorithm, key, plaintext)
-//             },
-//             EncryptAlgorithm::AesCbc(algorithm) => {
-//                 aes_cbc_operation::encrypt(algorithm, key, plaintext)
-//             },
-//             EncryptAlgorithm::AesGcm(algorithm) => {
-//                 aes_gcm_operation::encrypt(algorithm, key, plaintext)
-//             },
-//             EncryptAlgorithm::AesOcb(algorithm) => {
-//                 aes_ocb_operation::encrypt(algorithm, key, plaintext)
-//             },
-//             EncryptAlgorithm::ChaCha20Poly1305(algorithm) => {
-//                 chacha20_poly1305_operation::encrypt(algorithm, key, plaintext)
-//             },
-//         }
-//     }
-// }
-//
-// /// The value of the key "decrypt" in the internal object supportedAlgorithms
-// struct DecryptOperation {}
-//
-// impl Operation for DecryptOperation {
-//     type RegisteredAlgorithm = DecryptAlgorithm;
-// }
-//
-// /// Normalized algorithm for the "decrypt" operation, used as output of
-// /// <https://w3c.github.io/webcrypto/#dfn-normalize-an-algorithm>
-// enum DecryptAlgorithm {
-//     RsaOaep(RsaOaepParams),
-//     AesCtr(AesCtrParams),
-//     AesCbc(AesCbcParams),
-//     AesGcm(AesGcmParams),
-//     AesOcb(AeadParams),
-//     ChaCha20Poly1305(AeadParams),
-// }
-//
-// impl NormalizedAlgorithm for DecryptAlgorithm {
-//     fn from_object(
-//         cx: &mut JSContext,
-//         algorithm_name: CryptoAlgorithm,
-//         object: HandleObject,
-//     ) -> Fallible<Self> {
-//         match algorithm_name {
-//             CryptoAlgorithm::RsaOaep => Ok(DecryptAlgorithm::RsaOaep(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::AesCtr => Ok(DecryptAlgorithm::AesCtr(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::AesCbc => Ok(DecryptAlgorithm::AesCbc(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::AesGcm => Ok(DecryptAlgorithm::AesGcm(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::AesOcb => Ok(DecryptAlgorithm::AesOcb(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::ChaCha20Poly1305 => Ok(DecryptAlgorithm::ChaCha20Poly1305(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             _ => Err(Error::NotSupported(Some(format!(
-//                 "{} does not support \"decrypt\" operation",
-//                 algorithm_name.as_str()
-//             )))),
-//         }
-//     }
-//
-//     fn name(&self) -> CryptoAlgorithm {
-//         match self {
-//             DecryptAlgorithm::RsaOaep(algorithm) => algorithm.name,
-//             DecryptAlgorithm::AesCtr(algorithm) => algorithm.name,
-//             DecryptAlgorithm::AesCbc(algorithm) => algorithm.name,
-//             DecryptAlgorithm::AesGcm(algorithm) => algorithm.name,
-//             DecryptAlgorithm::AesOcb(algorithm) => algorithm.name,
-//             DecryptAlgorithm::ChaCha20Poly1305(algorithm) => algorithm.name,
-//         }
-//     }
-//
-//     fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
-//         match self {
-//             DecryptAlgorithm::RsaOaep(_) => true,
-//             DecryptAlgorithm::AesCtr(normalized_algorithm) => {
-//                 normalized_algorithm.counter.len() == 16 &&
-//                     normalized_algorithm.length != 0 &&
-//                     normalized_algorithm.length <= 128
-//             },
-//             DecryptAlgorithm::AesCbc(normalized_algorithm) => normalized_algorithm.iv.len() == 16,
-//             DecryptAlgorithm::AesGcm(normalized_algorithm) => {
-//                 normalized_algorithm
-//                     .tag_length
-//                     .as_ref()
-//                     .is_none_or(|length| matches!(length, 32 | 64 | 96 | 104 | 112 | 120 | 128)) &&
-//                     normalized_algorithm.iv.len() <= u64::MAX as usize &&
-//                     normalized_algorithm
-//                         .additional_data
-//                         .as_ref()
-//                         .is_none_or(|additional_data| additional_data.len() <= u64::MAX as usize)
-//             },
-//             DecryptAlgorithm::AesOcb(normalized_algorithm) => {
-//                 normalized_algorithm.iv.len() <= 15 &&
-//                     normalized_algorithm
-//                         .tag_length
-//                         .as_ref()
-//                         .is_none_or(|length| matches!(length, 64 | 96 | 128))
-//             },
-//             DecryptAlgorithm::ChaCha20Poly1305(normalized_algorithm) => {
-//                 normalized_algorithm.iv.len() == 12 &&
-//                     normalized_algorithm
-//                         .tag_length
-//                         .as_ref()
-//                         .is_none_or(|length| *length == 128)
-//             },
-//         }
-//     }
-// }
-//
-// impl DecryptAlgorithm {
-//     fn decrypt(&self, key: &CryptoKey, ciphertext: &[u8]) -> Result<Vec<u8>, Error> {
-//         match self {
-//             DecryptAlgorithm::RsaOaep(algorithm) => {
-//                 rsa_oaep_operation::decrypt(algorithm, key, ciphertext)
-//             },
-//             DecryptAlgorithm::AesCtr(algorithm) => {
-//                 aes_ctr_operation::decrypt(algorithm, key, ciphertext)
-//             },
-//             DecryptAlgorithm::AesCbc(algorithm) => {
-//                 aes_cbc_operation::decrypt(algorithm, key, ciphertext)
-//             },
-//             DecryptAlgorithm::AesGcm(algorithm) => {
-//                 aes_gcm_operation::decrypt(algorithm, key, ciphertext)
-//             },
-//             DecryptAlgorithm::AesOcb(algorithm) => {
-//                 aes_ocb_operation::decrypt(algorithm, key, ciphertext)
-//             },
-//             DecryptAlgorithm::ChaCha20Poly1305(algorithm) => {
-//                 chacha20_poly1305_operation::decrypt(algorithm, key, ciphertext)
-//             },
-//         }
-//     }
-// }
-//
-// /// The value of the key "sign" in the internal object supportedAlgorithms
-// struct SignOperation {}
-//
-// impl Operation for SignOperation {
-//     type RegisteredAlgorithm = SignAlgorithm;
-// }
-//
-// /// Normalized algorithm for the "sign" operation, used as output of
-// /// <https://w3c.github.io/webcrypto/#dfn-normalize-an-algorithm>
-// enum SignAlgorithm {
-//     RsassaPkcs1V1_5(Algorithm),
-//     RsaPss(RsaPssParams),
-//     Ecdsa(EcdsaParams),
-//     Ed25519(Algorithm),
-//     Ed448(SubtleEd448Params),
-//     Hmac(Algorithm),
-//     MlDsa(ContextParams),
-//     Kmac(KmacParams),
-// }
-//
-// impl NormalizedAlgorithm for SignAlgorithm {
-//     fn from_object(
-//         cx: &mut JSContext,
-//         algorithm_name: CryptoAlgorithm,
-//         object: HandleObject,
-//     ) -> Fallible<Self> {
-//         match algorithm_name {
-//             CryptoAlgorithm::RsassaPkcs1V1_5 => Ok(SignAlgorithm::RsassaPkcs1V1_5(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::RsaPss => Ok(SignAlgorithm::RsaPss(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::Ecdsa => Ok(SignAlgorithm::Ecdsa(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::Ed25519 => Ok(SignAlgorithm::Ed25519(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::Ed448 => Ok(SignAlgorithm::Ed448(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::Hmac => Ok(SignAlgorithm::Hmac(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::MlDsa44 | CryptoAlgorithm::MlDsa65 | CryptoAlgorithm::MlDsa87 => Ok(
-//                 SignAlgorithm::MlDsa(object.try_into_with_cx_and_name(cx, algorithm_name)?),
-//             ),
-//             CryptoAlgorithm::Kmac128 | CryptoAlgorithm::Kmac256 => Ok(SignAlgorithm::Kmac(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             _ => Err(Error::NotSupported(Some(format!(
-//                 "{} does not support \"sign\" operation",
-//                 algorithm_name.as_str()
-//             )))),
-//         }
-//     }
-//
-//     fn name(&self) -> CryptoAlgorithm {
-//         match self {
-//             SignAlgorithm::RsassaPkcs1V1_5(algorithm) => algorithm.name,
-//             SignAlgorithm::RsaPss(algorithm) => algorithm.name,
-//             SignAlgorithm::Ecdsa(algorithm) => algorithm.name,
-//             SignAlgorithm::Ed25519(algorithm) => algorithm.name,
-//             SignAlgorithm::Ed448(algorithm) => algorithm.name,
-//             SignAlgorithm::Hmac(algorithm) => algorithm.name,
-//             SignAlgorithm::MlDsa(algorithm) => algorithm.name,
-//             SignAlgorithm::Kmac(algorithm) => algorithm.name,
-//         }
-//     }
-//
-//     fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
-//         match self {
-//             SignAlgorithm::RsassaPkcs1V1_5(_) |
-//             SignAlgorithm::RsaPss(_) |
-//             SignAlgorithm::Ecdsa(_) |
-//             SignAlgorithm::Ed25519(_) => true,
-//             SignAlgorithm::Ed448(normalized_algorithm) => normalized_algorithm
-//                 .context
-//                 .as_ref()
-//                 .is_none_or(|context| context.len() <= 255),
-//             SignAlgorithm::Hmac(_) => true,
-//             SignAlgorithm::MlDsa(normalized_algorithm) => normalized_algorithm
-//                 .context
-//                 .as_ref()
-//                 .is_none_or(|context| context.len() <= 255),
-//             SignAlgorithm::Kmac(_) => true,
-//         }
-//     }
-// }
-//
-// impl SignAlgorithm {
-//     fn sign(&self, key: &CryptoKey, message: &[u8]) -> Result<Vec<u8>, Error> {
-//         match self {
-//             SignAlgorithm::RsassaPkcs1V1_5(_algorithm) => {
-//                 rsassa_pkcs1_v1_5_operation::sign(key, message)
-//             },
-//             SignAlgorithm::RsaPss(algorithm) => rsa_pss_operation::sign(algorithm, key, message),
-//             SignAlgorithm::Ecdsa(algorithm) => ecdsa_operation::sign(algorithm, key, message),
-//             SignAlgorithm::Ed25519(_algorithm) => ed25519_operation::sign(key, message),
-//             SignAlgorithm::Ed448(algorithm) => ed448_operation::sign(algorithm, key, message),
-//             SignAlgorithm::Hmac(_algorithm) => hmac_operation::sign(key, message),
-//             SignAlgorithm::MlDsa(algorithm) => ml_dsa_operation::sign(algorithm, key, message),
-//             SignAlgorithm::Kmac(algorithm) => kmac_operation::sign(algorithm, key, message),
-//         }
-//     }
-// }
-//
-// /// The value of the key "verify" in the internal object supportedAlgorithms
-// struct VerifyOperation {}
-//
-// impl Operation for VerifyOperation {
-//     type RegisteredAlgorithm = VerifyAlgorithm;
-// }
-//
-// /// Normalized algorithm for the "verify" operation, used as output of
-// /// <https://w3c.github.io/webcrypto/#dfn-normalize-an-algorithm>
-// enum VerifyAlgorithm {
-//     RsassaPkcs1V1_5(Algorithm),
-//     RsaPss(RsaPssParams),
-//     Ecdsa(EcdsaParams),
-//     Ed25519(Algorithm),
-//     Ed448(SubtleEd448Params),
-//     Hmac(Algorithm),
-//     MlDsa(ContextParams),
-//     Kmac(KmacParams),
-// }
-//
-// impl NormalizedAlgorithm for VerifyAlgorithm {
-//     fn from_object(
-//         cx: &mut JSContext,
-//         algorithm_name: CryptoAlgorithm,
-//         object: HandleObject,
-//     ) -> Fallible<Self> {
-//         match algorithm_name {
-//             CryptoAlgorithm::RsassaPkcs1V1_5 => Ok(VerifyAlgorithm::RsassaPkcs1V1_5(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::RsaPss => Ok(VerifyAlgorithm::RsaPss(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::Ecdsa => Ok(VerifyAlgorithm::Ecdsa(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::Ed25519 => Ok(VerifyAlgorithm::Ed25519(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::Ed448 => Ok(VerifyAlgorithm::Ed448(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::Hmac => Ok(VerifyAlgorithm::Hmac(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::MlDsa44 | CryptoAlgorithm::MlDsa65 | CryptoAlgorithm::MlDsa87 => Ok(
-//                 VerifyAlgorithm::MlDsa(object.try_into_with_cx_and_name(cx, algorithm_name)?),
-//             ),
-//             CryptoAlgorithm::Kmac128 | CryptoAlgorithm::Kmac256 => Ok(VerifyAlgorithm::Kmac(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             _ => Err(Error::NotSupported(Some(format!(
-//                 "{} does not support \"verify\" operation",
-//                 algorithm_name.as_str()
-//             )))),
-//         }
-//     }
-//
-//     fn name(&self) -> CryptoAlgorithm {
-//         match self {
-//             VerifyAlgorithm::RsassaPkcs1V1_5(algorithm) => algorithm.name,
-//             VerifyAlgorithm::RsaPss(algorithm) => algorithm.name,
-//             VerifyAlgorithm::Ecdsa(algorithm) => algorithm.name,
-//             VerifyAlgorithm::Ed25519(algorithm) => algorithm.name,
-//             VerifyAlgorithm::Ed448(algorithm) => algorithm.name,
-//             VerifyAlgorithm::Hmac(algorithm) => algorithm.name,
-//             VerifyAlgorithm::MlDsa(algorithm) => algorithm.name,
-//             VerifyAlgorithm::Kmac(algorithm) => algorithm.name,
-//         }
-//     }
-//
-//     fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
-//         match self {
-//             VerifyAlgorithm::RsassaPkcs1V1_5(_) |
-//             VerifyAlgorithm::RsaPss(_) |
-//             VerifyAlgorithm::Ecdsa(_) |
-//             VerifyAlgorithm::Ed25519(_) => true,
-//             VerifyAlgorithm::Ed448(normalized_algorithm) => normalized_algorithm
-//                 .context
-//                 .as_ref()
-//                 .is_none_or(|context| context.len() <= 255),
-//             VerifyAlgorithm::Hmac(_) => true,
-//             VerifyAlgorithm::MlDsa(normalized_algorithm) => normalized_algorithm
-//                 .context
-//                 .as_ref()
-//                 .is_none_or(|context| context.len() <= 255),
-//             VerifyAlgorithm::Kmac(_) => true,
-//         }
-//     }
-// }
-//
-// impl VerifyAlgorithm {
-//     fn verify(&self, key: &CryptoKey, message: &[u8], signature: &[u8]) -> Result<bool, Error> {
-//         match self {
-//             VerifyAlgorithm::RsassaPkcs1V1_5(_algorithm) => {
-//                 rsassa_pkcs1_v1_5_operation::verify(key, message, signature)
-//             },
-//             VerifyAlgorithm::RsaPss(algorithm) => {
-//                 rsa_pss_operation::verify(algorithm, key, message, signature)
-//             },
-//             VerifyAlgorithm::Ecdsa(algorithm) => {
-//                 ecdsa_operation::verify(algorithm, key, message, signature)
-//             },
-//             VerifyAlgorithm::Ed25519(_algorithm) => {
-//                 ed25519_operation::verify(key, message, signature)
-//             },
-//             VerifyAlgorithm::Ed448(algorithm) => {
-//                 ed448_operation::verify(algorithm, key, message, signature)
-//             },
-//             VerifyAlgorithm::Hmac(_algorithm) => hmac_operation::verify(key, message, signature),
-//             VerifyAlgorithm::MlDsa(algorithm) => {
-//                 ml_dsa_operation::verify(algorithm, key, message, signature)
-//             },
-//             VerifyAlgorithm::Kmac(algorithm) => {
-//                 kmac_operation::verify(algorithm, key, message, signature)
-//             },
-//         }
-//     }
-// }
+/// The value of the key "encrypt" in the internal object supportedAlgorithms
+struct EncryptOperation {}
+
+impl Operation for EncryptOperation {
+    type RegisteredAlgorithm = EncryptAlgorithm;
+}
+
+/// Normalized algorithm for the "encrypt" operation, used as output of
+/// <https://w3c.github.io/webcrypto/#dfn-normalize-an-algorithm>
+enum EncryptAlgorithm {
+    RsaOaep(RsaOaepParams),
+    AesCtr(AesCtrParams),
+    AesCbc(AesCbcParams),
+    AesGcm(AesGcmParams),
+    AesOcb(AeadParams),
+    ChaCha20Poly1305(AeadParams),
+}
+
+impl NormalizedAlgorithm for EncryptAlgorithm {
+    fn from_object(
+        cx: &mut JSContext,
+        algorithm_name: CryptoAlgorithm,
+        object: HandleObject,
+    ) -> Fallible<Self> {
+        match algorithm_name {
+            CryptoAlgorithm::RsaOaep => Ok(EncryptAlgorithm::RsaOaep(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::AesCtr => Ok(EncryptAlgorithm::AesCtr(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::AesCbc => Ok(EncryptAlgorithm::AesCbc(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::AesGcm => Ok(EncryptAlgorithm::AesGcm(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::AesOcb => Ok(EncryptAlgorithm::AesOcb(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::ChaCha20Poly1305 => Ok(EncryptAlgorithm::ChaCha20Poly1305(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            _ => Err(Error::NotSupported(Some(format!(
+                "{} does not support \"encrypt\" operation",
+                algorithm_name.as_str()
+            )))),
+        }
+    }
+
+    fn name(&self) -> CryptoAlgorithm {
+        match self {
+            EncryptAlgorithm::RsaOaep(algorithm) => algorithm.name,
+            EncryptAlgorithm::AesCtr(algorithm) => algorithm.name,
+            EncryptAlgorithm::AesCbc(algorithm) => algorithm.name,
+            EncryptAlgorithm::AesGcm(algorithm) => algorithm.name,
+            EncryptAlgorithm::AesOcb(algorithm) => algorithm.name,
+            EncryptAlgorithm::ChaCha20Poly1305(algorithm) => algorithm.name,
+        }
+    }
+
+    fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
+        match self {
+            EncryptAlgorithm::RsaOaep(_) => true,
+            EncryptAlgorithm::AesCtr(normalized_algorithm) => {
+                normalized_algorithm.counter.len() == 16 &&
+                    normalized_algorithm.length != 0 &&
+                    normalized_algorithm.length <= 128
+            },
+            EncryptAlgorithm::AesCbc(normalized_algorithm) => normalized_algorithm.iv.len() == 16,
+            EncryptAlgorithm::AesGcm(normalized_algorithm) => {
+                normalized_algorithm.iv.len() <= u64::MAX as usize &&
+                    normalized_algorithm
+                        .additional_data
+                        .as_ref()
+                        .is_none_or(|additional_data| additional_data.len() <= u64::MAX as usize) &&
+                    normalized_algorithm.tag_length.is_none_or(|length| {
+                        matches!(length, 32 | 64 | 96 | 104 | 112 | 120 | 128)
+                    })
+            },
+            EncryptAlgorithm::AesOcb(normalized_algorithm) => {
+                normalized_algorithm.iv.len() <= 15 &&
+                    normalized_algorithm
+                        .tag_length
+                        .is_none_or(|length| matches!(length, 64 | 96 | 128))
+            },
+            EncryptAlgorithm::ChaCha20Poly1305(normalized_algorithm) => {
+                normalized_algorithm.iv.len() == 12 &&
+                    normalized_algorithm
+                        .tag_length
+                        .is_none_or(|length| length == 128)
+            },
+        }
+    }
+}
+
+impl EncryptAlgorithm {
+    fn encrypt<D: Equivalence>(&self, key: &CryptoKey<D>, plaintext: &[u8]) -> Result<Vec<u8>, Error> {
+        match self {
+            EncryptAlgorithm::RsaOaep(algorithm) => {
+                rsa_oaep_operation::encrypt(algorithm, key, plaintext)
+            },
+            EncryptAlgorithm::AesCtr(algorithm) => {
+                aes_ctr_operation::encrypt(algorithm, key, plaintext)
+            },
+            EncryptAlgorithm::AesCbc(algorithm) => {
+                aes_cbc_operation::encrypt(algorithm, key, plaintext)
+            },
+            EncryptAlgorithm::AesGcm(algorithm) => {
+                aes_gcm_operation::encrypt(algorithm, key, plaintext)
+            },
+            EncryptAlgorithm::AesOcb(algorithm) => {
+                aes_ocb_operation::encrypt(algorithm, key, plaintext)
+            },
+            EncryptAlgorithm::ChaCha20Poly1305(algorithm) => {
+                chacha20_poly1305_operation::encrypt(algorithm, key, plaintext)
+            },
+        }
+    }
+}
+
+/// The value of the key "decrypt" in the internal object supportedAlgorithms
+struct DecryptOperation {}
+
+impl Operation for DecryptOperation {
+    type RegisteredAlgorithm = DecryptAlgorithm;
+}
+
+/// Normalized algorithm for the "decrypt" operation, used as output of
+/// <https://w3c.github.io/webcrypto/#dfn-normalize-an-algorithm>
+enum DecryptAlgorithm {
+    RsaOaep(RsaOaepParams),
+    AesCtr(AesCtrParams),
+    AesCbc(AesCbcParams),
+    AesGcm(AesGcmParams),
+    AesOcb(AeadParams),
+    ChaCha20Poly1305(AeadParams),
+}
+
+impl NormalizedAlgorithm for DecryptAlgorithm {
+    fn from_object(
+        cx: &mut JSContext,
+        algorithm_name: CryptoAlgorithm,
+        object: HandleObject,
+    ) -> Fallible<Self> {
+        match algorithm_name {
+            CryptoAlgorithm::RsaOaep => Ok(DecryptAlgorithm::RsaOaep(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::AesCtr => Ok(DecryptAlgorithm::AesCtr(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::AesCbc => Ok(DecryptAlgorithm::AesCbc(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::AesGcm => Ok(DecryptAlgorithm::AesGcm(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::AesOcb => Ok(DecryptAlgorithm::AesOcb(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::ChaCha20Poly1305 => Ok(DecryptAlgorithm::ChaCha20Poly1305(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            _ => Err(Error::NotSupported(Some(format!(
+                "{} does not support \"decrypt\" operation",
+                algorithm_name.as_str()
+            )))),
+        }
+    }
+
+    fn name(&self) -> CryptoAlgorithm {
+        match self {
+            DecryptAlgorithm::RsaOaep(algorithm) => algorithm.name,
+            DecryptAlgorithm::AesCtr(algorithm) => algorithm.name,
+            DecryptAlgorithm::AesCbc(algorithm) => algorithm.name,
+            DecryptAlgorithm::AesGcm(algorithm) => algorithm.name,
+            DecryptAlgorithm::AesOcb(algorithm) => algorithm.name,
+            DecryptAlgorithm::ChaCha20Poly1305(algorithm) => algorithm.name,
+        }
+    }
+
+    fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
+        match self {
+            DecryptAlgorithm::RsaOaep(_) => true,
+            DecryptAlgorithm::AesCtr(normalized_algorithm) => {
+                normalized_algorithm.counter.len() == 16 &&
+                    normalized_algorithm.length != 0 &&
+                    normalized_algorithm.length <= 128
+            },
+            DecryptAlgorithm::AesCbc(normalized_algorithm) => normalized_algorithm.iv.len() == 16,
+            DecryptAlgorithm::AesGcm(normalized_algorithm) => {
+                normalized_algorithm
+                    .tag_length
+                    .as_ref()
+                    .is_none_or(|length| matches!(length, 32 | 64 | 96 | 104 | 112 | 120 | 128)) &&
+                    normalized_algorithm.iv.len() <= u64::MAX as usize &&
+                    normalized_algorithm
+                        .additional_data
+                        .as_ref()
+                        .is_none_or(|additional_data| additional_data.len() <= u64::MAX as usize)
+            },
+            DecryptAlgorithm::AesOcb(normalized_algorithm) => {
+                normalized_algorithm.iv.len() <= 15 &&
+                    normalized_algorithm
+                        .tag_length
+                        .as_ref()
+                        .is_none_or(|length| matches!(length, 64 | 96 | 128))
+            },
+            DecryptAlgorithm::ChaCha20Poly1305(normalized_algorithm) => {
+                normalized_algorithm.iv.len() == 12 &&
+                    normalized_algorithm
+                        .tag_length
+                        .as_ref()
+                        .is_none_or(|length| *length == 128)
+            },
+        }
+    }
+}
+
+impl DecryptAlgorithm {
+    fn decrypt<D: Equivalence>(&self, key: &CryptoKey<D>, ciphertext: &[u8]) -> Result<Vec<u8>, Error> {
+        match self {
+            DecryptAlgorithm::RsaOaep(algorithm) => {
+                rsa_oaep_operation::decrypt(algorithm, key, ciphertext)
+            },
+            DecryptAlgorithm::AesCtr(algorithm) => {
+                aes_ctr_operation::decrypt(algorithm, key, ciphertext)
+            },
+            DecryptAlgorithm::AesCbc(algorithm) => {
+                aes_cbc_operation::decrypt(algorithm, key, ciphertext)
+            },
+            DecryptAlgorithm::AesGcm(algorithm) => {
+                aes_gcm_operation::decrypt(algorithm, key, ciphertext)
+            },
+            DecryptAlgorithm::AesOcb(algorithm) => {
+                aes_ocb_operation::decrypt(algorithm, key, ciphertext)
+            },
+            DecryptAlgorithm::ChaCha20Poly1305(algorithm) => {
+                chacha20_poly1305_operation::decrypt(algorithm, key, ciphertext)
+            },
+        }
+    }
+}
+
+/// The value of the key "sign" in the internal object supportedAlgorithms
+struct SignOperation {}
+
+impl Operation for SignOperation {
+    type RegisteredAlgorithm = SignAlgorithm;
+}
+
+/// Normalized algorithm for the "sign" operation, used as output of
+/// <https://w3c.github.io/webcrypto/#dfn-normalize-an-algorithm>
+enum SignAlgorithm {
+    RsassaPkcs1V1_5(Algorithm),
+    RsaPss(RsaPssParams),
+    Ecdsa(EcdsaParams),
+    Ed25519(Algorithm),
+    Ed448(SubtleEd448Params),
+    Hmac(Algorithm),
+    MlDsa(ContextParams),
+    Kmac(KmacParams),
+}
+
+impl NormalizedAlgorithm for SignAlgorithm {
+    fn from_object(
+        cx: &mut JSContext,
+        algorithm_name: CryptoAlgorithm,
+        object: HandleObject,
+    ) -> Fallible<Self> {
+        match algorithm_name {
+            CryptoAlgorithm::RsassaPkcs1V1_5 => Ok(SignAlgorithm::RsassaPkcs1V1_5(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::RsaPss => Ok(SignAlgorithm::RsaPss(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::Ecdsa => Ok(SignAlgorithm::Ecdsa(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::Ed25519 => Ok(SignAlgorithm::Ed25519(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::Ed448 => Ok(SignAlgorithm::Ed448(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::Hmac => Ok(SignAlgorithm::Hmac(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::MlDsa44 | CryptoAlgorithm::MlDsa65 | CryptoAlgorithm::MlDsa87 => Ok(
+                SignAlgorithm::MlDsa(object.try_into_with_cx_and_name(cx, algorithm_name)?),
+            ),
+            CryptoAlgorithm::Kmac128 | CryptoAlgorithm::Kmac256 => Ok(SignAlgorithm::Kmac(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            _ => Err(Error::NotSupported(Some(format!(
+                "{} does not support \"sign\" operation",
+                algorithm_name.as_str()
+            )))),
+        }
+    }
+
+    fn name(&self) -> CryptoAlgorithm {
+        match self {
+            SignAlgorithm::RsassaPkcs1V1_5(algorithm) => algorithm.name,
+            SignAlgorithm::RsaPss(algorithm) => algorithm.name,
+            SignAlgorithm::Ecdsa(algorithm) => algorithm.name,
+            SignAlgorithm::Ed25519(algorithm) => algorithm.name,
+            SignAlgorithm::Ed448(algorithm) => algorithm.name,
+            SignAlgorithm::Hmac(algorithm) => algorithm.name,
+            SignAlgorithm::MlDsa(algorithm) => algorithm.name,
+            SignAlgorithm::Kmac(algorithm) => algorithm.name,
+        }
+    }
+
+    fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
+        match self {
+            SignAlgorithm::RsassaPkcs1V1_5(_) |
+            SignAlgorithm::RsaPss(_) |
+            SignAlgorithm::Ecdsa(_) |
+            SignAlgorithm::Ed25519(_) => true,
+            SignAlgorithm::Ed448(normalized_algorithm) => normalized_algorithm
+                .context
+                .as_ref()
+                .is_none_or(|context| context.len() <= 255),
+            SignAlgorithm::Hmac(_) => true,
+            SignAlgorithm::MlDsa(normalized_algorithm) => normalized_algorithm
+                .context
+                .as_ref()
+                .is_none_or(|context| context.len() <= 255),
+            SignAlgorithm::Kmac(_) => true,
+        }
+    }
+}
+
+impl SignAlgorithm {
+    fn sign<D: Equivalence>(&self, key: &CryptoKey<D>, message: &[u8]) -> Result<Vec<u8>, Error> {
+        match self {
+            SignAlgorithm::RsassaPkcs1V1_5(_algorithm) => {
+                rsassa_pkcs1_v1_5_operation::sign(key, message)
+            },
+            SignAlgorithm::RsaPss(algorithm) => rsa_pss_operation::sign(algorithm, key, message),
+            SignAlgorithm::Ecdsa(algorithm) => ecdsa_operation::sign(algorithm, key, message),
+            SignAlgorithm::Ed25519(_algorithm) => ed25519_operation::sign(key, message),
+            SignAlgorithm::Ed448(algorithm) => ed448_operation::sign(algorithm, key, message),
+            SignAlgorithm::Hmac(_algorithm) => hmac_operation::sign(key, message),
+            SignAlgorithm::MlDsa(algorithm) => ml_dsa_operation::sign(algorithm, key, message),
+            SignAlgorithm::Kmac(algorithm) => kmac_operation::sign(algorithm, key, message),
+        }
+    }
+}
+
+/// The value of the key "verify" in the internal object supportedAlgorithms
+struct VerifyOperation {}
+
+impl Operation for VerifyOperation {
+    type RegisteredAlgorithm = VerifyAlgorithm;
+}
+
+/// Normalized algorithm for the "verify" operation, used as output of
+/// <https://w3c.github.io/webcrypto/#dfn-normalize-an-algorithm>
+enum VerifyAlgorithm {
+    RsassaPkcs1V1_5(Algorithm),
+    RsaPss(RsaPssParams),
+    Ecdsa(EcdsaParams),
+    Ed25519(Algorithm),
+    Ed448(SubtleEd448Params),
+    Hmac(Algorithm),
+    MlDsa(ContextParams),
+    Kmac(KmacParams),
+}
+
+impl NormalizedAlgorithm for VerifyAlgorithm {
+    fn from_object(
+        cx: &mut JSContext,
+        algorithm_name: CryptoAlgorithm,
+        object: HandleObject,
+    ) -> Fallible<Self> {
+        match algorithm_name {
+            CryptoAlgorithm::RsassaPkcs1V1_5 => Ok(VerifyAlgorithm::RsassaPkcs1V1_5(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::RsaPss => Ok(VerifyAlgorithm::RsaPss(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::Ecdsa => Ok(VerifyAlgorithm::Ecdsa(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::Ed25519 => Ok(VerifyAlgorithm::Ed25519(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::Ed448 => Ok(VerifyAlgorithm::Ed448(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::Hmac => Ok(VerifyAlgorithm::Hmac(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::MlDsa44 | CryptoAlgorithm::MlDsa65 | CryptoAlgorithm::MlDsa87 => Ok(
+                VerifyAlgorithm::MlDsa(object.try_into_with_cx_and_name(cx, algorithm_name)?),
+            ),
+            CryptoAlgorithm::Kmac128 | CryptoAlgorithm::Kmac256 => Ok(VerifyAlgorithm::Kmac(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            _ => Err(Error::NotSupported(Some(format!(
+                "{} does not support \"verify\" operation",
+                algorithm_name.as_str()
+            )))),
+        }
+    }
+
+    fn name(&self) -> CryptoAlgorithm {
+        match self {
+            VerifyAlgorithm::RsassaPkcs1V1_5(algorithm) => algorithm.name,
+            VerifyAlgorithm::RsaPss(algorithm) => algorithm.name,
+            VerifyAlgorithm::Ecdsa(algorithm) => algorithm.name,
+            VerifyAlgorithm::Ed25519(algorithm) => algorithm.name,
+            VerifyAlgorithm::Ed448(algorithm) => algorithm.name,
+            VerifyAlgorithm::Hmac(algorithm) => algorithm.name,
+            VerifyAlgorithm::MlDsa(algorithm) => algorithm.name,
+            VerifyAlgorithm::Kmac(algorithm) => algorithm.name,
+        }
+    }
+
+    fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
+        match self {
+            VerifyAlgorithm::RsassaPkcs1V1_5(_) |
+            VerifyAlgorithm::RsaPss(_) |
+            VerifyAlgorithm::Ecdsa(_) |
+            VerifyAlgorithm::Ed25519(_) => true,
+            VerifyAlgorithm::Ed448(normalized_algorithm) => normalized_algorithm
+                .context
+                .as_ref()
+                .is_none_or(|context| context.len() <= 255),
+            VerifyAlgorithm::Hmac(_) => true,
+            VerifyAlgorithm::MlDsa(normalized_algorithm) => normalized_algorithm
+                .context
+                .as_ref()
+                .is_none_or(|context| context.len() <= 255),
+            VerifyAlgorithm::Kmac(_) => true,
+        }
+    }
+}
+
+impl VerifyAlgorithm {
+    fn verify<D: Equivalence>(&self, key: &CryptoKey<D>, message: &[u8], signature: &[u8]) -> Result<bool, Error> {
+        match self {
+            VerifyAlgorithm::RsassaPkcs1V1_5(_algorithm) => {
+                rsassa_pkcs1_v1_5_operation::verify(key, message, signature)
+            },
+            VerifyAlgorithm::RsaPss(algorithm) => {
+                rsa_pss_operation::verify(algorithm, key, message, signature)
+            },
+            VerifyAlgorithm::Ecdsa(algorithm) => {
+                ecdsa_operation::verify(algorithm, key, message, signature)
+            },
+            VerifyAlgorithm::Ed25519(_algorithm) => {
+                ed25519_operation::verify(key, message, signature)
+            },
+            VerifyAlgorithm::Ed448(algorithm) => {
+                ed448_operation::verify(algorithm, key, message, signature)
+            },
+            VerifyAlgorithm::Hmac(_algorithm) => hmac_operation::verify(key, message, signature),
+            VerifyAlgorithm::MlDsa(algorithm) => {
+                ml_dsa_operation::verify(algorithm, key, message, signature)
+            },
+            VerifyAlgorithm::Kmac(algorithm) => {
+                kmac_operation::verify(algorithm, key, message, signature)
+            },
+        }
+    }
+}
 
 /// The value of the key "digest" in the internal object supportedAlgorithms
 struct DigestOperation {}
@@ -5428,1538 +5429,1540 @@ impl From<&DigestAlgorithm> for SerializableDigestAlgorithm {
     }
 }
 
-// /// The value of the key "deriveBits" in the internal object supportedAlgorithms
-// struct DeriveBitsOperation {}
-//
-// impl Operation for DeriveBitsOperation {
-//     type RegisteredAlgorithm = DeriveBitsAlgorithm;
-// }
-//
-// /// Normalized algorithm for the "deriveBits" operation, used as output of
-// /// <https://w3c.github.io/webcrypto/#dfn-normalize-an-algorithm>
-// enum DeriveBitsAlgorithm {
-//     Ecdh(EcdhKeyDeriveParams),
-//     X25519(EcdhKeyDeriveParams),
-//     X448(EcdhKeyDeriveParams),
-//     Hkdf(HkdfParams),
-//     Pbkdf2(Pbkdf2Params),
-//     Argon2(Argon2Params),
-// }
-//
-// impl NormalizedAlgorithm for DeriveBitsAlgorithm {
-//     fn from_object(
-//         cx: &mut JSContext,
-//         algorithm_name: CryptoAlgorithm,
-//         object: HandleObject,
-//     ) -> Fallible<Self> {
-//         match algorithm_name {
-//             CryptoAlgorithm::Ecdh => Ok(DeriveBitsAlgorithm::Ecdh(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::X25519 => Ok(DeriveBitsAlgorithm::X25519(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::X448 => Ok(DeriveBitsAlgorithm::X448(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::Hkdf => Ok(DeriveBitsAlgorithm::Hkdf(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::Pbkdf2 => Ok(DeriveBitsAlgorithm::Pbkdf2(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::Argon2D | CryptoAlgorithm::Argon2I | CryptoAlgorithm::Argon2ID => Ok(
-//                 DeriveBitsAlgorithm::Argon2(object.try_into_with_cx_and_name(cx, algorithm_name)?),
-//             ),
-//             _ => Err(Error::NotSupported(Some(format!(
-//                 "{} does not support \"deriveBits\" operation",
-//                 algorithm_name.as_str()
-//             )))),
-//         }
-//     }
-//
-//     fn name(&self) -> CryptoAlgorithm {
-//         match self {
-//             DeriveBitsAlgorithm::Ecdh(algorithm) => algorithm.name,
-//             DeriveBitsAlgorithm::X25519(algorithm) => algorithm.name,
-//             DeriveBitsAlgorithm::X448(algorithm) => algorithm.name,
-//             DeriveBitsAlgorithm::Hkdf(algorithm) => algorithm.name,
-//             DeriveBitsAlgorithm::Pbkdf2(algorithm) => algorithm.name,
-//             DeriveBitsAlgorithm::Argon2(algorithm) => algorithm.name,
-//         }
-//     }
-//
-//     fn determine_support_from_operation_steps(&self, length: Option<u32>) -> bool {
-//         match self {
-//             DeriveBitsAlgorithm::Ecdh(normalized_algorithm) => {
-//                 let public_key = normalized_algorithm.public.root();
-//                 let Ok(maximum_length) = ecdh_operation::maximum_length(&public_key) else {
-//                     return false;
-//                 };
-//                 public_key.Type() == KeyType::Public &&
-//                     public_key.algorithm().name() == normalized_algorithm.name &&
-//                     length.is_none_or(|length| length <= maximum_length)
-//             },
-//             DeriveBitsAlgorithm::X25519(normalized_algorithm) => {
-//                 let public_key = normalized_algorithm.public.root();
-//                 public_key.Type() == KeyType::Public &&
-//                     public_key.algorithm().name() == normalized_algorithm.name &&
-//                     length.is_none_or(|length| length <= 256)
-//             },
-//             DeriveBitsAlgorithm::X448(_) => {
-//                 length.is_none_or(|length| x448_operation::SECRET_LENGTH as u32 * 8 >= length)
-//             },
-//             DeriveBitsAlgorithm::Hkdf(normalized_algorithm) => {
-//                 let hash_length = match normalized_algorithm.hash.name() {
-//                     CryptoAlgorithm::Sha1 => 160,
-//                     CryptoAlgorithm::Sha256 => 256,
-//                     CryptoAlgorithm::Sha384 => 384,
-//                     CryptoAlgorithm::Sha512 => 512,
-//                     _ => return false,
-//                 };
-//                 length.is_some_and(|length| length % 8 == 0 && length <= 255 * hash_length)
-//             },
-//             DeriveBitsAlgorithm::Pbkdf2(normalized_algorithm) => {
-//                 length.is_some_and(|length| length % 8 == 0) && normalized_algorithm.iterations != 0
-//             },
-//             DeriveBitsAlgorithm::Argon2(normalized_algorithm) => {
-//                 length.is_some_and(|length| length >= 32 && length % 8 == 0) &&
-//                     normalized_algorithm
-//                         .version
-//                         .is_none_or(|version| version == 19) &&
-//                     normalized_algorithm.parallelism != 0 &&
-//                     normalized_algorithm.parallelism <= 16777215 &&
-//                     normalized_algorithm.memory >= 8 * normalized_algorithm.parallelism &&
-//                     normalized_algorithm.passes != 0
-//             },
-//         }
-//     }
-// }
-//
-// impl DeriveBitsAlgorithm {
-//     fn derive_bits(&self, key: &CryptoKey, length: Option<u32>) -> Result<Vec<u8>, Error> {
-//         match self {
-//             DeriveBitsAlgorithm::Ecdh(algorithm) => {
-//                 ecdh_operation::derive_bits(algorithm, key, length)
-//             },
-//             DeriveBitsAlgorithm::X25519(algorithm) => {
-//                 x25519_operation::derive_bits(algorithm, key, length)
-//             },
-//             DeriveBitsAlgorithm::X448(algorithm) => {
-//                 x448_operation::derive_bits(algorithm, key, length)
-//             },
-//             DeriveBitsAlgorithm::Hkdf(algorithm) => {
-//                 hkdf_operation::derive_bits(algorithm, key, length)
-//             },
-//             DeriveBitsAlgorithm::Pbkdf2(algorithm) => {
-//                 pbkdf2_operation::derive_bits(algorithm, key, length)
-//             },
-//             DeriveBitsAlgorithm::Argon2(algorithm) => {
-//                 argon2_operation::derive_bits(algorithm, key, length)
-//             },
-//         }
-//     }
-// }
-//
-// /// The value of the key "wrapKey" in the internal object supportedAlgorithms
-// struct WrapKeyOperation {}
-//
-// impl Operation for WrapKeyOperation {
-//     type RegisteredAlgorithm = WrapKeyAlgorithm;
-// }
-//
-// /// Normalized algorithm for the "wrapKey" operation, used as output of
-// /// <https://w3c.github.io/webcrypto/#dfn-normalize-an-algorithm>
-// enum WrapKeyAlgorithm {
-//     AesKw(Algorithm),
-// }
-//
-// impl NormalizedAlgorithm for WrapKeyAlgorithm {
-//     fn from_object(
-//         cx: &mut JSContext,
-//         algorithm_name: CryptoAlgorithm,
-//         object: HandleObject,
-//     ) -> Fallible<Self> {
-//         match algorithm_name {
-//             CryptoAlgorithm::AesKw => Ok(WrapKeyAlgorithm::AesKw(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             _ => Err(Error::NotSupported(Some(format!(
-//                 "{} does not support \"wrapKey\" operation",
-//                 algorithm_name.as_str()
-//             )))),
-//         }
-//     }
-//
-//     fn name(&self) -> CryptoAlgorithm {
-//         match self {
-//             WrapKeyAlgorithm::AesKw(algorithm) => algorithm.name,
-//         }
-//     }
-//
-//     fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
-//         match self {
-//             WrapKeyAlgorithm::AesKw(_) => true,
-//         }
-//     }
-// }
-//
-// impl WrapKeyAlgorithm {
-//     fn wrap_key(&self, key: &CryptoKey, plaintext: &[u8]) -> Result<Vec<u8>, Error> {
-//         match self {
-//             WrapKeyAlgorithm::AesKw(_algorithm) => aes_kw_operation::wrap_key(key, plaintext),
-//         }
-//     }
-// }
-//
-// /// The value of the key "unwrapKey" in the internal object supportedAlgorithms
-// struct UnwrapKeyOperation {}
-//
-// impl Operation for UnwrapKeyOperation {
-//     type RegisteredAlgorithm = UnwrapKeyAlgorithm;
-// }
-//
-// /// Normalized algorithm for the "unwrapKey" operation, used as output of
-// /// <https://w3c.github.io/webcrypto/#dfn-normalize-an-algorithm>
-// enum UnwrapKeyAlgorithm {
-//     AesKw(Algorithm),
-// }
-//
-// impl NormalizedAlgorithm for UnwrapKeyAlgorithm {
-//     fn from_object(
-//         cx: &mut JSContext,
-//         algorithm_name: CryptoAlgorithm,
-//         object: HandleObject,
-//     ) -> Fallible<Self> {
-//         match algorithm_name {
-//             CryptoAlgorithm::AesKw => Ok(UnwrapKeyAlgorithm::AesKw(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             _ => Err(Error::NotSupported(Some(format!(
-//                 "{} does not support \"unwrapKey\" operation",
-//                 algorithm_name.as_str()
-//             )))),
-//         }
-//     }
-//
-//     fn name(&self) -> CryptoAlgorithm {
-//         match self {
-//             UnwrapKeyAlgorithm::AesKw(algorithm) => algorithm.name,
-//         }
-//     }
-//
-//     fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
-//         match self {
-//             UnwrapKeyAlgorithm::AesKw(_) => true,
-//         }
-//     }
-// }
-//
-// impl UnwrapKeyAlgorithm {
-//     fn unwrap_key(&self, key: &CryptoKey, ciphertext: &[u8]) -> Result<Vec<u8>, Error> {
-//         match self {
-//             UnwrapKeyAlgorithm::AesKw(_algorithm) => aes_kw_operation::unwrap_key(key, ciphertext),
-//         }
-//     }
-// }
-//
-// /// The value of the key "unwrapKey" in the internal object supportedAlgorithms
-// struct GenerateKeyOperation {}
-//
-// impl Operation for GenerateKeyOperation {
-//     type RegisteredAlgorithm = GenerateKeyAlgorithm;
-// }
-//
-// /// Normalized algorithm for the "generateKey" operation, used as output of
-// /// <https://w3c.github.io/webcrypto/#dfn-normalize-an-algorithm>
-// enum GenerateKeyAlgorithm {
-//     RsassaPkcs1V1_5(RsaHashedKeyGenParams),
-//     RsaPss(RsaHashedKeyGenParams),
-//     RsaOaep(RsaHashedKeyGenParams),
-//     Ecdsa(EcKeyGenParams),
-//     Ecdh(EcKeyGenParams),
-//     Ed25519(Algorithm),
-//     X25519(Algorithm),
-//     Ed448(Algorithm),
-//     X448(Algorithm),
-//     AesCtr(AesKeyGenParams),
-//     AesCbc(AesKeyGenParams),
-//     AesGcm(AesKeyGenParams),
-//     AesKw(AesKeyGenParams),
-//     Hmac(HmacKeyGenParams),
-//     MlKem(Algorithm),
-//     HybridKem(Algorithm),
-//     MlDsa(Algorithm),
-//     AesOcb(AesKeyGenParams),
-//     ChaCha20Poly1305(Algorithm),
-//     Kmac(KmacKeyGenParams),
-// }
-//
-// impl NormalizedAlgorithm for GenerateKeyAlgorithm {
-//     fn from_object(
-//         cx: &mut JSContext,
-//         algorithm_name: CryptoAlgorithm,
-//         object: HandleObject,
-//     ) -> Fallible<Self> {
-//         match algorithm_name {
-//             CryptoAlgorithm::RsassaPkcs1V1_5 => Ok(GenerateKeyAlgorithm::RsassaPkcs1V1_5(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::RsaPss => Ok(GenerateKeyAlgorithm::RsaPss(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::RsaOaep => Ok(GenerateKeyAlgorithm::RsaOaep(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::Ecdsa => Ok(GenerateKeyAlgorithm::Ecdsa(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::Ecdh => Ok(GenerateKeyAlgorithm::Ecdh(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::Ed25519 => Ok(GenerateKeyAlgorithm::Ed25519(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::X25519 => Ok(GenerateKeyAlgorithm::X25519(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::Ed448 => Ok(GenerateKeyAlgorithm::Ed448(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::X448 => Ok(GenerateKeyAlgorithm::X448(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::AesCtr => Ok(GenerateKeyAlgorithm::AesCtr(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::AesCbc => Ok(GenerateKeyAlgorithm::AesCbc(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::AesGcm => Ok(GenerateKeyAlgorithm::AesGcm(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::AesKw => Ok(GenerateKeyAlgorithm::AesKw(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::Hmac => Ok(GenerateKeyAlgorithm::Hmac(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::MlKem512 | CryptoAlgorithm::MlKem768 | CryptoAlgorithm::MlKem1024 => {
-//                 Ok(GenerateKeyAlgorithm::MlKem(
-//                     object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//                 ))
-//             },
-//             CryptoAlgorithm::MlKem768X25519 => Ok(GenerateKeyAlgorithm::HybridKem(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::MlDsa44 | CryptoAlgorithm::MlDsa65 | CryptoAlgorithm::MlDsa87 => Ok(
-//                 GenerateKeyAlgorithm::MlDsa(object.try_into_with_cx_and_name(cx, algorithm_name)?),
-//             ),
-//             CryptoAlgorithm::AesOcb => Ok(GenerateKeyAlgorithm::AesOcb(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::ChaCha20Poly1305 => Ok(GenerateKeyAlgorithm::ChaCha20Poly1305(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::Kmac128 | CryptoAlgorithm::Kmac256 => Ok(GenerateKeyAlgorithm::Kmac(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             _ => Err(Error::NotSupported(Some(format!(
-//                 "{} does not support \"generateKey\" operation",
-//                 algorithm_name.as_str()
-//             )))),
-//         }
-//     }
-//
-//     fn name(&self) -> CryptoAlgorithm {
-//         match self {
-//             GenerateKeyAlgorithm::RsassaPkcs1V1_5(algorithm) => algorithm.name,
-//             GenerateKeyAlgorithm::RsaPss(algorithm) => algorithm.name,
-//             GenerateKeyAlgorithm::RsaOaep(algorithm) => algorithm.name,
-//             GenerateKeyAlgorithm::Ecdsa(algorithm) => algorithm.name,
-//             GenerateKeyAlgorithm::Ecdh(algorithm) => algorithm.name,
-//             GenerateKeyAlgorithm::Ed25519(algorithm) => algorithm.name,
-//             GenerateKeyAlgorithm::X25519(algorithm) => algorithm.name,
-//             GenerateKeyAlgorithm::Ed448(algorithm) => algorithm.name,
-//             GenerateKeyAlgorithm::X448(algorithm) => algorithm.name,
-//             GenerateKeyAlgorithm::AesCtr(algorithm) => algorithm.name,
-//             GenerateKeyAlgorithm::AesCbc(algorithm) => algorithm.name,
-//             GenerateKeyAlgorithm::AesGcm(algorithm) => algorithm.name,
-//             GenerateKeyAlgorithm::AesKw(algorithm) => algorithm.name,
-//             GenerateKeyAlgorithm::Hmac(algorithm) => algorithm.name,
-//             GenerateKeyAlgorithm::MlKem(algorithm) => algorithm.name,
-//             GenerateKeyAlgorithm::HybridKem(algorithm) => algorithm.name,
-//             GenerateKeyAlgorithm::MlDsa(algorithm) => algorithm.name,
-//             GenerateKeyAlgorithm::AesOcb(algorithm) => algorithm.name,
-//             GenerateKeyAlgorithm::ChaCha20Poly1305(algorithm) => algorithm.name,
-//             GenerateKeyAlgorithm::Kmac(algorithm) => algorithm.name,
-//         }
-//     }
-//
-//     fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
-//         match self {
-//             GenerateKeyAlgorithm::RsassaPkcs1V1_5(normalized_algorithm) |
-//             GenerateKeyAlgorithm::RsaPss(normalized_algorithm) |
-//             GenerateKeyAlgorithm::RsaOaep(normalized_algorithm) => {
-//                 normalized_algorithm.validate_parameters().is_ok()
-//             },
-//             GenerateKeyAlgorithm::Ecdsa(normalized_algorithm) |
-//             GenerateKeyAlgorithm::Ecdh(normalized_algorithm) => {
-//                 SUPPORTED_CURVES.contains(&normalized_algorithm.named_curve.as_str())
-//             },
-//             GenerateKeyAlgorithm::Ed25519(_) |
-//             GenerateKeyAlgorithm::X25519(_) |
-//             GenerateKeyAlgorithm::Ed448(_) |
-//             GenerateKeyAlgorithm::X448(_) => true,
-//             GenerateKeyAlgorithm::AesCtr(normalized_algorithm) |
-//             GenerateKeyAlgorithm::AesCbc(normalized_algorithm) |
-//             GenerateKeyAlgorithm::AesGcm(normalized_algorithm) |
-//             GenerateKeyAlgorithm::AesKw(normalized_algorithm) => {
-//                 matches!(normalized_algorithm.length, 128 | 192 | 256)
-//             },
-//             GenerateKeyAlgorithm::Hmac(normalized_algorithm) => {
-//                 normalized_algorithm.length.is_none_or(|length| length != 0)
-//             },
-//             GenerateKeyAlgorithm::MlKem(_) |
-//             GenerateKeyAlgorithm::HybridKem(_) |
-//             GenerateKeyAlgorithm::MlDsa(_) => true,
-//             GenerateKeyAlgorithm::AesOcb(normalized_algorithm) => {
-//                 matches!(normalized_algorithm.length, 128 | 192 | 256)
-//             },
-//             GenerateKeyAlgorithm::ChaCha20Poly1305(_) | GenerateKeyAlgorithm::Kmac(_) => true,
-//         }
-//     }
-// }
-//
-// impl GenerateKeyAlgorithm {
-//     fn generate_key(
-//         &self,
-//         cx: &mut JSContext,
-//         global: &GlobalScope,
-//         extractable: bool,
-//         usages: Vec<KeyUsage>,
-//     ) -> Result<CryptoKeyOrCryptoKeyPair, Error> {
-//         match self {
-//             GenerateKeyAlgorithm::RsassaPkcs1V1_5(algorithm) => {
-//                 rsassa_pkcs1_v1_5_operation::generate_key(
-//                     cx,
-//                     global,
-//                     algorithm,
-//                     extractable,
-//                     usages,
-//                 )
-//                 .map(CryptoKeyOrCryptoKeyPair::CryptoKeyPair)
-//             },
-//             GenerateKeyAlgorithm::RsaPss(algorithm) => {
-//                 rsa_pss_operation::generate_key(cx, global, algorithm, extractable, usages)
-//                     .map(CryptoKeyOrCryptoKeyPair::CryptoKeyPair)
-//             },
-//             GenerateKeyAlgorithm::RsaOaep(algorithm) => {
-//                 rsa_oaep_operation::generate_key(cx, global, algorithm, extractable, usages)
-//                     .map(CryptoKeyOrCryptoKeyPair::CryptoKeyPair)
-//             },
-//             GenerateKeyAlgorithm::Ecdsa(algorithm) => {
-//                 ecdsa_operation::generate_key(cx, global, algorithm, extractable, usages)
-//                     .map(CryptoKeyOrCryptoKeyPair::CryptoKeyPair)
-//             },
-//             GenerateKeyAlgorithm::Ecdh(algorithm) => {
-//                 ecdh_operation::generate_key(cx, global, algorithm, extractable, usages)
-//                     .map(CryptoKeyOrCryptoKeyPair::CryptoKeyPair)
-//             },
-//             GenerateKeyAlgorithm::Ed25519(_algorithm) => {
-//                 ed25519_operation::generate_key(cx, global, extractable, usages)
-//                     .map(CryptoKeyOrCryptoKeyPair::CryptoKeyPair)
-//             },
-//             GenerateKeyAlgorithm::X25519(_algorithm) => {
-//                 x25519_operation::generate_key(cx, global, extractable, usages)
-//                     .map(CryptoKeyOrCryptoKeyPair::CryptoKeyPair)
-//             },
-//             GenerateKeyAlgorithm::Ed448(_algorithm) => {
-//                 ed448_operation::generate_key(cx, global, extractable, usages)
-//                     .map(CryptoKeyOrCryptoKeyPair::CryptoKeyPair)
-//             },
-//             GenerateKeyAlgorithm::X448(_algorithm) => {
-//                 x448_operation::generate_key(cx, global, extractable, usages)
-//                     .map(CryptoKeyOrCryptoKeyPair::CryptoKeyPair)
-//             },
-//             GenerateKeyAlgorithm::AesCtr(algorithm) => {
-//                 aes_ctr_operation::generate_key(cx, global, algorithm, extractable, usages)
-//                     .map(CryptoKeyOrCryptoKeyPair::CryptoKey)
-//             },
-//             GenerateKeyAlgorithm::AesCbc(algorithm) => {
-//                 aes_cbc_operation::generate_key(cx, global, algorithm, extractable, usages)
-//                     .map(CryptoKeyOrCryptoKeyPair::CryptoKey)
-//             },
-//             GenerateKeyAlgorithm::AesGcm(algorithm) => {
-//                 aes_gcm_operation::generate_key(cx, global, algorithm, extractable, usages)
-//                     .map(CryptoKeyOrCryptoKeyPair::CryptoKey)
-//             },
-//             GenerateKeyAlgorithm::AesKw(algorithm) => {
-//                 aes_kw_operation::generate_key(cx, global, algorithm, extractable, usages)
-//                     .map(CryptoKeyOrCryptoKeyPair::CryptoKey)
-//             },
-//             GenerateKeyAlgorithm::Hmac(algorithm) => {
-//                 hmac_operation::generate_key(cx, global, algorithm, extractable, usages)
-//                     .map(CryptoKeyOrCryptoKeyPair::CryptoKey)
-//             },
-//             GenerateKeyAlgorithm::MlKem(algorithm) => {
-//                 ml_kem_operation::generate_key(cx, global, algorithm, extractable, usages)
-//                     .map(CryptoKeyOrCryptoKeyPair::CryptoKeyPair)
-//             },
-//             GenerateKeyAlgorithm::HybridKem(algorithm) => {
-//                 hybrid_kem_operation::generate_key(cx, global, algorithm, extractable, usages)
-//                     .map(CryptoKeyOrCryptoKeyPair::CryptoKeyPair)
-//             },
-//             GenerateKeyAlgorithm::MlDsa(algorithm) => {
-//                 ml_dsa_operation::generate_key(cx, global, algorithm, extractable, usages)
-//                     .map(CryptoKeyOrCryptoKeyPair::CryptoKeyPair)
-//             },
-//             GenerateKeyAlgorithm::AesOcb(algorithm) => {
-//                 aes_ocb_operation::generate_key(cx, global, algorithm, extractable, usages)
-//                     .map(CryptoKeyOrCryptoKeyPair::CryptoKey)
-//             },
-//             GenerateKeyAlgorithm::ChaCha20Poly1305(_algorithm) => {
-//                 chacha20_poly1305_operation::generate_key(cx, global, extractable, usages)
-//                     .map(CryptoKeyOrCryptoKeyPair::CryptoKey)
-//             },
-//             GenerateKeyAlgorithm::Kmac(algorithm) => {
-//                 kmac_operation::generate_key(cx, global, algorithm, extractable, usages)
-//                     .map(CryptoKeyOrCryptoKeyPair::CryptoKey)
-//             },
-//         }
-//     }
-// }
-//
-// /// The value of the key "importKey" in the internal object supportedAlgorithms
-// struct ImportKeyOperation {}
-//
-// impl Operation for ImportKeyOperation {
-//     type RegisteredAlgorithm = ImportKeyAlgorithm;
-// }
-//
-// /// Normalized algorithm for the "importKey" operation, used as output of
-// /// <https://w3c.github.io/webcrypto/#dfn-normalize-an-algorithm>
-// enum ImportKeyAlgorithm {
-//     RsassaPkcs1V1_5(RsaHashedImportParams),
-//     RsaPss(RsaHashedImportParams),
-//     RsaOaep(RsaHashedImportParams),
-//     Ecdsa(EcKeyImportParams),
-//     Ecdh(EcKeyImportParams),
-//     Ed25519(Algorithm),
-//     X25519(Algorithm),
-//     Ed448(Algorithm),
-//     X448(Algorithm),
-//     AesCtr(Algorithm),
-//     AesCbc(Algorithm),
-//     AesGcm(Algorithm),
-//     AesKw(Algorithm),
-//     Hmac(HmacImportParams),
-//     Hkdf(Algorithm),
-//     Pbkdf2(Algorithm),
-//     MlKem(Algorithm),
-//     HybridKem(Algorithm),
-//     MlDsa(Algorithm),
-//     AesOcb(Algorithm),
-//     ChaCha20Poly1305(Algorithm),
-//     Kmac(KmacImportParams),
-//     Argon2(Algorithm),
-// }
-//
-// impl NormalizedAlgorithm for ImportKeyAlgorithm {
-//     fn from_object(
-//         cx: &mut JSContext,
-//         algorithm_name: CryptoAlgorithm,
-//         object: HandleObject,
-//     ) -> Fallible<Self> {
-//         match algorithm_name {
-//             CryptoAlgorithm::RsassaPkcs1V1_5 => Ok(ImportKeyAlgorithm::RsassaPkcs1V1_5(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::RsaPss => Ok(ImportKeyAlgorithm::RsaPss(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::RsaOaep => Ok(ImportKeyAlgorithm::RsaOaep(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::Ecdsa => Ok(ImportKeyAlgorithm::Ecdsa(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::Ecdh => Ok(ImportKeyAlgorithm::Ecdh(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::Ed25519 => Ok(ImportKeyAlgorithm::Ed25519(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::X25519 => Ok(ImportKeyAlgorithm::X25519(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::Ed448 => Ok(ImportKeyAlgorithm::Ed448(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::X448 => Ok(ImportKeyAlgorithm::X448(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::AesCtr => Ok(ImportKeyAlgorithm::AesCtr(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::AesCbc => Ok(ImportKeyAlgorithm::AesCbc(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::AesGcm => Ok(ImportKeyAlgorithm::AesGcm(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::AesKw => Ok(ImportKeyAlgorithm::AesKw(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::Hmac => Ok(ImportKeyAlgorithm::Hmac(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::Hkdf => Ok(ImportKeyAlgorithm::Hkdf(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::Pbkdf2 => Ok(ImportKeyAlgorithm::Pbkdf2(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::MlKem512 | CryptoAlgorithm::MlKem768 | CryptoAlgorithm::MlKem1024 => {
-//                 Ok(ImportKeyAlgorithm::MlKem(
-//                     object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//                 ))
-//             },
-//             CryptoAlgorithm::MlKem768X25519 => Ok(ImportKeyAlgorithm::HybridKem(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::MlDsa44 | CryptoAlgorithm::MlDsa65 | CryptoAlgorithm::MlDsa87 => Ok(
-//                 ImportKeyAlgorithm::MlDsa(object.try_into_with_cx_and_name(cx, algorithm_name)?),
-//             ),
-//             CryptoAlgorithm::AesOcb => Ok(ImportKeyAlgorithm::AesOcb(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::ChaCha20Poly1305 => Ok(ImportKeyAlgorithm::ChaCha20Poly1305(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::Kmac128 | CryptoAlgorithm::Kmac256 => Ok(ImportKeyAlgorithm::Kmac(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::Argon2D | CryptoAlgorithm::Argon2I | CryptoAlgorithm::Argon2ID => Ok(
-//                 ImportKeyAlgorithm::Argon2(object.try_into_with_cx_and_name(cx, algorithm_name)?),
-//             ),
-//             _ => Err(Error::NotSupported(Some(format!(
-//                 "{} does not support \"importKey\" operation",
-//                 algorithm_name.as_str()
-//             )))),
-//         }
-//     }
-//
-//     fn name(&self) -> CryptoAlgorithm {
-//         match self {
-//             ImportKeyAlgorithm::RsassaPkcs1V1_5(algorithm) => algorithm.name,
-//             ImportKeyAlgorithm::RsaPss(algorithm) => algorithm.name,
-//             ImportKeyAlgorithm::RsaOaep(algorithm) => algorithm.name,
-//             ImportKeyAlgorithm::Ecdsa(algorithm) => algorithm.name,
-//             ImportKeyAlgorithm::Ecdh(algorithm) => algorithm.name,
-//             ImportKeyAlgorithm::Ed25519(algorithm) => algorithm.name,
-//             ImportKeyAlgorithm::X25519(algorithm) => algorithm.name,
-//             ImportKeyAlgorithm::Ed448(algorithm) => algorithm.name,
-//             ImportKeyAlgorithm::X448(algorithm) => algorithm.name,
-//             ImportKeyAlgorithm::AesCtr(algorithm) => algorithm.name,
-//             ImportKeyAlgorithm::AesCbc(algorithm) => algorithm.name,
-//             ImportKeyAlgorithm::AesGcm(algorithm) => algorithm.name,
-//             ImportKeyAlgorithm::AesKw(algorithm) => algorithm.name,
-//             ImportKeyAlgorithm::Hmac(algorithm) => algorithm.name,
-//             ImportKeyAlgorithm::Hkdf(algorithm) => algorithm.name,
-//             ImportKeyAlgorithm::Pbkdf2(algorithm) => algorithm.name,
-//             ImportKeyAlgorithm::MlKem(algorithm) => algorithm.name,
-//             ImportKeyAlgorithm::HybridKem(algorithm) => algorithm.name,
-//             ImportKeyAlgorithm::MlDsa(algorithm) => algorithm.name,
-//             ImportKeyAlgorithm::AesOcb(algorithm) => algorithm.name,
-//             ImportKeyAlgorithm::ChaCha20Poly1305(algorithm) => algorithm.name,
-//             ImportKeyAlgorithm::Kmac(algorithm) => algorithm.name,
-//             ImportKeyAlgorithm::Argon2(algorithm) => algorithm.name,
-//         }
-//     }
-//
-//     fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
-//         match self {
-//             ImportKeyAlgorithm::RsassaPkcs1V1_5(_) |
-//             ImportKeyAlgorithm::RsaPss(_) |
-//             ImportKeyAlgorithm::RsaOaep(_) => true,
-//             ImportKeyAlgorithm::Ecdsa(normalized_algorithm) |
-//             ImportKeyAlgorithm::Ecdh(normalized_algorithm) => {
-//                 SUPPORTED_CURVES.contains(&normalized_algorithm.named_curve.as_str())
-//             },
-//             ImportKeyAlgorithm::Ed25519(_) |
-//             ImportKeyAlgorithm::X25519(_) |
-//             ImportKeyAlgorithm::Ed448(_) |
-//             ImportKeyAlgorithm::X448(_) |
-//             ImportKeyAlgorithm::AesCtr(_) |
-//             ImportKeyAlgorithm::AesCbc(_) |
-//             ImportKeyAlgorithm::AesGcm(_) |
-//             ImportKeyAlgorithm::AesKw(_) => true,
-//             ImportKeyAlgorithm::Hmac(normalized_algorithm) => {
-//                 normalized_algorithm.length.is_none_or(|length| length != 0)
-//             },
-//             ImportKeyAlgorithm::Hkdf(_) |
-//             ImportKeyAlgorithm::Pbkdf2(_) |
-//             ImportKeyAlgorithm::MlKem(_) |
-//             ImportKeyAlgorithm::HybridKem(_) |
-//             ImportKeyAlgorithm::MlDsa(_) |
-//             ImportKeyAlgorithm::AesOcb(_) |
-//             ImportKeyAlgorithm::ChaCha20Poly1305(_) |
-//             ImportKeyAlgorithm::Kmac(_) |
-//             ImportKeyAlgorithm::Argon2(_) => true,
-//         }
-//     }
-// }
-//
-// impl ImportKeyAlgorithm {
-//     fn import_key(
-//         &self,
-//         cx: &mut JSContext,
-//         global: &GlobalScope,
-//         format: KeyFormat,
-//         key_data: &[u8],
-//         extractable: bool,
-//         usages: Vec<KeyUsage>,
-//     ) -> Result<DomRoot<CryptoKey>, Error> {
-//         match self {
-//             ImportKeyAlgorithm::RsassaPkcs1V1_5(algorithm) => {
-//                 rsassa_pkcs1_v1_5_operation::import_key(
-//                     cx,
-//                     global,
-//                     algorithm,
-//                     format,
-//                     key_data,
-//                     extractable,
-//                     usages,
-//                 )
-//             },
-//             ImportKeyAlgorithm::RsaPss(algorithm) => rsa_pss_operation::import_key(
-//                 cx,
-//                 global,
-//                 algorithm,
-//                 format,
-//                 key_data,
-//                 extractable,
-//                 usages,
-//             ),
-//             ImportKeyAlgorithm::RsaOaep(algorithm) => rsa_oaep_operation::import_key(
-//                 cx,
-//                 global,
-//                 algorithm,
-//                 format,
-//                 key_data,
-//                 extractable,
-//                 usages,
-//             ),
-//             ImportKeyAlgorithm::Ecdsa(algorithm) => ecdsa_operation::import_key(
-//                 cx,
-//                 global,
-//                 algorithm,
-//                 format,
-//                 key_data,
-//                 extractable,
-//                 usages,
-//             ),
-//             ImportKeyAlgorithm::Ecdh(algorithm) => ecdh_operation::import_key(
-//                 cx,
-//                 global,
-//                 algorithm,
-//                 format,
-//                 key_data,
-//                 extractable,
-//                 usages,
-//             ),
-//             ImportKeyAlgorithm::Ed25519(_algorithm) => {
-//                 ed25519_operation::import_key(cx, global, format, key_data, extractable, usages)
-//             },
-//             ImportKeyAlgorithm::X25519(_algorithm) => {
-//                 x25519_operation::import_key(cx, global, format, key_data, extractable, usages)
-//             },
-//             ImportKeyAlgorithm::Ed448(_algorithm) => {
-//                 ed448_operation::import_key(cx, global, format, key_data, extractable, usages)
-//             },
-//             ImportKeyAlgorithm::X448(_algorithm) => {
-//                 x448_operation::import_key(cx, global, format, key_data, extractable, usages)
-//             },
-//             ImportKeyAlgorithm::AesCtr(_algorithm) => {
-//                 aes_ctr_operation::import_key(cx, global, format, key_data, extractable, usages)
-//             },
-//             ImportKeyAlgorithm::AesCbc(_algorithm) => {
-//                 aes_cbc_operation::import_key(cx, global, format, key_data, extractable, usages)
-//             },
-//             ImportKeyAlgorithm::AesGcm(_algorithm) => {
-//                 aes_gcm_operation::import_key(cx, global, format, key_data, extractable, usages)
-//             },
-//             ImportKeyAlgorithm::AesKw(_algorithm) => {
-//                 aes_kw_operation::import_key(cx, global, format, key_data, extractable, usages)
-//             },
-//             ImportKeyAlgorithm::Hmac(algorithm) => hmac_operation::import_key(
-//                 cx,
-//                 global,
-//                 algorithm,
-//                 format,
-//                 key_data,
-//                 extractable,
-//                 usages,
-//             ),
-//             ImportKeyAlgorithm::Hkdf(_algorithm) => {
-//                 hkdf_operation::import_key(cx, global, format, key_data, extractable, usages)
-//             },
-//             ImportKeyAlgorithm::Pbkdf2(_algorithm) => {
-//                 pbkdf2_operation::import_key(cx, global, format, key_data, extractable, usages)
-//             },
-//             ImportKeyAlgorithm::MlKem(algorithm) => ml_kem_operation::import_key(
-//                 cx,
-//                 global,
-//                 algorithm,
-//                 format,
-//                 key_data,
-//                 extractable,
-//                 usages,
-//             ),
-//             ImportKeyAlgorithm::HybridKem(algorithm) => hybrid_kem_operation::import_key(
-//                 cx,
-//                 global,
-//                 algorithm,
-//                 format,
-//                 key_data,
-//                 extractable,
-//                 usages,
-//             ),
-//             ImportKeyAlgorithm::MlDsa(algorithm) => ml_dsa_operation::import_key(
-//                 cx,
-//                 global,
-//                 algorithm,
-//                 format,
-//                 key_data,
-//                 extractable,
-//                 usages,
-//             ),
-//             ImportKeyAlgorithm::AesOcb(_algorithm) => {
-//                 aes_ocb_operation::import_key(cx, global, format, key_data, extractable, usages)
-//             },
-//             ImportKeyAlgorithm::ChaCha20Poly1305(_algorithm) => {
-//                 chacha20_poly1305_operation::import_key(
-//                     cx,
-//                     global,
-//                     format,
-//                     key_data,
-//                     extractable,
-//                     usages,
-//                 )
-//             },
-//             ImportKeyAlgorithm::Kmac(algorithm) => kmac_operation::import_key(
-//                 cx,
-//                 global,
-//                 algorithm,
-//                 format,
-//                 key_data,
-//                 extractable,
-//                 usages,
-//             ),
-//             ImportKeyAlgorithm::Argon2(algorithm) => argon2_operation::import_key(
-//                 cx,
-//                 global,
-//                 algorithm,
-//                 format,
-//                 key_data,
-//                 extractable,
-//                 usages,
-//             ),
-//         }
-//     }
-//
-//     /// Return whether the import key operation specified by normalized algorithm would throw an
-//     /// error for every value of keyData that is a byte sequence whose length in bits is
-//     /// sharedKeyLength when format is "raw-secret".
-//     fn will_throw_for_key_data_length(&self, key_data_length: u32) -> bool {
-//         match self {
-//             ImportKeyAlgorithm::RsassaPkcs1V1_5(_) |
-//             ImportKeyAlgorithm::RsaPss(_) |
-//             ImportKeyAlgorithm::RsaOaep(_) |
-//             ImportKeyAlgorithm::Ecdsa(_) |
-//             ImportKeyAlgorithm::Ecdh(_) |
-//             ImportKeyAlgorithm::Ed25519(_) |
-//             ImportKeyAlgorithm::X25519(_) |
-//             ImportKeyAlgorithm::Ed448(_) |
-//             ImportKeyAlgorithm::X448(_) => true,
-//             ImportKeyAlgorithm::AesCtr(_) |
-//             ImportKeyAlgorithm::AesCbc(_) |
-//             ImportKeyAlgorithm::AesGcm(_) |
-//             ImportKeyAlgorithm::AesKw(_) => !matches!(key_data_length, 128 | 192 | 256),
-//             ImportKeyAlgorithm::Hmac(algorithm) => {
-//                 key_data_length == 0 ||
-//                     algorithm.length.is_some_and(|length| {
-//                         length > key_data_length || length + 8 <= key_data_length
-//                     })
-//             },
-//             ImportKeyAlgorithm::Hkdf(_) | ImportKeyAlgorithm::Pbkdf2(_) => false,
-//             ImportKeyAlgorithm::MlKem(_) |
-//             ImportKeyAlgorithm::HybridKem(_) |
-//             ImportKeyAlgorithm::MlDsa(_) => true,
-//             ImportKeyAlgorithm::AesOcb(_) => !matches!(key_data_length, 128 | 192 | 256),
-//             ImportKeyAlgorithm::ChaCha20Poly1305(_) => key_data_length != 256,
-//             ImportKeyAlgorithm::Kmac(algorithm) => algorithm
-//                 .length
-//                 .is_some_and(|length| length > key_data_length || length + 8 <= key_data_length),
-//             ImportKeyAlgorithm::Argon2(_) => false,
-//         }
-//     }
-// }
-//
-// /// The value of the key "exportKey" in the internal object supportedAlgorithms
-// struct ExportKeyOperation {}
-//
-// impl Operation for ExportKeyOperation {
-//     type RegisteredAlgorithm = ExportKeyAlgorithm;
-// }
-//
-// /// Normalized algorithm for the "exportKey" operation, used as output of
-// /// <https://w3c.github.io/webcrypto/#dfn-normalize-an-algorithm>
-// enum ExportKeyAlgorithm {
-//     RsassaPkcs1V1_5(Algorithm),
-//     RsaPss(Algorithm),
-//     RsaOaep(Algorithm),
-//     Ecdsa(Algorithm),
-//     Ecdh(Algorithm),
-//     Ed25519(Algorithm),
-//     X25519(Algorithm),
-//     Ed448(Algorithm),
-//     X448(Algorithm),
-//     AesCtr(Algorithm),
-//     AesCbc(Algorithm),
-//     AesGcm(Algorithm),
-//     AesKw(Algorithm),
-//     Hmac(Algorithm),
-//     MlKem(Algorithm),
-//     HybridKem(Algorithm),
-//     MlDsa(Algorithm),
-//     AesOcb(Algorithm),
-//     ChaCha20Poly1305(Algorithm),
-//     Kmac(Algorithm),
-// }
-//
-// impl NormalizedAlgorithm for ExportKeyAlgorithm {
-//     fn from_object(
-//         cx: &mut JSContext,
-//         algorithm_name: CryptoAlgorithm,
-//         object: HandleObject,
-//     ) -> Fallible<Self> {
-//         match algorithm_name {
-//             CryptoAlgorithm::RsassaPkcs1V1_5 => Ok(ExportKeyAlgorithm::RsassaPkcs1V1_5(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::RsaPss => Ok(ExportKeyAlgorithm::RsaPss(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::RsaOaep => Ok(ExportKeyAlgorithm::RsaOaep(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::Ecdsa => Ok(ExportKeyAlgorithm::Ecdsa(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::Ecdh => Ok(ExportKeyAlgorithm::Ecdh(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::Ed25519 => Ok(ExportKeyAlgorithm::Ed25519(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::X25519 => Ok(ExportKeyAlgorithm::X25519(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::Ed448 => Ok(ExportKeyAlgorithm::Ed448(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::X448 => Ok(ExportKeyAlgorithm::X448(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::AesCtr => Ok(ExportKeyAlgorithm::AesCtr(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::AesCbc => Ok(ExportKeyAlgorithm::AesCbc(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::AesGcm => Ok(ExportKeyAlgorithm::AesGcm(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::AesKw => Ok(ExportKeyAlgorithm::AesKw(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::Hmac => Ok(ExportKeyAlgorithm::Hmac(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::MlKem512 | CryptoAlgorithm::MlKem768 | CryptoAlgorithm::MlKem1024 => {
-//                 Ok(ExportKeyAlgorithm::MlKem(
-//                     object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//                 ))
-//             },
-//             CryptoAlgorithm::MlKem768X25519 => Ok(ExportKeyAlgorithm::HybridKem(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::MlDsa44 | CryptoAlgorithm::MlDsa65 | CryptoAlgorithm::MlDsa87 => Ok(
-//                 ExportKeyAlgorithm::MlDsa(object.try_into_with_cx_and_name(cx, algorithm_name)?),
-//             ),
-//             CryptoAlgorithm::AesOcb => Ok(ExportKeyAlgorithm::AesOcb(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::ChaCha20Poly1305 => Ok(ExportKeyAlgorithm::ChaCha20Poly1305(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::Kmac128 | CryptoAlgorithm::Kmac256 => Ok(ExportKeyAlgorithm::Kmac(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             _ => Err(Error::NotSupported(Some(format!(
-//                 "{} does not support \"exportKey\" operation",
-//                 algorithm_name.as_str()
-//             )))),
-//         }
-//     }
-//
-//     fn name(&self) -> CryptoAlgorithm {
-//         match self {
-//             ExportKeyAlgorithm::RsassaPkcs1V1_5(algorithm) => algorithm.name,
-//             ExportKeyAlgorithm::RsaPss(algorithm) => algorithm.name,
-//             ExportKeyAlgorithm::RsaOaep(algorithm) => algorithm.name,
-//             ExportKeyAlgorithm::Ecdsa(algorithm) => algorithm.name,
-//             ExportKeyAlgorithm::Ecdh(algorithm) => algorithm.name,
-//             ExportKeyAlgorithm::Ed25519(algorithm) => algorithm.name,
-//             ExportKeyAlgorithm::X25519(algorithm) => algorithm.name,
-//             ExportKeyAlgorithm::Ed448(algorithm) => algorithm.name,
-//             ExportKeyAlgorithm::X448(algorithm) => algorithm.name,
-//             ExportKeyAlgorithm::AesCtr(algorithm) => algorithm.name,
-//             ExportKeyAlgorithm::AesCbc(algorithm) => algorithm.name,
-//             ExportKeyAlgorithm::AesGcm(algorithm) => algorithm.name,
-//             ExportKeyAlgorithm::AesKw(algorithm) => algorithm.name,
-//             ExportKeyAlgorithm::Hmac(algorithm) => algorithm.name,
-//             ExportKeyAlgorithm::MlKem(algorithm) => algorithm.name,
-//             ExportKeyAlgorithm::HybridKem(algorithm) => algorithm.name,
-//             ExportKeyAlgorithm::MlDsa(algorithm) => algorithm.name,
-//             ExportKeyAlgorithm::AesOcb(algorithm) => algorithm.name,
-//             ExportKeyAlgorithm::ChaCha20Poly1305(algorithm) => algorithm.name,
-//             ExportKeyAlgorithm::Kmac(algorithm) => algorithm.name,
-//         }
-//     }
-//
-//     fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
-//         match self {
-//             ExportKeyAlgorithm::RsassaPkcs1V1_5(_) |
-//             ExportKeyAlgorithm::RsaPss(_) |
-//             ExportKeyAlgorithm::RsaOaep(_) |
-//             ExportKeyAlgorithm::Ecdsa(_) |
-//             ExportKeyAlgorithm::Ecdh(_) |
-//             ExportKeyAlgorithm::Ed25519(_) |
-//             ExportKeyAlgorithm::X25519(_) |
-//             ExportKeyAlgorithm::Ed448(_) |
-//             ExportKeyAlgorithm::X448(_) |
-//             ExportKeyAlgorithm::AesCtr(_) |
-//             ExportKeyAlgorithm::AesCbc(_) |
-//             ExportKeyAlgorithm::AesGcm(_) |
-//             ExportKeyAlgorithm::AesKw(_) |
-//             ExportKeyAlgorithm::Hmac(_) |
-//             ExportKeyAlgorithm::MlKem(_) |
-//             ExportKeyAlgorithm::HybridKem(_) |
-//             ExportKeyAlgorithm::MlDsa(_) |
-//             ExportKeyAlgorithm::AesOcb(_) |
-//             ExportKeyAlgorithm::ChaCha20Poly1305(_) |
-//             ExportKeyAlgorithm::Kmac(_) => true,
-//         }
-//     }
-// }
-//
-// impl ExportKeyAlgorithm {
-//     fn export_key(&self, format: KeyFormat, key: &CryptoKey) -> Result<ExportedKey, Error> {
-//         match self {
-//             ExportKeyAlgorithm::RsassaPkcs1V1_5(_algorithm) => {
-//                 rsassa_pkcs1_v1_5_operation::export_key(format, key)
-//             },
-//             ExportKeyAlgorithm::RsaPss(_algorithm) => rsa_pss_operation::export_key(format, key),
-//             ExportKeyAlgorithm::RsaOaep(_algorithm) => rsa_oaep_operation::export_key(format, key),
-//             ExportKeyAlgorithm::Ecdsa(_algorithm) => ecdsa_operation::export_key(format, key),
-//             ExportKeyAlgorithm::Ecdh(_algorithm) => ecdh_operation::export_key(format, key),
-//             ExportKeyAlgorithm::Ed25519(_algorithm) => ed25519_operation::export_key(format, key),
-//             ExportKeyAlgorithm::X25519(_algorithm) => x25519_operation::export_key(format, key),
-//             ExportKeyAlgorithm::Ed448(_algorithm) => ed448_operation::export_key(format, key),
-//             ExportKeyAlgorithm::X448(_algorithm) => x448_operation::export_key(format, key),
-//             ExportKeyAlgorithm::AesCtr(_algorithm) => aes_ctr_operation::export_key(format, key),
-//             ExportKeyAlgorithm::AesCbc(_algorithm) => aes_cbc_operation::export_key(format, key),
-//             ExportKeyAlgorithm::AesGcm(_algorithm) => aes_gcm_operation::export_key(format, key),
-//             ExportKeyAlgorithm::AesKw(_algorithm) => aes_kw_operation::export_key(format, key),
-//             ExportKeyAlgorithm::Hmac(_algorithm) => hmac_operation::export_key(format, key),
-//             ExportKeyAlgorithm::MlKem(_algorithm) => ml_kem_operation::export_key(format, key),
-//             ExportKeyAlgorithm::HybridKem(_algorithm) => {
-//                 hybrid_kem_operation::export_key(format, key)
-//             },
-//             ExportKeyAlgorithm::MlDsa(_algorithm) => ml_dsa_operation::export_key(format, key),
-//             ExportKeyAlgorithm::AesOcb(_algorithm) => aes_ocb_operation::export_key(format, key),
-//             ExportKeyAlgorithm::ChaCha20Poly1305(_algorithm) => {
-//                 chacha20_poly1305_operation::export_key(format, key)
-//             },
-//             ExportKeyAlgorithm::Kmac(_algorithm) => kmac_operation::export_key(format, key),
-//         }
-//     }
-// }
-//
-// /// The value of the key "get key length" in the internal object supportedAlgorithms
-// struct GetKeyLengthOperation {}
-//
-// impl Operation for GetKeyLengthOperation {
-//     type RegisteredAlgorithm = GetKeyLengthAlgorithm;
-// }
-//
-// /// Normalized algorithm for the "get key length" operation, used as output of
-// /// <https://w3c.github.io/webcrypto/#dfn-normalize-an-algorithm>
-// enum GetKeyLengthAlgorithm {
-//     AesCtr(AesDerivedKeyParams),
-//     AesCbc(AesDerivedKeyParams),
-//     AesGcm(AesDerivedKeyParams),
-//     AesKw(AesDerivedKeyParams),
-//     Hmac(HmacImportParams),
-//     Hkdf(Algorithm),
-//     Pbkdf2(Algorithm),
-//     AesOcb(AesDerivedKeyParams),
-//     ChaCha20Poly1305(Algorithm),
-//     Kmac(KmacImportParams),
-//     Argon2(Algorithm),
-// }
-//
-// impl NormalizedAlgorithm for GetKeyLengthAlgorithm {
-//     fn from_object(
-//         cx: &mut JSContext,
-//         algorithm_name: CryptoAlgorithm,
-//         object: HandleObject,
-//     ) -> Fallible<Self> {
-//         match algorithm_name {
-//             CryptoAlgorithm::AesCtr => Ok(GetKeyLengthAlgorithm::AesCtr(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::AesCbc => Ok(GetKeyLengthAlgorithm::AesCbc(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::AesGcm => Ok(GetKeyLengthAlgorithm::AesGcm(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::AesKw => Ok(GetKeyLengthAlgorithm::AesKw(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::Hmac => Ok(GetKeyLengthAlgorithm::Hmac(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::Hkdf => Ok(GetKeyLengthAlgorithm::Hkdf(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::Pbkdf2 => Ok(GetKeyLengthAlgorithm::Pbkdf2(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::AesOcb => Ok(GetKeyLengthAlgorithm::AesOcb(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::ChaCha20Poly1305 => Ok(GetKeyLengthAlgorithm::ChaCha20Poly1305(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::Kmac128 | CryptoAlgorithm::Kmac256 => Ok(GetKeyLengthAlgorithm::Kmac(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::Argon2D | CryptoAlgorithm::Argon2I | CryptoAlgorithm::Argon2ID => {
-//                 Ok(GetKeyLengthAlgorithm::Argon2(
-//                     object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//                 ))
-//             },
-//             _ => Err(Error::NotSupported(Some(format!(
-//                 "{} does not support \"get key length\" operation",
-//                 algorithm_name.as_str()
-//             )))),
-//         }
-//     }
-//
-//     fn name(&self) -> CryptoAlgorithm {
-//         match self {
-//             GetKeyLengthAlgorithm::AesCtr(algorithm) => algorithm.name,
-//             GetKeyLengthAlgorithm::AesCbc(algorithm) => algorithm.name,
-//             GetKeyLengthAlgorithm::AesGcm(algorithm) => algorithm.name,
-//             GetKeyLengthAlgorithm::AesKw(algorithm) => algorithm.name,
-//             GetKeyLengthAlgorithm::Hmac(algorithm) => algorithm.name,
-//             GetKeyLengthAlgorithm::Hkdf(algorithm) => algorithm.name,
-//             GetKeyLengthAlgorithm::Pbkdf2(algorithm) => algorithm.name,
-//             GetKeyLengthAlgorithm::AesOcb(algorithm) => algorithm.name,
-//             GetKeyLengthAlgorithm::ChaCha20Poly1305(algorithm) => algorithm.name,
-//             GetKeyLengthAlgorithm::Kmac(algorithm) => algorithm.name,
-//             GetKeyLengthAlgorithm::Argon2(algorithm) => algorithm.name,
-//         }
-//     }
-//
-//     fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
-//         match self {
-//             GetKeyLengthAlgorithm::AesCtr(normalized_derived_key_algorithm) |
-//             GetKeyLengthAlgorithm::AesCbc(normalized_derived_key_algorithm) |
-//             GetKeyLengthAlgorithm::AesGcm(normalized_derived_key_algorithm) |
-//             GetKeyLengthAlgorithm::AesKw(normalized_derived_key_algorithm) => {
-//                 matches!(normalized_derived_key_algorithm.length, 128 | 192 | 256)
-//             },
-//             GetKeyLengthAlgorithm::Hmac(normalized_derived_key_algorithm) => {
-//                 normalized_derived_key_algorithm
-//                     .length
-//                     .is_none_or(|length| length != 0)
-//             },
-//             GetKeyLengthAlgorithm::Hkdf(_) | GetKeyLengthAlgorithm::Pbkdf2(_) => true,
-//             GetKeyLengthAlgorithm::AesOcb(normalized_derived_key_algorithm) => {
-//                 matches!(normalized_derived_key_algorithm.length, 128 | 192 | 256)
-//             },
-//             GetKeyLengthAlgorithm::ChaCha20Poly1305(_) |
-//             GetKeyLengthAlgorithm::Kmac(_) |
-//             GetKeyLengthAlgorithm::Argon2(_) => true,
-//         }
-//     }
-// }
-//
-// impl GetKeyLengthAlgorithm {
-//     fn get_key_length(&self) -> Result<Option<u32>, Error> {
-//         match self {
-//             GetKeyLengthAlgorithm::AesCtr(algorithm) => {
-//                 aes_ctr_operation::get_key_length(algorithm)
-//             },
-//             GetKeyLengthAlgorithm::AesCbc(algorithm) => {
-//                 aes_cbc_operation::get_key_length(algorithm)
-//             },
-//             GetKeyLengthAlgorithm::AesGcm(algorithm) => {
-//                 aes_gcm_operation::get_key_length(algorithm)
-//             },
-//             GetKeyLengthAlgorithm::AesKw(algorithm) => aes_kw_operation::get_key_length(algorithm),
-//             GetKeyLengthAlgorithm::Hmac(algorithm) => hmac_operation::get_key_length(algorithm),
-//             GetKeyLengthAlgorithm::Hkdf(_algorithm) => hkdf_operation::get_key_length(),
-//             GetKeyLengthAlgorithm::Pbkdf2(_algorithm) => pbkdf2_operation::get_key_length(),
-//             GetKeyLengthAlgorithm::AesOcb(algorithm) => {
-//                 aes_ocb_operation::get_key_length(algorithm)
-//             },
-//             GetKeyLengthAlgorithm::ChaCha20Poly1305(_algorithm) => {
-//                 chacha20_poly1305_operation::get_key_length()
-//             },
-//             GetKeyLengthAlgorithm::Kmac(algorithm) => kmac_operation::get_key_length(algorithm),
-//             GetKeyLengthAlgorithm::Argon2(_algorithm) => argon2_operation::get_key_length(),
-//         }
-//     }
-// }
-//
-// /// The value of the key "encapsulate" in the internal object supportedAlgorithms
-// struct EncapsulateOperation {}
-//
-// impl Operation for EncapsulateOperation {
-//     type RegisteredAlgorithm = EncapsulateAlgorithm;
-// }
-//
-// /// Normalized algorithm for the "encapsulate" operation, used as output of
-// /// <https://w3c.github.io/webcrypto/#dfn-normalize-an-algorithm>
-// enum EncapsulateAlgorithm {
-//     MlKem(Algorithm),
-//     HybridKem(Algorithm),
-// }
-//
-// impl NormalizedAlgorithm for EncapsulateAlgorithm {
-//     fn from_object(
-//         cx: &mut JSContext,
-//         algorithm_name: CryptoAlgorithm,
-//         object: HandleObject,
-//     ) -> Fallible<Self> {
-//         match algorithm_name {
-//             CryptoAlgorithm::MlKem512 | CryptoAlgorithm::MlKem768 | CryptoAlgorithm::MlKem1024 => {
-//                 Ok(EncapsulateAlgorithm::MlKem(
-//                     object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//                 ))
-//             },
-//             CryptoAlgorithm::MlKem768X25519 => Ok(EncapsulateAlgorithm::HybridKem(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             _ => Err(Error::NotSupported(Some(format!(
-//                 "{} does not support \"encapsulate\" operation",
-//                 algorithm_name.as_str()
-//             )))),
-//         }
-//     }
-//
-//     fn name(&self) -> CryptoAlgorithm {
-//         match self {
-//             EncapsulateAlgorithm::MlKem(algorithm) => algorithm.name,
-//             EncapsulateAlgorithm::HybridKem(algorithm) => algorithm.name,
-//         }
-//     }
-//
-//     fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
-//         match self {
-//             EncapsulateAlgorithm::MlKem(_) | EncapsulateAlgorithm::HybridKem(_) => true,
-//         }
-//     }
-// }
-//
-// impl EncapsulateAlgorithm {
-//     fn encapsulate(&self, key: &CryptoKey) -> Result<EncapsulatedBits, Error> {
-//         match self {
-//             EncapsulateAlgorithm::MlKem(algorithm) => ml_kem_operation::encapsulate(algorithm, key),
-//             EncapsulateAlgorithm::HybridKem(algorithm) => {
-//                 hybrid_kem_operation::encapsulate(algorithm, key)
-//             },
-//         }
-//     }
-// }
-//
-// /// The value of the key "decapsulate" in the internal object supportedAlgorithms
-// struct DecapsulateOperation {}
-//
-// impl Operation for DecapsulateOperation {
-//     type RegisteredAlgorithm = DecapsulateAlgorithm;
-// }
-//
-// /// Normalized algorithm for the "decapsulate" operation, used as output of
-// /// <https://w3c.github.io/webcrypto/#dfn-normalize-an-algorithm>
-// enum DecapsulateAlgorithm {
-//     MlKem(Algorithm),
-//     HybridKem(Algorithm),
-// }
-//
-// impl NormalizedAlgorithm for DecapsulateAlgorithm {
-//     fn from_object(
-//         cx: &mut JSContext,
-//         algorithm_name: CryptoAlgorithm,
-//         object: HandleObject,
-//     ) -> Fallible<Self> {
-//         match algorithm_name {
-//             CryptoAlgorithm::MlKem512 | CryptoAlgorithm::MlKem768 | CryptoAlgorithm::MlKem1024 => {
-//                 Ok(DecapsulateAlgorithm::MlKem(
-//                     object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//                 ))
-//             },
-//             CryptoAlgorithm::MlKem768X25519 => Ok(DecapsulateAlgorithm::HybridKem(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             _ => Err(Error::NotSupported(Some(format!(
-//                 "{} does not support \"decapsulate\" operation",
-//                 algorithm_name.as_str()
-//             )))),
-//         }
-//     }
-//
-//     fn name(&self) -> CryptoAlgorithm {
-//         match self {
-//             DecapsulateAlgorithm::MlKem(algorithm) => algorithm.name,
-//             DecapsulateAlgorithm::HybridKem(algorithm) => algorithm.name,
-//         }
-//     }
-//
-//     fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
-//         match self {
-//             DecapsulateAlgorithm::MlKem(_) | DecapsulateAlgorithm::HybridKem(_) => true,
-//         }
-//     }
-// }
-//
-// impl DecapsulateAlgorithm {
-//     fn decapsulate(&self, key: &CryptoKey, ciphertext: &[u8]) -> Result<Vec<u8>, Error> {
-//         match self {
-//             DecapsulateAlgorithm::MlKem(algorithm) => {
-//                 ml_kem_operation::decapsulate(algorithm, key, ciphertext)
-//             },
-//             DecapsulateAlgorithm::HybridKem(algorithm) => {
-//                 hybrid_kem_operation::decapsulate(algorithm, key, ciphertext)
-//             },
-//         }
-//     }
-// }
-//
-// /// The value of the key "get shared key length" in the internal object supportedAlgorithms
-// struct GetSharedKeyLengthOperation {}
-//
-// impl Operation for GetSharedKeyLengthOperation {
-//     type RegisteredAlgorithm = GetSharedKeyLengthAlgorithm;
-// }
-//
-// /// Normalized algorithm for the "get shared key length" operation, used as output of
-// /// <https://w3c.github.io/webcrypto/#dfn-normalize-an-algorithm>
-// enum GetSharedKeyLengthAlgorithm {
-//     MlKem(Algorithm),
-//     HybridKem(Algorithm),
-// }
-//
-// impl NormalizedAlgorithm for GetSharedKeyLengthAlgorithm {
-//     fn from_object(
-//         cx: &mut JSContext,
-//         algorithm_name: CryptoAlgorithm,
-//         object: HandleObject,
-//     ) -> Fallible<Self> {
-//         match algorithm_name {
-//             CryptoAlgorithm::MlKem512 | CryptoAlgorithm::MlKem768 | CryptoAlgorithm::MlKem1024 => {
-//                 Ok(GetSharedKeyLengthAlgorithm::MlKem(
-//                     object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//                 ))
-//             },
-//             CryptoAlgorithm::MlKem768X25519 => Ok(GetSharedKeyLengthAlgorithm::HybridKem(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             _ => Err(Error::NotSupported(Some(format!(
-//                 "{} does not support \"get shared key length\" operation",
-//                 algorithm_name.as_str()
-//             )))),
-//         }
-//     }
-//
-//     fn name(&self) -> CryptoAlgorithm {
-//         match self {
-//             GetSharedKeyLengthAlgorithm::MlKem(algorithm) => algorithm.name,
-//             GetSharedKeyLengthAlgorithm::HybridKem(algorithm) => algorithm.name,
-//         }
-//     }
-// }
-//
-// impl GetSharedKeyLengthAlgorithm {
-//     fn get_shared_key_length(&self) -> u32 {
-//         match self {
-//             GetSharedKeyLengthAlgorithm::MlKem(_algorithm) => {
-//                 ml_kem_operation::get_shared_key_length()
-//             },
-//             GetSharedKeyLengthAlgorithm::HybridKem(_algorithm) => {
-//                 hybrid_kem_operation::get_shared_key_length()
-//             },
-//         }
-//     }
-// }
-//
-// /// The value of the key "getPublicKey" in the internal object supportedAlgorithms
-// struct GetPublicKeyOperation {}
-//
-// impl Operation for GetPublicKeyOperation {
-//     type RegisteredAlgorithm = GetPublicKeyAlgorithm;
-// }
-//
-// /// Normalized algorithm for the "getPublicKey" operation, used as output of
-// /// <https://w3c.github.io/webcrypto/#dfn-normalize-an-algorithm>
-// enum GetPublicKeyAlgorithm {
-//     RsassaPkcs1v1_5(Algorithm),
-//     RsaPss(Algorithm),
-//     RsaOaep(Algorithm),
-//     Ecdsa(Algorithm),
-//     Ecdh(Algorithm),
-//     Ed25519(Algorithm),
-//     X25519(Algorithm),
-//     Ed448(Algorithm),
-//     X448(Algorithm),
-//     MlKem(Algorithm),
-//     HybridKem(Algorithm),
-//     MlDsa(Algorithm),
-// }
-//
-// impl NormalizedAlgorithm for GetPublicKeyAlgorithm {
-//     fn from_object(
-//         cx: &mut JSContext,
-//         algorithm_name: CryptoAlgorithm,
-//         object: HandleObject,
-//     ) -> Fallible<Self> {
-//         match algorithm_name {
-//             CryptoAlgorithm::RsassaPkcs1V1_5 => Ok(GetPublicKeyAlgorithm::RsassaPkcs1v1_5(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::RsaPss => Ok(GetPublicKeyAlgorithm::RsaPss(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::RsaOaep => Ok(GetPublicKeyAlgorithm::RsaOaep(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::Ecdsa => Ok(GetPublicKeyAlgorithm::Ecdsa(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::Ecdh => Ok(GetPublicKeyAlgorithm::Ecdh(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::Ed25519 => Ok(GetPublicKeyAlgorithm::Ed25519(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::X25519 => Ok(GetPublicKeyAlgorithm::X25519(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::Ed448 => Ok(GetPublicKeyAlgorithm::Ed448(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::X448 => Ok(GetPublicKeyAlgorithm::X448(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::MlKem512 | CryptoAlgorithm::MlKem768 | CryptoAlgorithm::MlKem1024 => {
-//                 Ok(GetPublicKeyAlgorithm::MlKem(
-//                     object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//                 ))
-//             },
-//             CryptoAlgorithm::MlKem768X25519 => Ok(GetPublicKeyAlgorithm::HybridKem(
-//                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
-//             )),
-//             CryptoAlgorithm::MlDsa44 | CryptoAlgorithm::MlDsa65 | CryptoAlgorithm::MlDsa87 => Ok(
-//                 GetPublicKeyAlgorithm::MlDsa(object.try_into_with_cx_and_name(cx, algorithm_name)?),
-//             ),
-//             _ => Err(Error::NotSupported(Some(format!(
-//                 "{} does not support \"getPublicKey\" operation",
-//                 algorithm_name.as_str()
-//             )))),
-//         }
-//     }
-//
-//     fn name(&self) -> CryptoAlgorithm {
-//         match self {
-//             GetPublicKeyAlgorithm::RsassaPkcs1v1_5(algorithm) => algorithm.name,
-//             GetPublicKeyAlgorithm::RsaPss(algorithm) => algorithm.name,
-//             GetPublicKeyAlgorithm::RsaOaep(algorithm) => algorithm.name,
-//             GetPublicKeyAlgorithm::Ecdsa(algorithm) => algorithm.name,
-//             GetPublicKeyAlgorithm::Ecdh(algorithm) => algorithm.name,
-//             GetPublicKeyAlgorithm::Ed25519(algorithm) => algorithm.name,
-//             GetPublicKeyAlgorithm::X25519(algorithm) => algorithm.name,
-//             GetPublicKeyAlgorithm::Ed448(algorithm) => algorithm.name,
-//             GetPublicKeyAlgorithm::X448(algorithm) => algorithm.name,
-//             GetPublicKeyAlgorithm::MlKem(algorithm) => algorithm.name,
-//             GetPublicKeyAlgorithm::HybridKem(algorithm) => algorithm.name,
-//             GetPublicKeyAlgorithm::MlDsa(algorithm) => algorithm.name,
-//         }
-//     }
-// }
-//
-// impl GetPublicKeyAlgorithm {
-//     fn get_public_key(
-//         &self,
-//         cx: &mut JSContext,
-//         global: &GlobalScope,
-//         key: &CryptoKey,
-//         algorithm: &KeyAlgorithmAndDerivatives,
-//         usages: Vec<KeyUsage>,
-//     ) -> Result<DomRoot<CryptoKey>, Error> {
-//         match self {
-//             GetPublicKeyAlgorithm::RsassaPkcs1v1_5(_algorithm) => {
-//                 rsassa_pkcs1_v1_5_operation::get_public_key(cx, global, key, algorithm, usages)
-//             },
-//             GetPublicKeyAlgorithm::RsaPss(_algorithm) => {
-//                 rsa_pss_operation::get_public_key(cx, global, key, algorithm, usages)
-//             },
-//             GetPublicKeyAlgorithm::RsaOaep(_algorithm) => {
-//                 rsa_oaep_operation::get_public_key(cx, global, key, algorithm, usages)
-//             },
-//             GetPublicKeyAlgorithm::Ecdsa(_algorithm) => {
-//                 ecdsa_operation::get_public_key(cx, global, key, algorithm, usages)
-//             },
-//             GetPublicKeyAlgorithm::Ecdh(_algorithm) => {
-//                 ecdh_operation::get_public_key(cx, global, key, algorithm, usages)
-//             },
-//             GetPublicKeyAlgorithm::Ed25519(_algorithm) => {
-//                 ed25519_operation::get_public_key(cx, global, key, algorithm, usages)
-//             },
-//             GetPublicKeyAlgorithm::X25519(_algorithm) => {
-//                 x25519_operation::get_public_key(cx, global, key, algorithm, usages)
-//             },
-//             GetPublicKeyAlgorithm::Ed448(_algorithm) => {
-//                 ed448_operation::get_public_key(cx, global, key, algorithm, usages)
-//             },
-//             GetPublicKeyAlgorithm::X448(_algorithm) => {
-//                 x448_operation::get_public_key(cx, global, key, algorithm, usages)
-//             },
-//             GetPublicKeyAlgorithm::MlKem(_algorithm) => {
-//                 ml_kem_operation::get_public_key(cx, global, key, algorithm, usages)
-//             },
-//             GetPublicKeyAlgorithm::HybridKem(_algorithm) => {
-//                 hybrid_kem_operation::get_public_key(cx, global, key, algorithm, usages)
-//             },
-//             GetPublicKeyAlgorithm::MlDsa(_algorithm) => {
-//                 ml_dsa_operation::get_public_key(cx, global, key, algorithm, usages)
-//             },
-//         }
-//     }
-// }
+/// The value of the key "deriveBits" in the internal object supportedAlgorithms
+struct DeriveBitsOperation<D: Equivalence> {
+    phantom: PhantomData<D>,
+}
+
+impl<D: Equivalence> Operation for DeriveBitsOperation<D> {
+    type RegisteredAlgorithm = DeriveBitsAlgorithm<D>;
+}
+
+/// Normalized algorithm for the "deriveBits" operation, used as output of
+/// <https://w3c.github.io/webcrypto/#dfn-normalize-an-algorithm>
+enum DeriveBitsAlgorithm<D: Equivalence> {
+    Ecdh(EcdhKeyDeriveParams<D>),
+    X25519(EcdhKeyDeriveParams<D>),
+    X448(EcdhKeyDeriveParams<D>),
+    Hkdf(HkdfParams),
+    Pbkdf2(Pbkdf2Params),
+    Argon2(Argon2Params),
+}
+
+impl<D: Equivalence> NormalizedAlgorithm for DeriveBitsAlgorithm<D> {
+    fn from_object(
+        cx: &mut JSContext,
+        algorithm_name: CryptoAlgorithm,
+        object: HandleObject,
+    ) -> Fallible<Self> {
+        match algorithm_name {
+            CryptoAlgorithm::Ecdh => Ok(DeriveBitsAlgorithm::Ecdh(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::X25519 => Ok(DeriveBitsAlgorithm::X25519(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::X448 => Ok(DeriveBitsAlgorithm::X448(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::Hkdf => Ok(DeriveBitsAlgorithm::Hkdf(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::Pbkdf2 => Ok(DeriveBitsAlgorithm::Pbkdf2(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::Argon2D | CryptoAlgorithm::Argon2I | CryptoAlgorithm::Argon2ID => Ok(
+                DeriveBitsAlgorithm::Argon2(object.try_into_with_cx_and_name(cx, algorithm_name)?),
+            ),
+            _ => Err(Error::NotSupported(Some(format!(
+                "{} does not support \"deriveBits\" operation",
+                algorithm_name.as_str()
+            )))),
+        }
+    }
+
+    fn name(&self) -> CryptoAlgorithm {
+        match self {
+            DeriveBitsAlgorithm::Ecdh(algorithm) => algorithm.name,
+            DeriveBitsAlgorithm::X25519(algorithm) => algorithm.name,
+            DeriveBitsAlgorithm::X448(algorithm) => algorithm.name,
+            DeriveBitsAlgorithm::Hkdf(algorithm) => algorithm.name,
+            DeriveBitsAlgorithm::Pbkdf2(algorithm) => algorithm.name,
+            DeriveBitsAlgorithm::Argon2(algorithm) => algorithm.name,
+        }
+    }
+
+    fn determine_support_from_operation_steps(&self, length: Option<u32>) -> bool {
+        match self {
+            DeriveBitsAlgorithm::Ecdh(normalized_algorithm) => {
+                let public_key = normalized_algorithm.public.root();
+                let Ok(maximum_length) = ecdh_operation::maximum_length(&public_key) else {
+                    return false;
+                };
+                public_key.Type() == KeyType::Public &&
+                    public_key.algorithm().name() == normalized_algorithm.name &&
+                    length.is_none_or(|length| length <= maximum_length)
+            },
+            DeriveBitsAlgorithm::X25519(normalized_algorithm) => {
+                let public_key = normalized_algorithm.public.root();
+                public_key.Type() == KeyType::Public &&
+                    public_key.algorithm().name() == normalized_algorithm.name &&
+                    length.is_none_or(|length| length <= 256)
+            },
+            DeriveBitsAlgorithm::X448(_) => {
+                length.is_none_or(|length| x448_operation::SECRET_LENGTH as u32 * 8 >= length)
+            },
+            DeriveBitsAlgorithm::Hkdf(normalized_algorithm) => {
+                let hash_length = match normalized_algorithm.hash.name() {
+                    CryptoAlgorithm::Sha1 => 160,
+                    CryptoAlgorithm::Sha256 => 256,
+                    CryptoAlgorithm::Sha384 => 384,
+                    CryptoAlgorithm::Sha512 => 512,
+                    _ => return false,
+                };
+                length.is_some_and(|length| length % 8 == 0 && length <= 255 * hash_length)
+            },
+            DeriveBitsAlgorithm::Pbkdf2(normalized_algorithm) => {
+                length.is_some_and(|length| length % 8 == 0) && normalized_algorithm.iterations != 0
+            },
+            DeriveBitsAlgorithm::Argon2(normalized_algorithm) => {
+                length.is_some_and(|length| length >= 32 && length % 8 == 0) &&
+                    normalized_algorithm
+                        .version
+                        .is_none_or(|version| version == 19) &&
+                    normalized_algorithm.parallelism != 0 &&
+                    normalized_algorithm.parallelism <= 16777215 &&
+                    normalized_algorithm.memory >= 8 * normalized_algorithm.parallelism &&
+                    normalized_algorithm.passes != 0
+            },
+        }
+    }
+}
+
+impl<D: Equivalence> DeriveBitsAlgorithm<D> {
+    fn derive_bits(&self, key: &CryptoKey<D>, length: Option<u32>) -> Result<Vec<u8>, Error> {
+        match self {
+            DeriveBitsAlgorithm::Ecdh(algorithm) => {
+                ecdh_operation::derive_bits(algorithm, key, length)
+            },
+            DeriveBitsAlgorithm::X25519(algorithm) => {
+                x25519_operation::derive_bits(algorithm, key, length)
+            },
+            DeriveBitsAlgorithm::X448(algorithm) => {
+                x448_operation::derive_bits(algorithm, key, length)
+            },
+            DeriveBitsAlgorithm::Hkdf(algorithm) => {
+                hkdf_operation::derive_bits(algorithm, key, length)
+            },
+            DeriveBitsAlgorithm::Pbkdf2(algorithm) => {
+                pbkdf2_operation::derive_bits(algorithm, key, length)
+            },
+            DeriveBitsAlgorithm::Argon2(algorithm) => {
+                argon2_operation::derive_bits(algorithm, key, length)
+            },
+        }
+    }
+}
+
+/// The value of the key "wrapKey" in the internal object supportedAlgorithms
+struct WrapKeyOperation {}
+
+impl Operation for WrapKeyOperation {
+    type RegisteredAlgorithm = WrapKeyAlgorithm;
+}
+
+/// Normalized algorithm for the "wrapKey" operation, used as output of
+/// <https://w3c.github.io/webcrypto/#dfn-normalize-an-algorithm>
+enum WrapKeyAlgorithm {
+    AesKw(Algorithm),
+}
+
+impl NormalizedAlgorithm for WrapKeyAlgorithm {
+    fn from_object(
+        cx: &mut JSContext,
+        algorithm_name: CryptoAlgorithm,
+        object: HandleObject,
+    ) -> Fallible<Self> {
+        match algorithm_name {
+            CryptoAlgorithm::AesKw => Ok(WrapKeyAlgorithm::AesKw(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            _ => Err(Error::NotSupported(Some(format!(
+                "{} does not support \"wrapKey\" operation",
+                algorithm_name.as_str()
+            )))),
+        }
+    }
+
+    fn name(&self) -> CryptoAlgorithm {
+        match self {
+            WrapKeyAlgorithm::AesKw(algorithm) => algorithm.name,
+        }
+    }
+
+    fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
+        match self {
+            WrapKeyAlgorithm::AesKw(_) => true,
+        }
+    }
+}
+
+impl WrapKeyAlgorithm {
+    fn wrap_key<D: Equivalence>(&self, key: &CryptoKey<D>, plaintext: &[u8]) -> Result<Vec<u8>, Error> {
+        match self {
+            WrapKeyAlgorithm::AesKw(_algorithm) => aes_kw_operation::wrap_key(key, plaintext),
+        }
+    }
+}
+
+/// The value of the key "unwrapKey" in the internal object supportedAlgorithms
+struct UnwrapKeyOperation {}
+
+impl Operation for UnwrapKeyOperation {
+    type RegisteredAlgorithm = UnwrapKeyAlgorithm;
+}
+
+/// Normalized algorithm for the "unwrapKey" operation, used as output of
+/// <https://w3c.github.io/webcrypto/#dfn-normalize-an-algorithm>
+enum UnwrapKeyAlgorithm {
+    AesKw(Algorithm),
+}
+
+impl NormalizedAlgorithm for UnwrapKeyAlgorithm {
+    fn from_object(
+        cx: &mut JSContext,
+        algorithm_name: CryptoAlgorithm,
+        object: HandleObject,
+    ) -> Fallible<Self> {
+        match algorithm_name {
+            CryptoAlgorithm::AesKw => Ok(UnwrapKeyAlgorithm::AesKw(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            _ => Err(Error::NotSupported(Some(format!(
+                "{} does not support \"unwrapKey\" operation",
+                algorithm_name.as_str()
+            )))),
+        }
+    }
+
+    fn name(&self) -> CryptoAlgorithm {
+        match self {
+            UnwrapKeyAlgorithm::AesKw(algorithm) => algorithm.name,
+        }
+    }
+
+    fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
+        match self {
+            UnwrapKeyAlgorithm::AesKw(_) => true,
+        }
+    }
+}
+
+impl UnwrapKeyAlgorithm {
+    fn unwrap_key<D: Equivalence>(&self, key: &CryptoKey<D>, ciphertext: &[u8]) -> Result<Vec<u8>, Error> {
+        match self {
+            UnwrapKeyAlgorithm::AesKw(_algorithm) => aes_kw_operation::unwrap_key(key, ciphertext),
+        }
+    }
+}
+
+/// The value of the key "unwrapKey" in the internal object supportedAlgorithms
+struct GenerateKeyOperation {}
+
+impl Operation for GenerateKeyOperation {
+    type RegisteredAlgorithm = GenerateKeyAlgorithm;
+}
+
+/// Normalized algorithm for the "generateKey" operation, used as output of
+/// <https://w3c.github.io/webcrypto/#dfn-normalize-an-algorithm>
+enum GenerateKeyAlgorithm {
+    RsassaPkcs1V1_5(RsaHashedKeyGenParams),
+    RsaPss(RsaHashedKeyGenParams),
+    RsaOaep(RsaHashedKeyGenParams),
+    Ecdsa(EcKeyGenParams),
+    Ecdh(EcKeyGenParams),
+    Ed25519(Algorithm),
+    X25519(Algorithm),
+    Ed448(Algorithm),
+    X448(Algorithm),
+    AesCtr(AesKeyGenParams),
+    AesCbc(AesKeyGenParams),
+    AesGcm(AesKeyGenParams),
+    AesKw(AesKeyGenParams),
+    Hmac(HmacKeyGenParams),
+    MlKem(Algorithm),
+    HybridKem(Algorithm),
+    MlDsa(Algorithm),
+    AesOcb(AesKeyGenParams),
+    ChaCha20Poly1305(Algorithm),
+    Kmac(KmacKeyGenParams),
+}
+
+impl NormalizedAlgorithm for GenerateKeyAlgorithm {
+    fn from_object(
+        cx: &mut JSContext,
+        algorithm_name: CryptoAlgorithm,
+        object: HandleObject,
+    ) -> Fallible<Self> {
+        match algorithm_name {
+            CryptoAlgorithm::RsassaPkcs1V1_5 => Ok(GenerateKeyAlgorithm::RsassaPkcs1V1_5(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::RsaPss => Ok(GenerateKeyAlgorithm::RsaPss(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::RsaOaep => Ok(GenerateKeyAlgorithm::RsaOaep(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::Ecdsa => Ok(GenerateKeyAlgorithm::Ecdsa(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::Ecdh => Ok(GenerateKeyAlgorithm::Ecdh(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::Ed25519 => Ok(GenerateKeyAlgorithm::Ed25519(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::X25519 => Ok(GenerateKeyAlgorithm::X25519(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::Ed448 => Ok(GenerateKeyAlgorithm::Ed448(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::X448 => Ok(GenerateKeyAlgorithm::X448(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::AesCtr => Ok(GenerateKeyAlgorithm::AesCtr(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::AesCbc => Ok(GenerateKeyAlgorithm::AesCbc(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::AesGcm => Ok(GenerateKeyAlgorithm::AesGcm(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::AesKw => Ok(GenerateKeyAlgorithm::AesKw(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::Hmac => Ok(GenerateKeyAlgorithm::Hmac(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::MlKem512 | CryptoAlgorithm::MlKem768 | CryptoAlgorithm::MlKem1024 => {
+                Ok(GenerateKeyAlgorithm::MlKem(
+                    object.try_into_with_cx_and_name(cx, algorithm_name)?,
+                ))
+            },
+            CryptoAlgorithm::MlKem768X25519 => Ok(GenerateKeyAlgorithm::HybridKem(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::MlDsa44 | CryptoAlgorithm::MlDsa65 | CryptoAlgorithm::MlDsa87 => Ok(
+                GenerateKeyAlgorithm::MlDsa(object.try_into_with_cx_and_name(cx, algorithm_name)?),
+            ),
+            CryptoAlgorithm::AesOcb => Ok(GenerateKeyAlgorithm::AesOcb(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::ChaCha20Poly1305 => Ok(GenerateKeyAlgorithm::ChaCha20Poly1305(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::Kmac128 | CryptoAlgorithm::Kmac256 => Ok(GenerateKeyAlgorithm::Kmac(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            _ => Err(Error::NotSupported(Some(format!(
+                "{} does not support \"generateKey\" operation",
+                algorithm_name.as_str()
+            )))),
+        }
+    }
+
+    fn name(&self) -> CryptoAlgorithm {
+        match self {
+            GenerateKeyAlgorithm::RsassaPkcs1V1_5(algorithm) => algorithm.name,
+            GenerateKeyAlgorithm::RsaPss(algorithm) => algorithm.name,
+            GenerateKeyAlgorithm::RsaOaep(algorithm) => algorithm.name,
+            GenerateKeyAlgorithm::Ecdsa(algorithm) => algorithm.name,
+            GenerateKeyAlgorithm::Ecdh(algorithm) => algorithm.name,
+            GenerateKeyAlgorithm::Ed25519(algorithm) => algorithm.name,
+            GenerateKeyAlgorithm::X25519(algorithm) => algorithm.name,
+            GenerateKeyAlgorithm::Ed448(algorithm) => algorithm.name,
+            GenerateKeyAlgorithm::X448(algorithm) => algorithm.name,
+            GenerateKeyAlgorithm::AesCtr(algorithm) => algorithm.name,
+            GenerateKeyAlgorithm::AesCbc(algorithm) => algorithm.name,
+            GenerateKeyAlgorithm::AesGcm(algorithm) => algorithm.name,
+            GenerateKeyAlgorithm::AesKw(algorithm) => algorithm.name,
+            GenerateKeyAlgorithm::Hmac(algorithm) => algorithm.name,
+            GenerateKeyAlgorithm::MlKem(algorithm) => algorithm.name,
+            GenerateKeyAlgorithm::HybridKem(algorithm) => algorithm.name,
+            GenerateKeyAlgorithm::MlDsa(algorithm) => algorithm.name,
+            GenerateKeyAlgorithm::AesOcb(algorithm) => algorithm.name,
+            GenerateKeyAlgorithm::ChaCha20Poly1305(algorithm) => algorithm.name,
+            GenerateKeyAlgorithm::Kmac(algorithm) => algorithm.name,
+        }
+    }
+
+    fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
+        match self {
+            GenerateKeyAlgorithm::RsassaPkcs1V1_5(normalized_algorithm) |
+            GenerateKeyAlgorithm::RsaPss(normalized_algorithm) |
+            GenerateKeyAlgorithm::RsaOaep(normalized_algorithm) => {
+                normalized_algorithm.validate_parameters().is_ok()
+            },
+            GenerateKeyAlgorithm::Ecdsa(normalized_algorithm) |
+            GenerateKeyAlgorithm::Ecdh(normalized_algorithm) => {
+                SUPPORTED_CURVES.contains(&normalized_algorithm.named_curve.as_str())
+            },
+            GenerateKeyAlgorithm::Ed25519(_) |
+            GenerateKeyAlgorithm::X25519(_) |
+            GenerateKeyAlgorithm::Ed448(_) |
+            GenerateKeyAlgorithm::X448(_) => true,
+            GenerateKeyAlgorithm::AesCtr(normalized_algorithm) |
+            GenerateKeyAlgorithm::AesCbc(normalized_algorithm) |
+            GenerateKeyAlgorithm::AesGcm(normalized_algorithm) |
+            GenerateKeyAlgorithm::AesKw(normalized_algorithm) => {
+                matches!(normalized_algorithm.length, 128 | 192 | 256)
+            },
+            GenerateKeyAlgorithm::Hmac(normalized_algorithm) => {
+                normalized_algorithm.length.is_none_or(|length| length != 0)
+            },
+            GenerateKeyAlgorithm::MlKem(_) |
+            GenerateKeyAlgorithm::HybridKem(_) |
+            GenerateKeyAlgorithm::MlDsa(_) => true,
+            GenerateKeyAlgorithm::AesOcb(normalized_algorithm) => {
+                matches!(normalized_algorithm.length, 128 | 192 | 256)
+            },
+            GenerateKeyAlgorithm::ChaCha20Poly1305(_) | GenerateKeyAlgorithm::Kmac(_) => true,
+        }
+    }
+}
+
+impl GenerateKeyAlgorithm {
+    fn generate_key<D: Equivalence>(
+        &self,
+        cx: &mut JSContext,
+        global: &D::GlobalScope,
+        extractable: bool,
+        usages: Vec<KeyUsage>,
+    ) -> Result<CryptoKeyOrCryptoKeyPair<D>, Error> {
+        match self {
+            GenerateKeyAlgorithm::RsassaPkcs1V1_5(algorithm) => {
+                rsassa_pkcs1_v1_5_operation::generate_key(
+                    cx,
+                    global,
+                    algorithm,
+                    extractable,
+                    usages,
+                )
+                .map(CryptoKeyOrCryptoKeyPair::CryptoKeyPair)
+            },
+            GenerateKeyAlgorithm::RsaPss(algorithm) => {
+                rsa_pss_operation::generate_key(cx, global, algorithm, extractable, usages)
+                    .map(CryptoKeyOrCryptoKeyPair::CryptoKeyPair)
+            },
+            GenerateKeyAlgorithm::RsaOaep(algorithm) => {
+                rsa_oaep_operation::generate_key(cx, global, algorithm, extractable, usages)
+                    .map(CryptoKeyOrCryptoKeyPair::CryptoKeyPair)
+            },
+            GenerateKeyAlgorithm::Ecdsa(algorithm) => {
+                ecdsa_operation::generate_key(cx, global, algorithm, extractable, usages)
+                    .map(CryptoKeyOrCryptoKeyPair::CryptoKeyPair)
+            },
+            GenerateKeyAlgorithm::Ecdh(algorithm) => {
+                ecdh_operation::generate_key(cx, global, algorithm, extractable, usages)
+                    .map(CryptoKeyOrCryptoKeyPair::CryptoKeyPair)
+            },
+            GenerateKeyAlgorithm::Ed25519(_algorithm) => {
+                ed25519_operation::generate_key(cx, global, extractable, usages)
+                    .map(CryptoKeyOrCryptoKeyPair::CryptoKeyPair)
+            },
+            GenerateKeyAlgorithm::X25519(_algorithm) => {
+                x25519_operation::generate_key(cx, global, extractable, usages)
+                    .map(CryptoKeyOrCryptoKeyPair::CryptoKeyPair)
+            },
+            GenerateKeyAlgorithm::Ed448(_algorithm) => {
+                ed448_operation::generate_key(cx, global, extractable, usages)
+                    .map(CryptoKeyOrCryptoKeyPair::CryptoKeyPair)
+            },
+            GenerateKeyAlgorithm::X448(_algorithm) => {
+                x448_operation::generate_key(cx, global, extractable, usages)
+                    .map(CryptoKeyOrCryptoKeyPair::CryptoKeyPair)
+            },
+            GenerateKeyAlgorithm::AesCtr(algorithm) => {
+                aes_ctr_operation::generate_key(cx, global, algorithm, extractable, usages)
+                    .map(CryptoKeyOrCryptoKeyPair::CryptoKey)
+            },
+            GenerateKeyAlgorithm::AesCbc(algorithm) => {
+                aes_cbc_operation::generate_key(cx, global, algorithm, extractable, usages)
+                    .map(CryptoKeyOrCryptoKeyPair::CryptoKey)
+            },
+            GenerateKeyAlgorithm::AesGcm(algorithm) => {
+                aes_gcm_operation::generate_key(cx, global, algorithm, extractable, usages)
+                    .map(CryptoKeyOrCryptoKeyPair::CryptoKey)
+            },
+            GenerateKeyAlgorithm::AesKw(algorithm) => {
+                aes_kw_operation::generate_key(cx, global, algorithm, extractable, usages)
+                    .map(CryptoKeyOrCryptoKeyPair::CryptoKey)
+            },
+            GenerateKeyAlgorithm::Hmac(algorithm) => {
+                hmac_operation::generate_key(cx, global, algorithm, extractable, usages)
+                    .map(CryptoKeyOrCryptoKeyPair::CryptoKey)
+            },
+            GenerateKeyAlgorithm::MlKem(algorithm) => {
+                ml_kem_operation::generate_key(cx, global, algorithm, extractable, usages)
+                    .map(CryptoKeyOrCryptoKeyPair::CryptoKeyPair)
+            },
+            GenerateKeyAlgorithm::HybridKem(algorithm) => {
+                hybrid_kem_operation::generate_key(cx, global, algorithm, extractable, usages)
+                    .map(CryptoKeyOrCryptoKeyPair::CryptoKeyPair)
+            },
+            GenerateKeyAlgorithm::MlDsa(algorithm) => {
+                ml_dsa_operation::generate_key(cx, global, algorithm, extractable, usages)
+                    .map(CryptoKeyOrCryptoKeyPair::CryptoKeyPair)
+            },
+            GenerateKeyAlgorithm::AesOcb(algorithm) => {
+                aes_ocb_operation::generate_key(cx, global, algorithm, extractable, usages)
+                    .map(CryptoKeyOrCryptoKeyPair::CryptoKey)
+            },
+            GenerateKeyAlgorithm::ChaCha20Poly1305(_algorithm) => {
+                chacha20_poly1305_operation::generate_key(cx, global, extractable, usages)
+                    .map(CryptoKeyOrCryptoKeyPair::CryptoKey)
+            },
+            GenerateKeyAlgorithm::Kmac(algorithm) => {
+                kmac_operation::generate_key(cx, global, algorithm, extractable, usages)
+                    .map(CryptoKeyOrCryptoKeyPair::CryptoKey)
+            },
+        }
+    }
+}
+
+/// The value of the key "importKey" in the internal object supportedAlgorithms
+struct ImportKeyOperation {}
+
+impl Operation for ImportKeyOperation {
+    type RegisteredAlgorithm = ImportKeyAlgorithm;
+}
+
+/// Normalized algorithm for the "importKey" operation, used as output of
+/// <https://w3c.github.io/webcrypto/#dfn-normalize-an-algorithm>
+enum ImportKeyAlgorithm {
+    RsassaPkcs1V1_5(RsaHashedImportParams),
+    RsaPss(RsaHashedImportParams),
+    RsaOaep(RsaHashedImportParams),
+    Ecdsa(EcKeyImportParams),
+    Ecdh(EcKeyImportParams),
+    Ed25519(Algorithm),
+    X25519(Algorithm),
+    Ed448(Algorithm),
+    X448(Algorithm),
+    AesCtr(Algorithm),
+    AesCbc(Algorithm),
+    AesGcm(Algorithm),
+    AesKw(Algorithm),
+    Hmac(HmacImportParams),
+    Hkdf(Algorithm),
+    Pbkdf2(Algorithm),
+    MlKem(Algorithm),
+    HybridKem(Algorithm),
+    MlDsa(Algorithm),
+    AesOcb(Algorithm),
+    ChaCha20Poly1305(Algorithm),
+    Kmac(KmacImportParams),
+    Argon2(Algorithm),
+}
+
+impl NormalizedAlgorithm for ImportKeyAlgorithm {
+    fn from_object(
+        cx: &mut JSContext,
+        algorithm_name: CryptoAlgorithm,
+        object: HandleObject,
+    ) -> Fallible<Self> {
+        match algorithm_name {
+            CryptoAlgorithm::RsassaPkcs1V1_5 => Ok(ImportKeyAlgorithm::RsassaPkcs1V1_5(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::RsaPss => Ok(ImportKeyAlgorithm::RsaPss(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::RsaOaep => Ok(ImportKeyAlgorithm::RsaOaep(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::Ecdsa => Ok(ImportKeyAlgorithm::Ecdsa(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::Ecdh => Ok(ImportKeyAlgorithm::Ecdh(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::Ed25519 => Ok(ImportKeyAlgorithm::Ed25519(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::X25519 => Ok(ImportKeyAlgorithm::X25519(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::Ed448 => Ok(ImportKeyAlgorithm::Ed448(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::X448 => Ok(ImportKeyAlgorithm::X448(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::AesCtr => Ok(ImportKeyAlgorithm::AesCtr(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::AesCbc => Ok(ImportKeyAlgorithm::AesCbc(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::AesGcm => Ok(ImportKeyAlgorithm::AesGcm(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::AesKw => Ok(ImportKeyAlgorithm::AesKw(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::Hmac => Ok(ImportKeyAlgorithm::Hmac(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::Hkdf => Ok(ImportKeyAlgorithm::Hkdf(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::Pbkdf2 => Ok(ImportKeyAlgorithm::Pbkdf2(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::MlKem512 | CryptoAlgorithm::MlKem768 | CryptoAlgorithm::MlKem1024 => {
+                Ok(ImportKeyAlgorithm::MlKem(
+                    object.try_into_with_cx_and_name(cx, algorithm_name)?,
+                ))
+            },
+            CryptoAlgorithm::MlKem768X25519 => Ok(ImportKeyAlgorithm::HybridKem(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::MlDsa44 | CryptoAlgorithm::MlDsa65 | CryptoAlgorithm::MlDsa87 => Ok(
+                ImportKeyAlgorithm::MlDsa(object.try_into_with_cx_and_name(cx, algorithm_name)?),
+            ),
+            CryptoAlgorithm::AesOcb => Ok(ImportKeyAlgorithm::AesOcb(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::ChaCha20Poly1305 => Ok(ImportKeyAlgorithm::ChaCha20Poly1305(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::Kmac128 | CryptoAlgorithm::Kmac256 => Ok(ImportKeyAlgorithm::Kmac(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::Argon2D | CryptoAlgorithm::Argon2I | CryptoAlgorithm::Argon2ID => Ok(
+                ImportKeyAlgorithm::Argon2(object.try_into_with_cx_and_name(cx, algorithm_name)?),
+            ),
+            _ => Err(Error::NotSupported(Some(format!(
+                "{} does not support \"importKey\" operation",
+                algorithm_name.as_str()
+            )))),
+        }
+    }
+
+    fn name(&self) -> CryptoAlgorithm {
+        match self {
+            ImportKeyAlgorithm::RsassaPkcs1V1_5(algorithm) => algorithm.name,
+            ImportKeyAlgorithm::RsaPss(algorithm) => algorithm.name,
+            ImportKeyAlgorithm::RsaOaep(algorithm) => algorithm.name,
+            ImportKeyAlgorithm::Ecdsa(algorithm) => algorithm.name,
+            ImportKeyAlgorithm::Ecdh(algorithm) => algorithm.name,
+            ImportKeyAlgorithm::Ed25519(algorithm) => algorithm.name,
+            ImportKeyAlgorithm::X25519(algorithm) => algorithm.name,
+            ImportKeyAlgorithm::Ed448(algorithm) => algorithm.name,
+            ImportKeyAlgorithm::X448(algorithm) => algorithm.name,
+            ImportKeyAlgorithm::AesCtr(algorithm) => algorithm.name,
+            ImportKeyAlgorithm::AesCbc(algorithm) => algorithm.name,
+            ImportKeyAlgorithm::AesGcm(algorithm) => algorithm.name,
+            ImportKeyAlgorithm::AesKw(algorithm) => algorithm.name,
+            ImportKeyAlgorithm::Hmac(algorithm) => algorithm.name,
+            ImportKeyAlgorithm::Hkdf(algorithm) => algorithm.name,
+            ImportKeyAlgorithm::Pbkdf2(algorithm) => algorithm.name,
+            ImportKeyAlgorithm::MlKem(algorithm) => algorithm.name,
+            ImportKeyAlgorithm::HybridKem(algorithm) => algorithm.name,
+            ImportKeyAlgorithm::MlDsa(algorithm) => algorithm.name,
+            ImportKeyAlgorithm::AesOcb(algorithm) => algorithm.name,
+            ImportKeyAlgorithm::ChaCha20Poly1305(algorithm) => algorithm.name,
+            ImportKeyAlgorithm::Kmac(algorithm) => algorithm.name,
+            ImportKeyAlgorithm::Argon2(algorithm) => algorithm.name,
+        }
+    }
+
+    fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
+        match self {
+            ImportKeyAlgorithm::RsassaPkcs1V1_5(_) |
+            ImportKeyAlgorithm::RsaPss(_) |
+            ImportKeyAlgorithm::RsaOaep(_) => true,
+            ImportKeyAlgorithm::Ecdsa(normalized_algorithm) |
+            ImportKeyAlgorithm::Ecdh(normalized_algorithm) => {
+                SUPPORTED_CURVES.contains(&normalized_algorithm.named_curve.as_str())
+            },
+            ImportKeyAlgorithm::Ed25519(_) |
+            ImportKeyAlgorithm::X25519(_) |
+            ImportKeyAlgorithm::Ed448(_) |
+            ImportKeyAlgorithm::X448(_) |
+            ImportKeyAlgorithm::AesCtr(_) |
+            ImportKeyAlgorithm::AesCbc(_) |
+            ImportKeyAlgorithm::AesGcm(_) |
+            ImportKeyAlgorithm::AesKw(_) => true,
+            ImportKeyAlgorithm::Hmac(normalized_algorithm) => {
+                normalized_algorithm.length.is_none_or(|length| length != 0)
+            },
+            ImportKeyAlgorithm::Hkdf(_) |
+            ImportKeyAlgorithm::Pbkdf2(_) |
+            ImportKeyAlgorithm::MlKem(_) |
+            ImportKeyAlgorithm::HybridKem(_) |
+            ImportKeyAlgorithm::MlDsa(_) |
+            ImportKeyAlgorithm::AesOcb(_) |
+            ImportKeyAlgorithm::ChaCha20Poly1305(_) |
+            ImportKeyAlgorithm::Kmac(_) |
+            ImportKeyAlgorithm::Argon2(_) => true,
+        }
+    }
+}
+
+impl ImportKeyAlgorithm {
+    fn import_key<D: Equivalence>(
+        &self,
+        cx: &mut JSContext,
+        global: &D::GlobalScope,
+        format: KeyFormat,
+        key_data: &[u8],
+        extractable: bool,
+        usages: Vec<KeyUsage>,
+    ) -> Result<DomRoot<CryptoKey<D>>, Error> {
+        match self {
+            ImportKeyAlgorithm::RsassaPkcs1V1_5(algorithm) => {
+                rsassa_pkcs1_v1_5_operation::import_key(
+                    cx,
+                    global,
+                    algorithm,
+                    format,
+                    key_data,
+                    extractable,
+                    usages,
+                )
+            },
+            ImportKeyAlgorithm::RsaPss(algorithm) => rsa_pss_operation::import_key(
+                cx,
+                global,
+                algorithm,
+                format,
+                key_data,
+                extractable,
+                usages,
+            ),
+            ImportKeyAlgorithm::RsaOaep(algorithm) => rsa_oaep_operation::import_key(
+                cx,
+                global,
+                algorithm,
+                format,
+                key_data,
+                extractable,
+                usages,
+            ),
+            ImportKeyAlgorithm::Ecdsa(algorithm) => ecdsa_operation::import_key(
+                cx,
+                global,
+                algorithm,
+                format,
+                key_data,
+                extractable,
+                usages,
+            ),
+            ImportKeyAlgorithm::Ecdh(algorithm) => ecdh_operation::import_key(
+                cx,
+                global,
+                algorithm,
+                format,
+                key_data,
+                extractable,
+                usages,
+            ),
+            ImportKeyAlgorithm::Ed25519(_algorithm) => {
+                ed25519_operation::import_key(cx, global, format, key_data, extractable, usages)
+            },
+            ImportKeyAlgorithm::X25519(_algorithm) => {
+                x25519_operation::import_key(cx, global, format, key_data, extractable, usages)
+            },
+            ImportKeyAlgorithm::Ed448(_algorithm) => {
+                ed448_operation::import_key(cx, global, format, key_data, extractable, usages)
+            },
+            ImportKeyAlgorithm::X448(_algorithm) => {
+                x448_operation::import_key(cx, global, format, key_data, extractable, usages)
+            },
+            ImportKeyAlgorithm::AesCtr(_algorithm) => {
+                aes_ctr_operation::import_key(cx, global, format, key_data, extractable, usages)
+            },
+            ImportKeyAlgorithm::AesCbc(_algorithm) => {
+                aes_cbc_operation::import_key(cx, global, format, key_data, extractable, usages)
+            },
+            ImportKeyAlgorithm::AesGcm(_algorithm) => {
+                aes_gcm_operation::import_key(cx, global, format, key_data, extractable, usages)
+            },
+            ImportKeyAlgorithm::AesKw(_algorithm) => {
+                aes_kw_operation::import_key(cx, global, format, key_data, extractable, usages)
+            },
+            ImportKeyAlgorithm::Hmac(algorithm) => hmac_operation::import_key(
+                cx,
+                global,
+                algorithm,
+                format,
+                key_data,
+                extractable,
+                usages,
+            ),
+            ImportKeyAlgorithm::Hkdf(_algorithm) => {
+                hkdf_operation::import_key(cx, global, format, key_data, extractable, usages)
+            },
+            ImportKeyAlgorithm::Pbkdf2(_algorithm) => {
+                pbkdf2_operation::import_key(cx, global, format, key_data, extractable, usages)
+            },
+            ImportKeyAlgorithm::MlKem(algorithm) => ml_kem_operation::import_key(
+                cx,
+                global,
+                algorithm,
+                format,
+                key_data,
+                extractable,
+                usages,
+            ),
+            ImportKeyAlgorithm::HybridKem(algorithm) => hybrid_kem_operation::import_key(
+                cx,
+                global,
+                algorithm,
+                format,
+                key_data,
+                extractable,
+                usages,
+            ),
+            ImportKeyAlgorithm::MlDsa(algorithm) => ml_dsa_operation::import_key(
+                cx,
+                global,
+                algorithm,
+                format,
+                key_data,
+                extractable,
+                usages,
+            ),
+            ImportKeyAlgorithm::AesOcb(_algorithm) => {
+                aes_ocb_operation::import_key(cx, global, format, key_data, extractable, usages)
+            },
+            ImportKeyAlgorithm::ChaCha20Poly1305(_algorithm) => {
+                chacha20_poly1305_operation::import_key(
+                    cx,
+                    global,
+                    format,
+                    key_data,
+                    extractable,
+                    usages,
+                )
+            },
+            ImportKeyAlgorithm::Kmac(algorithm) => kmac_operation::import_key(
+                cx,
+                global,
+                algorithm,
+                format,
+                key_data,
+                extractable,
+                usages,
+            ),
+            ImportKeyAlgorithm::Argon2(algorithm) => argon2_operation::import_key(
+                cx,
+                global,
+                algorithm,
+                format,
+                key_data,
+                extractable,
+                usages,
+            ),
+        }
+    }
+
+    /// Return whether the import key operation specified by normalized algorithm would throw an
+    /// error for every value of keyData that is a byte sequence whose length in bits is
+    /// sharedKeyLength when format is "raw-secret".
+    fn will_throw_for_key_data_length(&self, key_data_length: u32) -> bool {
+        match self {
+            ImportKeyAlgorithm::RsassaPkcs1V1_5(_) |
+            ImportKeyAlgorithm::RsaPss(_) |
+            ImportKeyAlgorithm::RsaOaep(_) |
+            ImportKeyAlgorithm::Ecdsa(_) |
+            ImportKeyAlgorithm::Ecdh(_) |
+            ImportKeyAlgorithm::Ed25519(_) |
+            ImportKeyAlgorithm::X25519(_) |
+            ImportKeyAlgorithm::Ed448(_) |
+            ImportKeyAlgorithm::X448(_) => true,
+            ImportKeyAlgorithm::AesCtr(_) |
+            ImportKeyAlgorithm::AesCbc(_) |
+            ImportKeyAlgorithm::AesGcm(_) |
+            ImportKeyAlgorithm::AesKw(_) => !matches!(key_data_length, 128 | 192 | 256),
+            ImportKeyAlgorithm::Hmac(algorithm) => {
+                key_data_length == 0 ||
+                    algorithm.length.is_some_and(|length| {
+                        length > key_data_length || length + 8 <= key_data_length
+                    })
+            },
+            ImportKeyAlgorithm::Hkdf(_) | ImportKeyAlgorithm::Pbkdf2(_) => false,
+            ImportKeyAlgorithm::MlKem(_) |
+            ImportKeyAlgorithm::HybridKem(_) |
+            ImportKeyAlgorithm::MlDsa(_) => true,
+            ImportKeyAlgorithm::AesOcb(_) => !matches!(key_data_length, 128 | 192 | 256),
+            ImportKeyAlgorithm::ChaCha20Poly1305(_) => key_data_length != 256,
+            ImportKeyAlgorithm::Kmac(algorithm) => algorithm
+                .length
+                .is_some_and(|length| length > key_data_length || length + 8 <= key_data_length),
+            ImportKeyAlgorithm::Argon2(_) => false,
+        }
+    }
+}
+
+/// The value of the key "exportKey" in the internal object supportedAlgorithms
+struct ExportKeyOperation {}
+
+impl Operation for ExportKeyOperation {
+    type RegisteredAlgorithm = ExportKeyAlgorithm;
+}
+
+/// Normalized algorithm for the "exportKey" operation, used as output of
+/// <https://w3c.github.io/webcrypto/#dfn-normalize-an-algorithm>
+enum ExportKeyAlgorithm {
+    RsassaPkcs1V1_5(Algorithm),
+    RsaPss(Algorithm),
+    RsaOaep(Algorithm),
+    Ecdsa(Algorithm),
+    Ecdh(Algorithm),
+    Ed25519(Algorithm),
+    X25519(Algorithm),
+    Ed448(Algorithm),
+    X448(Algorithm),
+    AesCtr(Algorithm),
+    AesCbc(Algorithm),
+    AesGcm(Algorithm),
+    AesKw(Algorithm),
+    Hmac(Algorithm),
+    MlKem(Algorithm),
+    HybridKem(Algorithm),
+    MlDsa(Algorithm),
+    AesOcb(Algorithm),
+    ChaCha20Poly1305(Algorithm),
+    Kmac(Algorithm),
+}
+
+impl NormalizedAlgorithm for ExportKeyAlgorithm {
+    fn from_object(
+        cx: &mut JSContext,
+        algorithm_name: CryptoAlgorithm,
+        object: HandleObject,
+    ) -> Fallible<Self> {
+        match algorithm_name {
+            CryptoAlgorithm::RsassaPkcs1V1_5 => Ok(ExportKeyAlgorithm::RsassaPkcs1V1_5(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::RsaPss => Ok(ExportKeyAlgorithm::RsaPss(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::RsaOaep => Ok(ExportKeyAlgorithm::RsaOaep(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::Ecdsa => Ok(ExportKeyAlgorithm::Ecdsa(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::Ecdh => Ok(ExportKeyAlgorithm::Ecdh(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::Ed25519 => Ok(ExportKeyAlgorithm::Ed25519(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::X25519 => Ok(ExportKeyAlgorithm::X25519(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::Ed448 => Ok(ExportKeyAlgorithm::Ed448(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::X448 => Ok(ExportKeyAlgorithm::X448(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::AesCtr => Ok(ExportKeyAlgorithm::AesCtr(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::AesCbc => Ok(ExportKeyAlgorithm::AesCbc(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::AesGcm => Ok(ExportKeyAlgorithm::AesGcm(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::AesKw => Ok(ExportKeyAlgorithm::AesKw(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::Hmac => Ok(ExportKeyAlgorithm::Hmac(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::MlKem512 | CryptoAlgorithm::MlKem768 | CryptoAlgorithm::MlKem1024 => {
+                Ok(ExportKeyAlgorithm::MlKem(
+                    object.try_into_with_cx_and_name(cx, algorithm_name)?,
+                ))
+            },
+            CryptoAlgorithm::MlKem768X25519 => Ok(ExportKeyAlgorithm::HybridKem(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::MlDsa44 | CryptoAlgorithm::MlDsa65 | CryptoAlgorithm::MlDsa87 => Ok(
+                ExportKeyAlgorithm::MlDsa(object.try_into_with_cx_and_name(cx, algorithm_name)?),
+            ),
+            CryptoAlgorithm::AesOcb => Ok(ExportKeyAlgorithm::AesOcb(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::ChaCha20Poly1305 => Ok(ExportKeyAlgorithm::ChaCha20Poly1305(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::Kmac128 | CryptoAlgorithm::Kmac256 => Ok(ExportKeyAlgorithm::Kmac(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            _ => Err(Error::NotSupported(Some(format!(
+                "{} does not support \"exportKey\" operation",
+                algorithm_name.as_str()
+            )))),
+        }
+    }
+
+    fn name(&self) -> CryptoAlgorithm {
+        match self {
+            ExportKeyAlgorithm::RsassaPkcs1V1_5(algorithm) => algorithm.name,
+            ExportKeyAlgorithm::RsaPss(algorithm) => algorithm.name,
+            ExportKeyAlgorithm::RsaOaep(algorithm) => algorithm.name,
+            ExportKeyAlgorithm::Ecdsa(algorithm) => algorithm.name,
+            ExportKeyAlgorithm::Ecdh(algorithm) => algorithm.name,
+            ExportKeyAlgorithm::Ed25519(algorithm) => algorithm.name,
+            ExportKeyAlgorithm::X25519(algorithm) => algorithm.name,
+            ExportKeyAlgorithm::Ed448(algorithm) => algorithm.name,
+            ExportKeyAlgorithm::X448(algorithm) => algorithm.name,
+            ExportKeyAlgorithm::AesCtr(algorithm) => algorithm.name,
+            ExportKeyAlgorithm::AesCbc(algorithm) => algorithm.name,
+            ExportKeyAlgorithm::AesGcm(algorithm) => algorithm.name,
+            ExportKeyAlgorithm::AesKw(algorithm) => algorithm.name,
+            ExportKeyAlgorithm::Hmac(algorithm) => algorithm.name,
+            ExportKeyAlgorithm::MlKem(algorithm) => algorithm.name,
+            ExportKeyAlgorithm::HybridKem(algorithm) => algorithm.name,
+            ExportKeyAlgorithm::MlDsa(algorithm) => algorithm.name,
+            ExportKeyAlgorithm::AesOcb(algorithm) => algorithm.name,
+            ExportKeyAlgorithm::ChaCha20Poly1305(algorithm) => algorithm.name,
+            ExportKeyAlgorithm::Kmac(algorithm) => algorithm.name,
+        }
+    }
+
+    fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
+        match self {
+            ExportKeyAlgorithm::RsassaPkcs1V1_5(_) |
+            ExportKeyAlgorithm::RsaPss(_) |
+            ExportKeyAlgorithm::RsaOaep(_) |
+            ExportKeyAlgorithm::Ecdsa(_) |
+            ExportKeyAlgorithm::Ecdh(_) |
+            ExportKeyAlgorithm::Ed25519(_) |
+            ExportKeyAlgorithm::X25519(_) |
+            ExportKeyAlgorithm::Ed448(_) |
+            ExportKeyAlgorithm::X448(_) |
+            ExportKeyAlgorithm::AesCtr(_) |
+            ExportKeyAlgorithm::AesCbc(_) |
+            ExportKeyAlgorithm::AesGcm(_) |
+            ExportKeyAlgorithm::AesKw(_) |
+            ExportKeyAlgorithm::Hmac(_) |
+            ExportKeyAlgorithm::MlKem(_) |
+            ExportKeyAlgorithm::HybridKem(_) |
+            ExportKeyAlgorithm::MlDsa(_) |
+            ExportKeyAlgorithm::AesOcb(_) |
+            ExportKeyAlgorithm::ChaCha20Poly1305(_) |
+            ExportKeyAlgorithm::Kmac(_) => true,
+        }
+    }
+}
+
+impl ExportKeyAlgorithm {
+    fn export_key<D: Equivalence>(&self, format: KeyFormat, key: &CryptoKey<D>) -> Result<ExportedKey, Error> {
+        match self {
+            ExportKeyAlgorithm::RsassaPkcs1V1_5(_algorithm) => {
+                rsassa_pkcs1_v1_5_operation::export_key(format, key)
+            },
+            ExportKeyAlgorithm::RsaPss(_algorithm) => rsa_pss_operation::export_key(format, key),
+            ExportKeyAlgorithm::RsaOaep(_algorithm) => rsa_oaep_operation::export_key(format, key),
+            ExportKeyAlgorithm::Ecdsa(_algorithm) => ecdsa_operation::export_key(format, key),
+            ExportKeyAlgorithm::Ecdh(_algorithm) => ecdh_operation::export_key(format, key),
+            ExportKeyAlgorithm::Ed25519(_algorithm) => ed25519_operation::export_key(format, key),
+            ExportKeyAlgorithm::X25519(_algorithm) => x25519_operation::export_key(format, key),
+            ExportKeyAlgorithm::Ed448(_algorithm) => ed448_operation::export_key(format, key),
+            ExportKeyAlgorithm::X448(_algorithm) => x448_operation::export_key(format, key),
+            ExportKeyAlgorithm::AesCtr(_algorithm) => aes_ctr_operation::export_key(format, key),
+            ExportKeyAlgorithm::AesCbc(_algorithm) => aes_cbc_operation::export_key(format, key),
+            ExportKeyAlgorithm::AesGcm(_algorithm) => aes_gcm_operation::export_key(format, key),
+            ExportKeyAlgorithm::AesKw(_algorithm) => aes_kw_operation::export_key(format, key),
+            ExportKeyAlgorithm::Hmac(_algorithm) => hmac_operation::export_key(format, key),
+            ExportKeyAlgorithm::MlKem(_algorithm) => ml_kem_operation::export_key(format, key),
+            ExportKeyAlgorithm::HybridKem(_algorithm) => {
+                hybrid_kem_operation::export_key(format, key)
+            },
+            ExportKeyAlgorithm::MlDsa(_algorithm) => ml_dsa_operation::export_key(format, key),
+            ExportKeyAlgorithm::AesOcb(_algorithm) => aes_ocb_operation::export_key(format, key),
+            ExportKeyAlgorithm::ChaCha20Poly1305(_algorithm) => {
+                chacha20_poly1305_operation::export_key(format, key)
+            },
+            ExportKeyAlgorithm::Kmac(_algorithm) => kmac_operation::export_key(format, key),
+        }
+    }
+}
+
+/// The value of the key "get key length" in the internal object supportedAlgorithms
+struct GetKeyLengthOperation {}
+
+impl Operation for GetKeyLengthOperation {
+    type RegisteredAlgorithm = GetKeyLengthAlgorithm;
+}
+
+/// Normalized algorithm for the "get key length" operation, used as output of
+/// <https://w3c.github.io/webcrypto/#dfn-normalize-an-algorithm>
+enum GetKeyLengthAlgorithm {
+    AesCtr(AesDerivedKeyParams),
+    AesCbc(AesDerivedKeyParams),
+    AesGcm(AesDerivedKeyParams),
+    AesKw(AesDerivedKeyParams),
+    Hmac(HmacImportParams),
+    Hkdf(Algorithm),
+    Pbkdf2(Algorithm),
+    AesOcb(AesDerivedKeyParams),
+    ChaCha20Poly1305(Algorithm),
+    Kmac(KmacImportParams),
+    Argon2(Algorithm),
+}
+
+impl NormalizedAlgorithm for GetKeyLengthAlgorithm {
+    fn from_object(
+        cx: &mut JSContext,
+        algorithm_name: CryptoAlgorithm,
+        object: HandleObject,
+    ) -> Fallible<Self> {
+        match algorithm_name {
+            CryptoAlgorithm::AesCtr => Ok(GetKeyLengthAlgorithm::AesCtr(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::AesCbc => Ok(GetKeyLengthAlgorithm::AesCbc(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::AesGcm => Ok(GetKeyLengthAlgorithm::AesGcm(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::AesKw => Ok(GetKeyLengthAlgorithm::AesKw(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::Hmac => Ok(GetKeyLengthAlgorithm::Hmac(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::Hkdf => Ok(GetKeyLengthAlgorithm::Hkdf(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::Pbkdf2 => Ok(GetKeyLengthAlgorithm::Pbkdf2(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::AesOcb => Ok(GetKeyLengthAlgorithm::AesOcb(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::ChaCha20Poly1305 => Ok(GetKeyLengthAlgorithm::ChaCha20Poly1305(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::Kmac128 | CryptoAlgorithm::Kmac256 => Ok(GetKeyLengthAlgorithm::Kmac(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::Argon2D | CryptoAlgorithm::Argon2I | CryptoAlgorithm::Argon2ID => {
+                Ok(GetKeyLengthAlgorithm::Argon2(
+                    object.try_into_with_cx_and_name(cx, algorithm_name)?,
+                ))
+            },
+            _ => Err(Error::NotSupported(Some(format!(
+                "{} does not support \"get key length\" operation",
+                algorithm_name.as_str()
+            )))),
+        }
+    }
+
+    fn name(&self) -> CryptoAlgorithm {
+        match self {
+            GetKeyLengthAlgorithm::AesCtr(algorithm) => algorithm.name,
+            GetKeyLengthAlgorithm::AesCbc(algorithm) => algorithm.name,
+            GetKeyLengthAlgorithm::AesGcm(algorithm) => algorithm.name,
+            GetKeyLengthAlgorithm::AesKw(algorithm) => algorithm.name,
+            GetKeyLengthAlgorithm::Hmac(algorithm) => algorithm.name,
+            GetKeyLengthAlgorithm::Hkdf(algorithm) => algorithm.name,
+            GetKeyLengthAlgorithm::Pbkdf2(algorithm) => algorithm.name,
+            GetKeyLengthAlgorithm::AesOcb(algorithm) => algorithm.name,
+            GetKeyLengthAlgorithm::ChaCha20Poly1305(algorithm) => algorithm.name,
+            GetKeyLengthAlgorithm::Kmac(algorithm) => algorithm.name,
+            GetKeyLengthAlgorithm::Argon2(algorithm) => algorithm.name,
+        }
+    }
+
+    fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
+        match self {
+            GetKeyLengthAlgorithm::AesCtr(normalized_derived_key_algorithm) |
+            GetKeyLengthAlgorithm::AesCbc(normalized_derived_key_algorithm) |
+            GetKeyLengthAlgorithm::AesGcm(normalized_derived_key_algorithm) |
+            GetKeyLengthAlgorithm::AesKw(normalized_derived_key_algorithm) => {
+                matches!(normalized_derived_key_algorithm.length, 128 | 192 | 256)
+            },
+            GetKeyLengthAlgorithm::Hmac(normalized_derived_key_algorithm) => {
+                normalized_derived_key_algorithm
+                    .length
+                    .is_none_or(|length| length != 0)
+            },
+            GetKeyLengthAlgorithm::Hkdf(_) | GetKeyLengthAlgorithm::Pbkdf2(_) => true,
+            GetKeyLengthAlgorithm::AesOcb(normalized_derived_key_algorithm) => {
+                matches!(normalized_derived_key_algorithm.length, 128 | 192 | 256)
+            },
+            GetKeyLengthAlgorithm::ChaCha20Poly1305(_) |
+            GetKeyLengthAlgorithm::Kmac(_) |
+            GetKeyLengthAlgorithm::Argon2(_) => true,
+        }
+    }
+}
+
+impl GetKeyLengthAlgorithm {
+    fn get_key_length(&self) -> Result<Option<u32>, Error> {
+        match self {
+            GetKeyLengthAlgorithm::AesCtr(algorithm) => {
+                aes_ctr_operation::get_key_length(algorithm)
+            },
+            GetKeyLengthAlgorithm::AesCbc(algorithm) => {
+                aes_cbc_operation::get_key_length(algorithm)
+            },
+            GetKeyLengthAlgorithm::AesGcm(algorithm) => {
+                aes_gcm_operation::get_key_length(algorithm)
+            },
+            GetKeyLengthAlgorithm::AesKw(algorithm) => aes_kw_operation::get_key_length(algorithm),
+            GetKeyLengthAlgorithm::Hmac(algorithm) => hmac_operation::get_key_length(algorithm),
+            GetKeyLengthAlgorithm::Hkdf(_algorithm) => hkdf_operation::get_key_length(),
+            GetKeyLengthAlgorithm::Pbkdf2(_algorithm) => pbkdf2_operation::get_key_length(),
+            GetKeyLengthAlgorithm::AesOcb(algorithm) => {
+                aes_ocb_operation::get_key_length(algorithm)
+            },
+            GetKeyLengthAlgorithm::ChaCha20Poly1305(_algorithm) => {
+                chacha20_poly1305_operation::get_key_length()
+            },
+            GetKeyLengthAlgorithm::Kmac(algorithm) => kmac_operation::get_key_length(algorithm),
+            GetKeyLengthAlgorithm::Argon2(_algorithm) => argon2_operation::get_key_length(),
+        }
+    }
+}
+
+/// The value of the key "encapsulate" in the internal object supportedAlgorithms
+struct EncapsulateOperation {}
+
+impl Operation for EncapsulateOperation {
+    type RegisteredAlgorithm = EncapsulateAlgorithm;
+}
+
+/// Normalized algorithm for the "encapsulate" operation, used as output of
+/// <https://w3c.github.io/webcrypto/#dfn-normalize-an-algorithm>
+enum EncapsulateAlgorithm {
+    MlKem(Algorithm),
+    HybridKem(Algorithm),
+}
+
+impl NormalizedAlgorithm for EncapsulateAlgorithm {
+    fn from_object(
+        cx: &mut JSContext,
+        algorithm_name: CryptoAlgorithm,
+        object: HandleObject,
+    ) -> Fallible<Self> {
+        match algorithm_name {
+            CryptoAlgorithm::MlKem512 | CryptoAlgorithm::MlKem768 | CryptoAlgorithm::MlKem1024 => {
+                Ok(EncapsulateAlgorithm::MlKem(
+                    object.try_into_with_cx_and_name(cx, algorithm_name)?,
+                ))
+            },
+            CryptoAlgorithm::MlKem768X25519 => Ok(EncapsulateAlgorithm::HybridKem(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            _ => Err(Error::NotSupported(Some(format!(
+                "{} does not support \"encapsulate\" operation",
+                algorithm_name.as_str()
+            )))),
+        }
+    }
+
+    fn name(&self) -> CryptoAlgorithm {
+        match self {
+            EncapsulateAlgorithm::MlKem(algorithm) => algorithm.name,
+            EncapsulateAlgorithm::HybridKem(algorithm) => algorithm.name,
+        }
+    }
+
+    fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
+        match self {
+            EncapsulateAlgorithm::MlKem(_) | EncapsulateAlgorithm::HybridKem(_) => true,
+        }
+    }
+}
+
+impl EncapsulateAlgorithm {
+    fn encapsulate<D: Equivalence>(&self, key: &CryptoKey<D>) -> Result<EncapsulatedBits, Error> {
+        match self {
+            EncapsulateAlgorithm::MlKem(algorithm) => ml_kem_operation::encapsulate(algorithm, key),
+            EncapsulateAlgorithm::HybridKem(algorithm) => {
+                hybrid_kem_operation::encapsulate(algorithm, key)
+            },
+        }
+    }
+}
+
+/// The value of the key "decapsulate" in the internal object supportedAlgorithms
+struct DecapsulateOperation {}
+
+impl Operation for DecapsulateOperation {
+    type RegisteredAlgorithm = DecapsulateAlgorithm;
+}
+
+/// Normalized algorithm for the "decapsulate" operation, used as output of
+/// <https://w3c.github.io/webcrypto/#dfn-normalize-an-algorithm>
+enum DecapsulateAlgorithm {
+    MlKem(Algorithm),
+    HybridKem(Algorithm),
+}
+
+impl NormalizedAlgorithm for DecapsulateAlgorithm {
+    fn from_object(
+        cx: &mut JSContext,
+        algorithm_name: CryptoAlgorithm,
+        object: HandleObject,
+    ) -> Fallible<Self> {
+        match algorithm_name {
+            CryptoAlgorithm::MlKem512 | CryptoAlgorithm::MlKem768 | CryptoAlgorithm::MlKem1024 => {
+                Ok(DecapsulateAlgorithm::MlKem(
+                    object.try_into_with_cx_and_name(cx, algorithm_name)?,
+                ))
+            },
+            CryptoAlgorithm::MlKem768X25519 => Ok(DecapsulateAlgorithm::HybridKem(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            _ => Err(Error::NotSupported(Some(format!(
+                "{} does not support \"decapsulate\" operation",
+                algorithm_name.as_str()
+            )))),
+        }
+    }
+
+    fn name(&self) -> CryptoAlgorithm {
+        match self {
+            DecapsulateAlgorithm::MlKem(algorithm) => algorithm.name,
+            DecapsulateAlgorithm::HybridKem(algorithm) => algorithm.name,
+        }
+    }
+
+    fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
+        match self {
+            DecapsulateAlgorithm::MlKem(_) | DecapsulateAlgorithm::HybridKem(_) => true,
+        }
+    }
+}
+
+impl DecapsulateAlgorithm {
+    fn decapsulate<D: Equivalence>(&self, key: &CryptoKey<D>, ciphertext: &[u8]) -> Result<Vec<u8>, Error> {
+        match self {
+            DecapsulateAlgorithm::MlKem(algorithm) => {
+                ml_kem_operation::decapsulate(algorithm, key, ciphertext)
+            },
+            DecapsulateAlgorithm::HybridKem(algorithm) => {
+                hybrid_kem_operation::decapsulate(algorithm, key, ciphertext)
+            },
+        }
+    }
+}
+
+/// The value of the key "get shared key length" in the internal object supportedAlgorithms
+struct GetSharedKeyLengthOperation {}
+
+impl Operation for GetSharedKeyLengthOperation {
+    type RegisteredAlgorithm = GetSharedKeyLengthAlgorithm;
+}
+
+/// Normalized algorithm for the "get shared key length" operation, used as output of
+/// <https://w3c.github.io/webcrypto/#dfn-normalize-an-algorithm>
+enum GetSharedKeyLengthAlgorithm {
+    MlKem(Algorithm),
+    HybridKem(Algorithm),
+}
+
+impl NormalizedAlgorithm for GetSharedKeyLengthAlgorithm {
+    fn from_object(
+        cx: &mut JSContext,
+        algorithm_name: CryptoAlgorithm,
+        object: HandleObject,
+    ) -> Fallible<Self> {
+        match algorithm_name {
+            CryptoAlgorithm::MlKem512 | CryptoAlgorithm::MlKem768 | CryptoAlgorithm::MlKem1024 => {
+                Ok(GetSharedKeyLengthAlgorithm::MlKem(
+                    object.try_into_with_cx_and_name(cx, algorithm_name)?,
+                ))
+            },
+            CryptoAlgorithm::MlKem768X25519 => Ok(GetSharedKeyLengthAlgorithm::HybridKem(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            _ => Err(Error::NotSupported(Some(format!(
+                "{} does not support \"get shared key length\" operation",
+                algorithm_name.as_str()
+            )))),
+        }
+    }
+
+    fn name(&self) -> CryptoAlgorithm {
+        match self {
+            GetSharedKeyLengthAlgorithm::MlKem(algorithm) => algorithm.name,
+            GetSharedKeyLengthAlgorithm::HybridKem(algorithm) => algorithm.name,
+        }
+    }
+}
+
+impl GetSharedKeyLengthAlgorithm {
+    fn get_shared_key_length(&self) -> u32 {
+        match self {
+            GetSharedKeyLengthAlgorithm::MlKem(_algorithm) => {
+                ml_kem_operation::get_shared_key_length()
+            },
+            GetSharedKeyLengthAlgorithm::HybridKem(_algorithm) => {
+                hybrid_kem_operation::get_shared_key_length()
+            },
+        }
+    }
+}
+
+/// The value of the key "getPublicKey" in the internal object supportedAlgorithms
+struct GetPublicKeyOperation {}
+
+impl Operation for GetPublicKeyOperation {
+    type RegisteredAlgorithm = GetPublicKeyAlgorithm;
+}
+
+/// Normalized algorithm for the "getPublicKey" operation, used as output of
+/// <https://w3c.github.io/webcrypto/#dfn-normalize-an-algorithm>
+enum GetPublicKeyAlgorithm {
+    RsassaPkcs1v1_5(Algorithm),
+    RsaPss(Algorithm),
+    RsaOaep(Algorithm),
+    Ecdsa(Algorithm),
+    Ecdh(Algorithm),
+    Ed25519(Algorithm),
+    X25519(Algorithm),
+    Ed448(Algorithm),
+    X448(Algorithm),
+    MlKem(Algorithm),
+    HybridKem(Algorithm),
+    MlDsa(Algorithm),
+}
+
+impl NormalizedAlgorithm for GetPublicKeyAlgorithm {
+    fn from_object(
+        cx: &mut JSContext,
+        algorithm_name: CryptoAlgorithm,
+        object: HandleObject,
+    ) -> Fallible<Self> {
+        match algorithm_name {
+            CryptoAlgorithm::RsassaPkcs1V1_5 => Ok(GetPublicKeyAlgorithm::RsassaPkcs1v1_5(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::RsaPss => Ok(GetPublicKeyAlgorithm::RsaPss(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::RsaOaep => Ok(GetPublicKeyAlgorithm::RsaOaep(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::Ecdsa => Ok(GetPublicKeyAlgorithm::Ecdsa(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::Ecdh => Ok(GetPublicKeyAlgorithm::Ecdh(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::Ed25519 => Ok(GetPublicKeyAlgorithm::Ed25519(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::X25519 => Ok(GetPublicKeyAlgorithm::X25519(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::Ed448 => Ok(GetPublicKeyAlgorithm::Ed448(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::X448 => Ok(GetPublicKeyAlgorithm::X448(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::MlKem512 | CryptoAlgorithm::MlKem768 | CryptoAlgorithm::MlKem1024 => {
+                Ok(GetPublicKeyAlgorithm::MlKem(
+                    object.try_into_with_cx_and_name(cx, algorithm_name)?,
+                ))
+            },
+            CryptoAlgorithm::MlKem768X25519 => Ok(GetPublicKeyAlgorithm::HybridKem(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::MlDsa44 | CryptoAlgorithm::MlDsa65 | CryptoAlgorithm::MlDsa87 => Ok(
+                GetPublicKeyAlgorithm::MlDsa(object.try_into_with_cx_and_name(cx, algorithm_name)?),
+            ),
+            _ => Err(Error::NotSupported(Some(format!(
+                "{} does not support \"getPublicKey\" operation",
+                algorithm_name.as_str()
+            )))),
+        }
+    }
+
+    fn name(&self) -> CryptoAlgorithm {
+        match self {
+            GetPublicKeyAlgorithm::RsassaPkcs1v1_5(algorithm) => algorithm.name,
+            GetPublicKeyAlgorithm::RsaPss(algorithm) => algorithm.name,
+            GetPublicKeyAlgorithm::RsaOaep(algorithm) => algorithm.name,
+            GetPublicKeyAlgorithm::Ecdsa(algorithm) => algorithm.name,
+            GetPublicKeyAlgorithm::Ecdh(algorithm) => algorithm.name,
+            GetPublicKeyAlgorithm::Ed25519(algorithm) => algorithm.name,
+            GetPublicKeyAlgorithm::X25519(algorithm) => algorithm.name,
+            GetPublicKeyAlgorithm::Ed448(algorithm) => algorithm.name,
+            GetPublicKeyAlgorithm::X448(algorithm) => algorithm.name,
+            GetPublicKeyAlgorithm::MlKem(algorithm) => algorithm.name,
+            GetPublicKeyAlgorithm::HybridKem(algorithm) => algorithm.name,
+            GetPublicKeyAlgorithm::MlDsa(algorithm) => algorithm.name,
+        }
+    }
+}
+
+impl GetPublicKeyAlgorithm {
+    fn get_public_key<D: Equivalence>(
+        &self,
+        cx: &mut JSContext,
+        global: &D::GlobalScope,
+        key: &CryptoKey<D>,
+        algorithm: &KeyAlgorithmAndDerivatives,
+        usages: Vec<KeyUsage>,
+    ) -> Result<DomRoot<CryptoKey<D>>, Error> {
+        match self {
+            GetPublicKeyAlgorithm::RsassaPkcs1v1_5(_algorithm) => {
+                rsassa_pkcs1_v1_5_operation::get_public_key(cx, global, key, algorithm, usages)
+            },
+            GetPublicKeyAlgorithm::RsaPss(_algorithm) => {
+                rsa_pss_operation::get_public_key(cx, global, key, algorithm, usages)
+            },
+            GetPublicKeyAlgorithm::RsaOaep(_algorithm) => {
+                rsa_oaep_operation::get_public_key(cx, global, key, algorithm, usages)
+            },
+            GetPublicKeyAlgorithm::Ecdsa(_algorithm) => {
+                ecdsa_operation::get_public_key(cx, global, key, algorithm, usages)
+            },
+            GetPublicKeyAlgorithm::Ecdh(_algorithm) => {
+                ecdh_operation::get_public_key(cx, global, key, algorithm, usages)
+            },
+            GetPublicKeyAlgorithm::Ed25519(_algorithm) => {
+                ed25519_operation::get_public_key(cx, global, key, algorithm, usages)
+            },
+            GetPublicKeyAlgorithm::X25519(_algorithm) => {
+                x25519_operation::get_public_key(cx, global, key, algorithm, usages)
+            },
+            GetPublicKeyAlgorithm::Ed448(_algorithm) => {
+                ed448_operation::get_public_key(cx, global, key, algorithm, usages)
+            },
+            GetPublicKeyAlgorithm::X448(_algorithm) => {
+                x448_operation::get_public_key(cx, global, key, algorithm, usages)
+            },
+            GetPublicKeyAlgorithm::MlKem(_algorithm) => {
+                ml_kem_operation::get_public_key(cx, global, key, algorithm, usages)
+            },
+            GetPublicKeyAlgorithm::HybridKem(_algorithm) => {
+                hybrid_kem_operation::get_public_key(cx, global, key, algorithm, usages)
+            },
+            GetPublicKeyAlgorithm::MlDsa(_algorithm) => {
+                ml_dsa_operation::get_public_key(cx, global, key, algorithm, usages)
+            },
+        }
+    }
+}
