@@ -279,9 +279,9 @@ partial interface SubtleCrypto {
   static boolean supports(DOMString operation,
                    AlgorithmIdentifier algorithm,
                    optional [EnforceRange] unsigned long? length = null);
-//   static boolean supports(DOMString operation,
-//                    AlgorithmIdentifier algorithm,
-//                    AlgorithmIdentifier additionalAlgorithm);
+  static boolean supports(DOMString operation,
+                   AlgorithmIdentifier algorithm,
+                   AlgorithmIdentifier additionalAlgorithm);
 };
 
 // https://wicg.github.io/webcrypto-modern-algos/#subtlecrypto-interface-keyformat

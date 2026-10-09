@@ -92,7 +92,6 @@ use script_bindings::task;
 use script_bindings::DomTypes;
 use script_bindings::interfaces::PromiseHelpers;
 use script_bindings::interfaces::StackRootPromiseHelpers;
-use script_bindings::interfaces::HeapTracedPromiseHelpers;
 use script_bindings::interfaces::ThreadTrustedPromiseHelpers;
 use script_bindings::reflector::DomGlobalGeneric;
 
@@ -2351,292 +2350,291 @@ where
         algorithm: AlgorithmIdentifier,
         length: Option<u32>,
     ) -> bool {
-        todo!()
-        // // Step 1. If operation is not one of "encrypt", "decrypt", "sign", "verify", "digest",
-        // // "generateKey", "deriveKey", "deriveBits", "importKey", "exportKey", "wrapKey",
-        // // "unwrapKey", "encapsulateKey", "encapsulateBits", "decapsulateKey", "decapsulateBits" or
-        // // "getPublicKey", return false.
-        // let operation = &*operation.str();
-        // if !matches!(
-        //     operation,
-        //     "encrypt" |
-        //         "decrypt" |
-        //         "sign" |
-        //         "verify" |
-        //         "digest" |
-        //         "generateKey" |
-        //         "deriveKey" |
-        //         "deriveBits" |
-        //         "importKey" |
-        //         "exportKey" |
-        //         "wrapKey" |
-        //         "unwrapKey" |
-        //         "encapsulateKey" |
-        //         "encapsulateBits" |
-        //         "decapsulateKey" |
-        //         "decapsulateBits" |
-        //         "getPublicKey"
-        // ) {
-        //     return false;
-        // }
-        //
-        // // Step 2. Return the result of checking support for an algorithm, with op set to
-        // // operation, alg set to algorithm, and length set to length.
-        // check_support_for_algorithm(cx, operation, &algorithm, length)
+        // Step 1. If operation is not one of "encrypt", "decrypt", "sign", "verify", "digest",
+        // "generateKey", "deriveKey", "deriveBits", "importKey", "exportKey", "wrapKey",
+        // "unwrapKey", "encapsulateKey", "encapsulateBits", "decapsulateKey", "decapsulateBits" or
+        // "getPublicKey", return false.
+        let operation = &*operation.str();
+        if !matches!(
+            operation,
+            "encrypt" |
+                "decrypt" |
+                "sign" |
+                "verify" |
+                "digest" |
+                "generateKey" |
+                "deriveKey" |
+                "deriveBits" |
+                "importKey" |
+                "exportKey" |
+                "wrapKey" |
+                "unwrapKey" |
+                "encapsulateKey" |
+                "encapsulateBits" |
+                "decapsulateKey" |
+                "decapsulateBits" |
+                "getPublicKey"
+        ) {
+            return false;
+        }
+
+        // Step 2. Return the result of checking support for an algorithm, with op set to
+        // operation, alg set to algorithm, and length set to length.
+        check_support_for_algorithm::<D>(cx, operation, &algorithm, length)
     }
 
-    // /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-SubtleCrypto-method-supports-additionalAlgorithm>
-    // fn Supports_(
-    //     cx: &mut JSContext,
-    //     _global: &GlobalScope,
-    //     operation: DOMString,
-    //     algorithm: AlgorithmIdentifier,
-    //     additional_algorithm: AlgorithmIdentifier,
-    // ) -> bool {
-    //     // Step 1. If operation is not one of "encrypt", "decrypt", "sign", "verify", "digest",
-    //     // "generateKey", "deriveKey", "deriveBits", "importKey", "exportKey", "wrapKey",
-    //     // "unwrapKey", "encapsulateKey", "encapsulateBits", "decapsulateKey", "decapsulateBits" or
-    //     // "getPublicKey", return false.
-    //     let mut operation = &*operation.str();
-    //     if !matches!(
-    //         operation,
-    //         "encrypt" |
-    //             "decrypt" |
-    //             "sign" |
-    //             "verify" |
-    //             "digest" |
-    //             "generateKey" |
-    //             "deriveKey" |
-    //             "deriveBits" |
-    //             "importKey" |
-    //             "exportKey" |
-    //             "wrapKey" |
-    //             "unwrapKey" |
-    //             "encapsulateKey" |
-    //             "encapsulateBits" |
-    //             "decapsulateKey" |
-    //             "decapsulateBits" |
-    //             "getPublicKey"
-    //     ) {
-    //         return false;
-    //     }
-    //
-    //     // Step 2.
-    //     // If operation is "deriveKey" or "unwrapKey":
-    //     //     If the result of checking support for an algorithm with op set to "importKey" and
-    //     //     alg set to additionalAlgorithm is false, return false.
-    //     // If operation is "wrapKey":
-    //     //     If the result of checking support for an algorithm with op set to "exportKey" and
-    //     //     alg set to additionalAlgorithm is false, return false.
-    //     if matches!(operation, "deriveKey" | "unwrapKey") &&
-    //         !check_support_for_algorithm(cx, "importKey", &additional_algorithm, None)
-    //     {
-    //         return false;
-    //     }
-    //     if operation == "wrapKey" &&
-    //         !check_support_for_algorithm(cx, "exportKey", &additional_algorithm, None)
-    //     {
-    //         return false;
-    //     }
-    //
-    //     // Step 3. If operation is "encapsulateKey" or "decapsulateKey":
-    //     if matches!(operation, "encapsulateKey" | "decapsulateKey") {
-    //         // Step 3.1. Let normalizedAlgorithm be the result of normalizing an algorithm, with alg
-    //         // set to algorithm and op set to "get shared key length".
-    //         // Step 3.2. If an error occurred, return false.
-    //         let Ok(normalized_algorithm) =
-    //             normalize_algorithm::<GetSharedKeyLengthOperation>(cx, &algorithm)
-    //         else {
-    //             return false;
-    //         };
-    //
-    //         // Step 3.3. Let sharedKeyLength be the result of performing the get shared key length
-    //         // algorithm specified by normalizedAlgorithm using algorithm.
-    //         let shared_key_length = normalized_algorithm.get_shared_key_length();
-    //
-    //         // Step 3.4. Let normalizedAdditionalAlgorithm be the result of normalizing an
-    //         // algorithm, with alg set to additionalAlgorithm and op set to "importKey".
-    //         // Step 3.5. If an error occurred, return false.
-    //         let Ok(normalized_additional_algorithm) =
-    //             normalize_algorithm::<ImportKeyOperation>(cx, &additional_algorithm)
-    //         else {
-    //             return false;
-    //         };
-    //
-    //         // Step 3.6. If the result of determining support from operation steps with op set to
-    //         // "importKey" and normalizedAlgorithm set to normalizedAdditionalAlgorithm, and length
-    //         // set to null is false, return false.
-    //         //
-    //         // NOTE: normalized_additional_algorithm is an ImportKeyAlgorithm value, so we don't
-    //         // need to explicitly set op to "importKey" when we call the
-    //         // determine_support_from_operation_steps method.
-    //         if !normalized_additional_algorithm.determine_support_from_operation_steps(None) {
-    //             return false;
-    //         }
-    //
-    //         // Step 3.7. If the import key operation specified by normalizedAdditionalAlgorithm
-    //         // would throw an error for every value of keyData that is a byte sequence whose length
-    //         // in bits is sharedKeyLength when format is "raw-secret", return false.
-    //         if normalized_additional_algorithm.will_throw_for_key_data_length(shared_key_length) {
-    //             return false;
-    //         }
-    //     }
-    //
-    //     // Step 4. Let length be null.
-    //     let mut length = None;
-    //
-    //     // Step 5. If operation is "deriveKey":
-    //     if operation == "deriveKey" {
-    //         // Step 5.1. If the result of checking support for an algorithm with op set to "get key
-    //         // length" and alg set to additionalAlgorithm is false, return false.
-    //         if !check_support_for_algorithm(cx, "get key length", &additional_algorithm, None) {
-    //             return false;
-    //         }
-    //
-    //         // Step 5.2. Let normalizedAdditionalAlgorithm be the result of normalizing an
-    //         // algorithm, with alg set to additionalAlgorithm and op set to "get key length".
-    //         let Ok(normalized_additional_algorithm) =
-    //             normalize_algorithm::<GetKeyLengthOperation>(cx, &additional_algorithm)
-    //         else {
-    //             return false;
-    //         };
-    //
-    //         // Step 5.3. Let length be the result of performing the get key length algorithm
-    //         // specified by additionalAlgorithm using normalizedAdditionalAlgorithm.'
-    //         match normalized_additional_algorithm.get_key_length() {
-    //             Ok(key_length) => {
-    //                 length = key_length;
-    //             },
-    //             Err(_) => return false,
-    //         };
-    //
-    //         // Step 5.4. Set operation to "deriveBits".
-    //         operation = "deriveBits";
-    //     }
-    //
-    //     // Step 6. Return the result of checking support for an algorithm, with op set to
-    //     // operation, alg set to algorithm, and length set to length.
-    //     check_support_for_algorithm(cx, operation, &algorithm, length)
-    // }
+    /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-SubtleCrypto-method-supports-additionalAlgorithm>
+    fn Supports_(
+        cx: &mut JSContext,
+        _global: &D::GlobalScope,
+        operation: DOMString,
+        algorithm: AlgorithmIdentifier,
+        additional_algorithm: AlgorithmIdentifier,
+    ) -> bool {
+        // Step 1. If operation is not one of "encrypt", "decrypt", "sign", "verify", "digest",
+        // "generateKey", "deriveKey", "deriveBits", "importKey", "exportKey", "wrapKey",
+        // "unwrapKey", "encapsulateKey", "encapsulateBits", "decapsulateKey", "decapsulateBits" or
+        // "getPublicKey", return false.
+        let mut operation = &*operation.str();
+        if !matches!(
+            operation,
+            "encrypt" |
+                "decrypt" |
+                "sign" |
+                "verify" |
+                "digest" |
+                "generateKey" |
+                "deriveKey" |
+                "deriveBits" |
+                "importKey" |
+                "exportKey" |
+                "wrapKey" |
+                "unwrapKey" |
+                "encapsulateKey" |
+                "encapsulateBits" |
+                "decapsulateKey" |
+                "decapsulateBits" |
+                "getPublicKey"
+        ) {
+            return false;
+        }
+
+        // Step 2.
+        // If operation is "deriveKey" or "unwrapKey":
+        //     If the result of checking support for an algorithm with op set to "importKey" and
+        //     alg set to additionalAlgorithm is false, return false.
+        // If operation is "wrapKey":
+        //     If the result of checking support for an algorithm with op set to "exportKey" and
+        //     alg set to additionalAlgorithm is false, return false.
+        if matches!(operation, "deriveKey" | "unwrapKey") &&
+            !check_support_for_algorithm::<D>(cx, "importKey", &additional_algorithm, None)
+        {
+            return false;
+        }
+        if operation == "wrapKey" &&
+            !check_support_for_algorithm::<D>(cx, "exportKey", &additional_algorithm, None)
+        {
+            return false;
+        }
+
+        // Step 3. If operation is "encapsulateKey" or "decapsulateKey":
+        if matches!(operation, "encapsulateKey" | "decapsulateKey") {
+            // Step 3.1. Let normalizedAlgorithm be the result of normalizing an algorithm, with alg
+            // set to algorithm and op set to "get shared key length".
+            // Step 3.2. If an error occurred, return false.
+            let Ok(normalized_algorithm) =
+                normalize_algorithm::<GetSharedKeyLengthOperation>(cx, &algorithm)
+            else {
+                return false;
+            };
+
+            // Step 3.3. Let sharedKeyLength be the result of performing the get shared key length
+            // algorithm specified by normalizedAlgorithm using algorithm.
+            let shared_key_length = normalized_algorithm.get_shared_key_length();
+
+            // Step 3.4. Let normalizedAdditionalAlgorithm be the result of normalizing an
+            // algorithm, with alg set to additionalAlgorithm and op set to "importKey".
+            // Step 3.5. If an error occurred, return false.
+            let Ok(normalized_additional_algorithm) =
+                normalize_algorithm::<ImportKeyOperation>(cx, &additional_algorithm)
+            else {
+                return false;
+            };
+
+            // Step 3.6. If the result of determining support from operation steps with op set to
+            // "importKey" and normalizedAlgorithm set to normalizedAdditionalAlgorithm, and length
+            // set to null is false, return false.
+            //
+            // NOTE: normalized_additional_algorithm is an ImportKeyAlgorithm value, so we don't
+            // need to explicitly set op to "importKey" when we call the
+            // determine_support_from_operation_steps method.
+            if !normalized_additional_algorithm.determine_support_from_operation_steps(None) {
+                return false;
+            }
+
+            // Step 3.7. If the import key operation specified by normalizedAdditionalAlgorithm
+            // would throw an error for every value of keyData that is a byte sequence whose length
+            // in bits is sharedKeyLength when format is "raw-secret", return false.
+            if normalized_additional_algorithm.will_throw_for_key_data_length(shared_key_length) {
+                return false;
+            }
+        }
+
+        // Step 4. Let length be null.
+        let mut length = None;
+
+        // Step 5. If operation is "deriveKey":
+        if operation == "deriveKey" {
+            // Step 5.1. If the result of checking support for an algorithm with op set to "get key
+            // length" and alg set to additionalAlgorithm is false, return false.
+            if !check_support_for_algorithm::<D>(cx, "get key length", &additional_algorithm, None) {
+                return false;
+            }
+
+            // Step 5.2. Let normalizedAdditionalAlgorithm be the result of normalizing an
+            // algorithm, with alg set to additionalAlgorithm and op set to "get key length".
+            let Ok(normalized_additional_algorithm) =
+                normalize_algorithm::<GetKeyLengthOperation>(cx, &additional_algorithm)
+            else {
+                return false;
+            };
+
+            // Step 5.3. Let length be the result of performing the get key length algorithm
+            // specified by additionalAlgorithm using normalizedAdditionalAlgorithm.'
+            match normalized_additional_algorithm.get_key_length() {
+                Ok(key_length) => {
+                    length = key_length;
+                },
+                Err(_) => return false,
+            };
+
+            // Step 5.4. Set operation to "deriveBits".
+            operation = "deriveBits";
+        }
+
+        // Step 6. Return the result of checking support for an algorithm, with op set to
+        // operation, alg set to algorithm, and length set to length.
+        check_support_for_algorithm::<D>(cx, operation, &algorithm, length)
+    }
 }
 
-// /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-check-support-for-algorithm>
-// pub(crate) fn check_support_for_algorithm(
-//     cx: &mut JSContext,
-//     mut operation: &str,
-//     algorithm: &AlgorithmIdentifier,
-//     length: Option<u32>,
-// ) -> bool {
-//     // Step 1. If op is "encapsulateKey" or "encapsulateBits", set op to "encapsulate".
-//     if operation == "encapsulateKey" || operation == "encapsulateBits" {
-//         operation = "encapsulate";
-//     }
-//
-//     // Step 2. If op is "decapsulateKey" or "decapsulateBits", set op to "decapsulate".
-//     if operation == "decapsulateKey" || operation == "decapsulateBits" {
-//         operation = "decapsulate";
-//     }
-//
-//     // Step 3. If op is "getPublicKey":
-//     if operation == "getPublicKey" {
-//         // Step 3.1. Let normalizedAlgorithm be the result of normalizing an algorithm, with alg
-//         // set to alg and op set to "exportKey".
-//         // Step 3.2. If an error occurred, return false.
-//         let Ok(normalized_algorithm) = normalize_algorithm::<ExportKeyOperation>(cx, algorithm)
-//         else {
-//             return false;
-//         };
-//
-//         // Step 3.3. If the cryptographic algorithm identified by normalizedAlgorithm does not
-//         // support deriving a public key from a private key, then return false.
-//         // Step 3.4. Otherwise, return true.
-//         //
-//         // NOTE: We rely on [`normalize_algorithm`] to check whether the algorithm supports the
-//         // getPublicKey operation.
-//         return normalize_algorithm::<GetPublicKeyOperation>(
-//             cx,
-//             &AlgorithmIdentifier::String(DOMString::from_static(
-//                 normalized_algorithm.name().as_str(),
-//             )),
-//         )
-//         .is_ok();
-//     }
-//
-//     // Step 4. Let normalizedAlgorithm be the result of normalizing an algorithm, with alg set to
-//     // alg and op set to op.
-//     // Step 5. If an error occurred:
-//     //     Step 5.1. If op is "wrapKey", return the result of checking support for an algorithm
-//     //     with op set to "encrypt" and alg set to alg.
-//     //     Step 5.2. If op is "unwrapKey", return the result of checking support for an algorithm
-//     //     with op set to "decrypt" and alg set to alg.
-//     //     Step 5.3. Otherwise, return false.
-//     // Step 6. Return the result of determining support from operation steps, with op set to op,
-//     // normalizedAlgorithm set to normalizedAlgorithm, and length set to length.
-//     match operation {
-//         "encrypt" => {
-//             normalize_and_determine_support::<EncryptOperation>(cx, operation, algorithm, length)
-//         },
-//         "decrypt" => {
-//             normalize_and_determine_support::<DecryptOperation>(cx, operation, algorithm, length)
-//         },
-//         "sign" => {
-//             normalize_and_determine_support::<SignOperation>(cx, operation, algorithm, length)
-//         },
-//         "verify" => {
-//             normalize_and_determine_support::<VerifyOperation>(cx, operation, algorithm, length)
-//         },
-//         "digest" => {
-//             normalize_and_determine_support::<DigestOperation>(cx, operation, algorithm, length)
-//         },
-//         "deriveBits" => {
-//             normalize_and_determine_support::<DeriveBitsOperation>(cx, operation, algorithm, length)
-//         },
-//         "wrapKey" => {
-//             normalize_and_determine_support::<WrapKeyOperation>(cx, operation, algorithm, length)
-//         },
-//         "unwrapKey" => {
-//             normalize_and_determine_support::<UnwrapKeyOperation>(cx, operation, algorithm, length)
-//         },
-//         "generateKey" => normalize_and_determine_support::<GenerateKeyOperation>(
-//             cx, operation, algorithm, length,
-//         ),
-//         "importKey" => {
-//             normalize_and_determine_support::<ImportKeyOperation>(cx, operation, algorithm, length)
-//         },
-//         "exportKey" => {
-//             normalize_and_determine_support::<ExportKeyOperation>(cx, operation, algorithm, length)
-//         },
-//         "get key length" => normalize_and_determine_support::<GetKeyLengthOperation>(
-//             cx, operation, algorithm, length,
-//         ),
-//         "encapsulate" => normalize_and_determine_support::<EncapsulateOperation>(
-//             cx, operation, algorithm, length,
-//         ),
-//         "decapsulate" => normalize_and_determine_support::<DecapsulateOperation>(
-//             cx, operation, algorithm, length,
-//         ),
-//         _ => false,
-//     }
-// }
-//
-// /// Helper function for Step 4 - 6 of
-// /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-check-support-for-algorithm>
-// fn normalize_and_determine_support<T: Operation>(
-//     cx: &mut JSContext,
-//     op: &str,
-//     algorithm: &AlgorithmIdentifier,
-//     length: Option<u32>,
-// ) -> bool {
-//     if let Ok(normalized_algorithm) = normalize_algorithm::<T>(cx, algorithm) {
-//         normalized_algorithm.determine_support_from_operation_steps(length)
-//     } else {
-//         match op {
-//             "wrapKey" => check_support_for_algorithm(cx, "encrypt", algorithm, length),
-//             "unwrapKey" => check_support_for_algorithm(cx, "decrypt", algorithm, length),
-//             _ => false,
-//         }
-//     }
-// }
+/// <https://wicg.github.io/webcrypto-modern-algos/#dfn-check-support-for-algorithm>
+pub(crate) fn check_support_for_algorithm<D: Equivalence>(
+    cx: &mut JSContext,
+    mut operation: &str,
+    algorithm: &AlgorithmIdentifier,
+    length: Option<u32>,
+) -> bool {
+    // Step 1. If op is "encapsulateKey" or "encapsulateBits", set op to "encapsulate".
+    if operation == "encapsulateKey" || operation == "encapsulateBits" {
+        operation = "encapsulate";
+    }
+
+    // Step 2. If op is "decapsulateKey" or "decapsulateBits", set op to "decapsulate".
+    if operation == "decapsulateKey" || operation == "decapsulateBits" {
+        operation = "decapsulate";
+    }
+
+    // Step 3. If op is "getPublicKey":
+    if operation == "getPublicKey" {
+        // Step 3.1. Let normalizedAlgorithm be the result of normalizing an algorithm, with alg
+        // set to alg and op set to "exportKey".
+        // Step 3.2. If an error occurred, return false.
+        let Ok(normalized_algorithm) = normalize_algorithm::<ExportKeyOperation>(cx, algorithm)
+        else {
+            return false;
+        };
+
+        // Step 3.3. If the cryptographic algorithm identified by normalizedAlgorithm does not
+        // support deriving a public key from a private key, then return false.
+        // Step 3.4. Otherwise, return true.
+        //
+        // NOTE: We rely on [`normalize_algorithm`] to check whether the algorithm supports the
+        // getPublicKey operation.
+        return normalize_algorithm::<GetPublicKeyOperation>(
+            cx,
+            &AlgorithmIdentifier::String(DOMString::from_static(
+                normalized_algorithm.name().as_str(),
+            )),
+        )
+        .is_ok();
+    }
+
+    // Step 4. Let normalizedAlgorithm be the result of normalizing an algorithm, with alg set to
+    // alg and op set to op.
+    // Step 5. If an error occurred:
+    //     Step 5.1. If op is "wrapKey", return the result of checking support for an algorithm
+    //     with op set to "encrypt" and alg set to alg.
+    //     Step 5.2. If op is "unwrapKey", return the result of checking support for an algorithm
+    //     with op set to "decrypt" and alg set to alg.
+    //     Step 5.3. Otherwise, return false.
+    // Step 6. Return the result of determining support from operation steps, with op set to op,
+    // normalizedAlgorithm set to normalizedAlgorithm, and length set to length.
+    match operation {
+        "encrypt" => {
+            normalize_and_determine_support::<EncryptOperation, D>(cx, operation, algorithm, length)
+        },
+        "decrypt" => {
+            normalize_and_determine_support::<DecryptOperation, D>(cx, operation, algorithm, length)
+        },
+        "sign" => {
+            normalize_and_determine_support::<SignOperation, D>(cx, operation, algorithm, length)
+        },
+        "verify" => {
+            normalize_and_determine_support::<VerifyOperation, D>(cx, operation, algorithm, length)
+        },
+        "digest" => {
+            normalize_and_determine_support::<DigestOperation, D>(cx, operation, algorithm, length)
+        },
+        "deriveBits" => {
+            normalize_and_determine_support::<DeriveBitsOperation<D>, D>(cx, operation, algorithm, length)
+        },
+        "wrapKey" => {
+            normalize_and_determine_support::<WrapKeyOperation, D>(cx, operation, algorithm, length)
+        },
+        "unwrapKey" => {
+            normalize_and_determine_support::<UnwrapKeyOperation, D>(cx, operation, algorithm, length)
+        },
+        "generateKey" => normalize_and_determine_support::<GenerateKeyOperation, D>(
+            cx, operation, algorithm, length,
+        ),
+        "importKey" => {
+            normalize_and_determine_support::<ImportKeyOperation, D>(cx, operation, algorithm, length)
+        },
+        "exportKey" => {
+            normalize_and_determine_support::<ExportKeyOperation, D>(cx, operation, algorithm, length)
+        },
+        "get key length" => normalize_and_determine_support::<GetKeyLengthOperation, D>(
+            cx, operation, algorithm, length,
+        ),
+        "encapsulate" => normalize_and_determine_support::<EncapsulateOperation, D>(
+            cx, operation, algorithm, length,
+        ),
+        "decapsulate" => normalize_and_determine_support::<DecapsulateOperation, D>(
+            cx, operation, algorithm, length,
+        ),
+        _ => false,
+    }
+}
+
+/// Helper function for Step 4 - 6 of
+/// <https://wicg.github.io/webcrypto-modern-algos/#dfn-check-support-for-algorithm>
+fn normalize_and_determine_support<T: Operation, D: Equivalence>(
+    cx: &mut JSContext,
+    op: &str,
+    algorithm: &AlgorithmIdentifier,
+    length: Option<u32>,
+) -> bool {
+    if let Ok(normalized_algorithm) = normalize_algorithm::<T>(cx, algorithm) {
+        normalized_algorithm.determine_support_from_operation_steps(length)
+    } else {
+        match op {
+            "wrapKey" => check_support_for_algorithm::<D>(cx, "encrypt", algorithm, length),
+            "unwrapKey" => check_support_for_algorithm::<D>(cx, "decrypt", algorithm, length),
+            _ => false,
+        }
+    }
+}
 
 /// Alternative to std::convert::TryFrom, with `&mut js::context::JSContext`
 trait TryFromWithCxAndName<T>: Sized {
@@ -4225,7 +4223,7 @@ impl ExportedKey {
 /// passed to another threads.
 #[derive(Clone, MallocSizeOf)]
 #[expect(clippy::enum_variant_names)]
-pub(crate) enum KeyAlgorithmAndDerivatives {
+pub enum KeyAlgorithmAndDerivatives {
     KeyAlgorithm(KeyAlgorithm),
     RsaHashedKeyAlgorithm(RsaHashedKeyAlgorithm),
     EcKeyAlgorithm(EcKeyAlgorithm),
