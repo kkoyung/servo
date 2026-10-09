@@ -7,7 +7,7 @@ use std::str::FromStr;
 
 use dom_struct::dom_struct;
 use itertools::Itertools;
-// use js::rooted;
+use js::rooted;
 use js::context::NoGC;
 use js::conversions::ToJSValConvertible;
 use js::jsapi::{Heap, JSObject, Value};
@@ -30,6 +30,7 @@ use script_bindings::codegen::GenericBindings::CryptoKeyBinding::{
 use script_bindings::error::{Error, ErrorResult};
 use script_bindings::root::DomRoot;
 
+use crate::subtlecrypto::KeyAlgorithmAndDerivatives;
 use crate::traits::Equivalence;
 
 pub(crate) enum CryptoKeyOrCryptoKeyPair<D: DomTypes> {
@@ -95,12 +96,12 @@ pub struct CryptoKey<D: DomTypes> {
     /// <https://w3c.github.io/webcrypto/#dfn-CryptoKey-slot-extractable>
     extractable: bool,
 
-    // /// <https://w3c.github.io/webcrypto/#dfn-CryptoKey-slot-algorithm>
-    // ///
-    // /// The contents of the [[algorithm]] internal slot shall be, or be derived from, a
-    // /// KeyAlgorithm.
-    // #[no_trace]
-    // algorithm: KeyAlgorithmAndDerivatives,
+    /// <https://w3c.github.io/webcrypto/#dfn-CryptoKey-slot-algorithm>
+    ///
+    /// The contents of the [[algorithm]] internal slot shall be, or be derived from, a
+    /// KeyAlgorithm.
+    #[no_trace]
+    algorithm: KeyAlgorithmAndDerivatives,
 
     /// <https://w3c.github.io/webcrypto/#dfn-CryptoKey-slot-algorithm_cached>
     #[ignore_malloc_size_of = "Defined in mozjs"]
@@ -130,7 +131,7 @@ where
     fn new_inherited(
         key_type: KeyType,
         extractable: bool,
-        // algorithm: KeyAlgorithmAndDerivatives,
+        algorithm: KeyAlgorithmAndDerivatives,
         usages: Vec<KeyUsage>,
         handle: Handle,
     ) -> CryptoKey<D> {
@@ -138,7 +139,7 @@ where
             reflector_: Reflector::new(),
             key_type,
             extractable,
-            // algorithm,
+            algorithm,
             algorithm_cached: Heap::default(),
             usages,
             usages_cached: Heap::default(),
@@ -152,7 +153,7 @@ where
         global: &D::GlobalScope,
         key_type: KeyType,
         extractable: bool,
-        // algorithm: KeyAlgorithmAndDerivatives,
+        algorithm: KeyAlgorithmAndDerivatives,
         usages: Vec<KeyUsage>,
         handle: Handle,
     ) -> DomRoot<CryptoKey<D>> {
@@ -161,7 +162,7 @@ where
             Box::new(CryptoKey::new_inherited(
                 key_type,
                 extractable,
-                // algorithm.clone(),
+                algorithm.clone(),
                 usages.clone(),
                 handle,
             )),
@@ -169,26 +170,26 @@ where
             CryptoKeyWrap::<D>,
         );
 
-        // // Create and store a cached object of algorithm
-        // rooted!(&in(cx) let mut algorithm_object_value: Value);
-        // algorithm.to_jsval(cx, algorithm_object_value.handle_mut());
-        // crypto_key
-        //     .algorithm_cached
-        //     .set(algorithm_object_value.to_object());
-        //
-        // // Create and store a cached object of usages
-        // rooted!(&in(cx) let mut usages_object_value: Value);
-        // usages.to_jsval(cx, usages_object_value.handle_mut());
-        // crypto_key
-        //     .usages_cached
-        //     .set(usages_object_value.to_object());
+        // Create and store a cached object of algorithm
+        rooted!(&in(cx) let mut algorithm_object_value: Value);
+        algorithm.to_jsval(cx, algorithm_object_value.handle_mut());
+        crypto_key
+            .algorithm_cached
+            .set(algorithm_object_value.to_object());
+
+        // Create and store a cached object of usages
+        rooted!(&in(cx) let mut usages_object_value: Value);
+        usages.to_jsval(cx, usages_object_value.handle_mut());
+        crypto_key
+            .usages_cached
+            .set(usages_object_value.to_object());
 
         crypto_key
     }
 
-    // pub(crate) fn algorithm(&self) -> &KeyAlgorithmAndDerivatives {
-    //     &self.algorithm
-    // }
+    pub(crate) fn algorithm(&self) -> &KeyAlgorithmAndDerivatives {
+        &self.algorithm
+    }
 
     pub(crate) fn usages(&self) -> &[KeyUsage] {
         &self.usages
@@ -263,8 +264,7 @@ where
         let serialized = SerializableCryptoKey {
             key_type: self.key_type.as_str().into(),
             extractable: self.extractable,
-            // algorithm: (&self.algorithm).into(),
-            algorithm: todo!(),
+            algorithm: (&self.algorithm).into(),
             usages: self
                 .usages
                 .iter()
@@ -294,7 +294,7 @@ where
             owner,
             KeyType::from_str(&serialized.key_type)?,
             serialized.extractable,
-            // serialized.algorithm.try_into()?,
+            serialized.algorithm.try_into()?,
             serialized
                 .usages
                 .iter()
