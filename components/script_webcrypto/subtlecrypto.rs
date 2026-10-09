@@ -267,95 +267,99 @@ where
             }));
     }
 
-    // /// Queue a global task on the crypto task source, given realm's global object, to resolve
-    // /// promise with the result of converting a JsonWebKey dictionary to an ECMAScript Object in
-    // /// realm, as defined by [WebIDL].
-    // fn resolve_promise_with_jwk(
-    //     &self,
-    //     cx: &mut JSContext,
-    //     promise: &RootedPromise,
-    //     jwk: Box<JsonWebKey>,
-    // ) {
-    //     // NOTE: Serialize the JsonWebKey dictionary by stringifying it, in order to pass it to
-    //     // other threads.
-    //     let stringified_jwk = match jwk.stringify(cx) {
-    //         Ok(stringified_jwk) => Zeroizing::new(stringified_jwk.to_string()),
-    //         Err(error) => {
-    //             self.reject_promise_with_error(promise, error);
-    //             return;
-    //         },
-    //     };
-    //
-    //     let trusted_subtle = Trusted::new(self);
-    //     let trusted_promise = TrustedPromise::from(promise);
-    //     self.global()
-    //         .task_manager()
-    //         .crypto_task_source()
-    //         .queue(task!(resolve_jwk: move |cx| {
-    //             let subtle = trusted_subtle.root();
-    //             let promise = trusted_promise.root(cx);
-    //
-    //             match JsonWebKey::parse(cx, stringified_jwk.as_bytes()) {
-    //                 Ok(jwk) => {
-    //                     rooted!(&in(cx) let mut rval = UndefinedValue());
-    //                     jwk.to_jsval(cx, rval.handle_mut());
-    //                     rooted!(&in(cx) let mut object = rval.to_object());
-    //                     promise.resolve_native(cx, &*object);
-    //                 },
-    //                 Err(error) => {
-    //                     subtle.reject_promise_with_error(&promise, error);
-    //                     return;
-    //                 },
-    //             }
-    //         }));
-    // }
-    //
-    // /// Queue a global task on the crypto task source, given realm's global object, to resolve
-    // /// promise with a CryptoKey.
-    // fn resolve_promise_with_key(&self, promise: &RootedPromise, key: &CryptoKey) {
-    //     let trusted_key = Trusted::new(key);
-    //     let trusted_promise = TrustedPromise::from(promise);
-    //     self.global()
-    //         .task_manager()
-    //         .crypto_task_source()
-    //         .queue(task!(resolve_key: move |cx| {
-    //             let key = trusted_key.root();
-    //             let promise = trusted_promise.root(cx);
-    //             promise.resolve_native(cx, &key);
-    //         }));
-    // }
-    //
-    // /// Queue a global task on the crypto task source, given realm's global object, to resolve
-    // /// promise with a CryptoKeyPair.
-    // fn resolve_promise_with_key_pair(&self, promise: &RootedPromise, key_pair: CryptoKeyPair) {
-    //     let trusted_private_key = key_pair.privateKey.map(|key| Trusted::new(&*key));
-    //     let trusted_public_key = key_pair.publicKey.map(|key| Trusted::new(&*key));
-    //     let trusted_promise = TrustedPromise::from(promise);
-    //     self.global()
-    //         .task_manager()
-    //         .crypto_task_source()
-    //         .queue(task!(resolve_key: move |cx| {
-    //             let key_pair = CryptoKeyPair {
-    //                 privateKey: trusted_private_key.map(|trusted_key| trusted_key.root()),
-    //                 publicKey: trusted_public_key.map(|trusted_key| trusted_key.root()),
-    //             };
-    //             let promise = trusted_promise.root(cx);
-    //             promise.resolve_native(cx, &key_pair);
-    //         }));
-    // }
-    //
-    // /// Queue a global task on the crypto task source, given realm's global object, to resolve
-    // /// promise with a bool value.
-    // fn resolve_promise_with_bool(&self, promise: &RootedPromise, result: bool) {
-    //     let trusted_promise = TrustedPromise::from(promise);
-    //     self.global()
-    //         .task_manager()
-    //         .crypto_task_source()
-    //         .queue(task!(resolve_bool: move |cx| {
-    //             let promise = trusted_promise.root(cx);
-    //             promise.resolve_native(cx, &result);
-    //         }));
-    // }
+    /// Queue a global task on the crypto task source, given realm's global object, to resolve
+    /// promise with the result of converting a JsonWebKey dictionary to an ECMAScript Object in
+    /// realm, as defined by [WebIDL].
+    fn resolve_promise_with_jwk(
+        &self,
+        cx: &mut JSContext,
+        promise: &<D::Promise as PromiseHelpers<D>>::StackRoot,
+        jwk: Box<JsonWebKey>,
+    ) {
+        // NOTE: Serialize the JsonWebKey dictionary by stringifying it, in order to pass it to
+        // other threads.
+        let stringified_jwk = match jwk.stringify(cx) {
+            Ok(stringified_jwk) => Zeroizing::new(stringified_jwk.to_string()),
+            Err(error) => {
+                self.reject_promise_with_error(promise, error);
+                return;
+            },
+        };
+
+        let trusted_subtle = Trusted::new(self);
+        let trusted_promise = promise.to_trusted();
+        self.global_from_reflector()
+            .queue_crypto_task_source(task!(resolve_jwk: move |cx| {
+                let subtle = trusted_subtle.root();
+                let promise = trusted_promise.root(cx);
+
+                match JsonWebKey::parse(cx, stringified_jwk.as_bytes()) {
+                    Ok(jwk) => {
+                        rooted!(&in(cx) let mut rval = UndefinedValue());
+                        jwk.to_jsval(cx, rval.handle_mut());
+                        rooted!(&in(cx) let mut object = rval.to_object());
+                        promise.resolve_native(cx, &*object);
+                    },
+                    Err(error) => {
+                        subtle.reject_promise_with_error(&promise, error);
+                        return;
+                    },
+                }
+            }));
+    }
+
+    /// Queue a global task on the crypto task source, given realm's global object, to resolve
+    /// promise with a CryptoKey.
+    fn resolve_promise_with_key(
+        &self,
+        promise: &<D::Promise as PromiseHelpers<D>>::StackRoot,
+        key: &CryptoKey<D>,
+    ) {
+        let trusted_key = Trusted::new(key);
+        let trusted_promise = promise.to_trusted();
+        self.global_from_reflector()
+            .queue_crypto_task_source(task!(resolve_key: move |cx| {
+                let key = trusted_key.root();
+                let promise = trusted_promise.root(cx);
+                promise.resolve_native(cx, &key);
+            }));
+    }
+
+    /// Queue a global task on the crypto task source, given realm's global object, to resolve
+    /// promise with a CryptoKeyPair.
+    fn resolve_promise_with_key_pair(
+        &self,
+        promise: &<D::Promise as PromiseHelpers<D>>::StackRoot,
+        key_pair: CryptoKeyPair<D>
+    ) {
+        let trusted_private_key = key_pair.privateKey.map(|key| Trusted::new(&*key));
+        let trusted_public_key = key_pair.publicKey.map(|key| Trusted::new(&*key));
+        let trusted_promise = promise.to_trusted();
+        self.global_from_reflector()
+            .queue_crypto_task_source(task!(resolve_key: move |cx| {
+                let key_pair = CryptoKeyPair::<D> {
+                    privateKey: trusted_private_key.map(|trusted_key| trusted_key.root()),
+                    publicKey: trusted_public_key.map(|trusted_key| trusted_key.root()),
+                };
+                let promise = trusted_promise.root(cx);
+                promise.resolve_native(cx, &key_pair);
+            }));
+    }
+
+    /// Queue a global task on the crypto task source, given realm's global object, to resolve
+    /// promise with a bool value.
+    fn resolve_promise_with_bool(
+        &self,
+        promise: &<D::Promise as PromiseHelpers<D>>::StackRoot,
+        result: bool,
+    ) {
+        let trusted_promise = promise.to_trusted();
+        self.global_from_reflector()
+            .queue_crypto_task_source(task!(resolve_bool: move |cx| {
+                let promise = trusted_promise.root(cx);
+                promise.resolve_native(cx, &result);
+            }));
+    }
 
     /// Queue a global task on the crypto task source, given realm's global object, to reject
     /// promise with an error.
@@ -372,39 +376,41 @@ where
             }));
     }
 
-    // /// Queue a global task on the crypto task source, given realm's global object, to resolve
-    // /// promise with the result of converting EncapsulatedKey to an ECMAScript Object in realm, as
-    // /// defined by [WebIDL].
-    // fn resolve_promise_with_encapsulated_key(
-    //     &self,
-    //     promise: &RootedPromise,
-    //     encapsulated_key: EncapsulatedKey,
-    // ) {
-    //     let trusted_promise = TrustedPromise::from(promise);
-    //     self.global().task_manager().crypto_task_source().queue(
-    //         task!(resolve_encapsulated_key: move |cx| {
-    //             let promise = trusted_promise.root(cx);
-    //             promise.resolve_native(cx, &encapsulated_key);
-    //         }),
-    //     );
-    // }
-    //
-    // /// Queue a global task on the crypto task source, given realm's global object, to resolve
-    // /// promise with the result of converting EncapsulateBits to an ECMAScript Object in realm, as
-    // /// defined by [WebIDL].
-    // fn resolve_promise_with_encapsulated_bits(
-    //     &self,
-    //     promise: &RootedPromise,
-    //     encapsulated_bits: EncapsulatedBits,
-    // ) {
-    //     let trusted_promise = TrustedPromise::from(promise);
-    //     self.global().task_manager().crypto_task_source().queue(
-    //         task!(resolve_encapsulated_bits: move |cx| {
-    //             let promise = trusted_promise.root(cx);
-    //             promise.resolve_native(cx, &encapsulated_bits);
-    //         }),
-    //     );
-    // }
+    /// Queue a global task on the crypto task source, given realm's global object, to resolve
+    /// promise with the result of converting EncapsulatedKey to an ECMAScript Object in realm, as
+    /// defined by [WebIDL].
+    fn resolve_promise_with_encapsulated_key(
+        &self,
+        promise: &<D::Promise as PromiseHelpers<D>>::StackRoot,
+        encapsulated_key: EncapsulatedKey<D>,
+    ) {
+        let trusted_promise = promise.to_trusted();
+        self.global_from_reflector()
+            .queue_crypto_task_source(
+            task!(resolve_encapsulated_key: move |cx| {
+                let promise = trusted_promise.root(cx);
+                promise.resolve_native(cx, &encapsulated_key);
+            }),
+        );
+    }
+
+    /// Queue a global task on the crypto task source, given realm's global object, to resolve
+    /// promise with the result of converting EncapsulateBits to an ECMAScript Object in realm, as
+    /// defined by [WebIDL].
+    fn resolve_promise_with_encapsulated_bits(
+        &self,
+        promise: &<D::Promise as PromiseHelpers<D>>::StackRoot,
+        encapsulated_bits: EncapsulatedBits,
+    ) {
+        let trusted_promise = promise.to_trusted();
+        self.global_from_reflector()
+            .queue_crypto_task_source(
+            task!(resolve_encapsulated_bits: move |cx| {
+                let promise = trusted_promise.root(cx);
+                promise.resolve_native(cx, &encapsulated_bits);
+            }),
+        );
+    }
 }
 
 impl<D> SubtleCryptoMethods<D> for SubtleCrypto<D>
