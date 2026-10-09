@@ -93,6 +93,7 @@ use script_bindings::DomTypes;
 use script_bindings::interfaces::PromiseHelpers;
 use script_bindings::interfaces::StackRootPromiseHelpers;
 use script_bindings::interfaces::HeapTracedPromiseHelpers;
+use script_bindings::interfaces::ThreadTrustedPromiseHelpers;
 use script_bindings::reflector::DomGlobalGeneric;
 
 use crate::traits::Equivalence;
@@ -241,28 +242,30 @@ where
     D: DomTypes + Equivalence,
     Self: DomGlobalGeneric<D>,
 {
-    // /// Queue a global task on the crypto task source, given realm's global object, to resolve
-    // /// promise with the result of creating an ArrayBuffer in realm, containing data. If it fails
-    // /// to create buffer source, reject promise with a JSFailedError.
-    // fn resolve_promise_with_data(&self, promise: &RootedPromise, data: Zeroizing<Vec<u8>>) {
-    //     let trusted_promise = TrustedPromise::from(promise);
-    //     self.global()
-    //         .task_manager()
-    //         .crypto_task_source()
-    //         .queue(task!(resolve_data: move |cx| {
-    //             let promise = trusted_promise.root(cx);
-    //
-    //             rooted!(&in(cx) let mut array_buffer_ptr = ptr::null_mut::<JSObject>());
-    //             match create_buffer_source::<ArrayBufferU8>(cx,
-    //                 &data,
-    //                 array_buffer_ptr.handle_mut(),
-    //             ) {
-    //                 Ok(_) => promise.resolve_native(cx, &*array_buffer_ptr),
-    //                 Err(_) => promise.reject_error(cx, Error::JSFailed),
-    //             }
-    //         }));
-    // }
-    //
+    /// Queue a global task on the crypto task source, given realm's global object, to resolve
+    /// promise with the result of creating an ArrayBuffer in realm, containing data. If it fails
+    /// to create buffer source, reject promise with a JSFailedError.
+    fn resolve_promise_with_data(
+        &self,
+        promise: &<D::Promise as PromiseHelpers<D>>::StackRoot,
+        data: Zeroizing<Vec<u8>>,
+    ) {
+        let trusted_promise = promise.to_trusted();
+        self.global_from_reflector()
+            .queue_crypto_task_source(task!(resolve_data: move |cx| {
+                let promise = trusted_promise.root(cx);
+
+                rooted!(&in(cx) let mut array_buffer_ptr = ptr::null_mut::<JSObject>());
+                match create_buffer_source::<ArrayBufferU8>(cx,
+                    &data,
+                    array_buffer_ptr.handle_mut(),
+                ) {
+                    Ok(_) => promise.resolve_native(cx, &*array_buffer_ptr),
+                    Err(_) => promise.reject_error(cx, Error::JSFailed),
+                }
+            }));
+    }
+
     // /// Queue a global task on the crypto task source, given realm's global object, to resolve
     // /// promise with the result of converting a JsonWebKey dictionary to an ECMAScript Object in
     // /// realm, as defined by [WebIDL].
@@ -355,12 +358,16 @@ where
 
     /// Queue a global task on the crypto task source, given realm's global object, to reject
     /// promise with an error.
-    fn reject_promise_with_error(&self, promise: &<D::Promise as PromiseHelpers<D>>::StackRoot, error: Error) {
-        // let trusted_promise = TrustedPromise::from(promise);
+    fn reject_promise_with_error(
+        &self,
+        promise: &<D::Promise as PromiseHelpers<D>>::StackRoot,
+        error: Error,
+    ) {
+        let trusted_promise = promise.to_trusted();
         self.global_from_reflector()
             .queue_crypto_task_source(task!(reject_error: move |cx| {
-    //             let promise = trusted_promise.root(cx);
-                // promise.reject_error(cx, error);
+                let promise = trusted_promise.root(cx);
+                promise.reject_error(cx, error);
             }));
     }
 
@@ -775,10 +782,11 @@ where
         // Step 7. Return promise and perform the remaining steps in parallel.
         let this = Trusted::new(self);
         // let trusted_promise = TrustedPromise::from(&promise);
+        let trusted_promise = promise.to_trusted();
         self.global_from_reflector()
             .queue_dom_manipulation_task_source(task!(digest_: move |cx| {
                 let subtle = this.root();
-                // let promise = &trusted_promise.root(cx);
+                let promise = trusted_promise.root(cx);
 
                 // Step 8. If the following steps or referenced procedures say to throw an error,
                 // queue a global task on the crypto task source, given realm's global object, to
@@ -789,7 +797,7 @@ where
                 let digest = match normalized_algorithm.digest(&data) {
                     Ok(digest) => digest,
                     Err(error) => {
-                        // subtle.reject_promise_with_error(promise, error);
+                        subtle.reject_promise_with_error(&promise, error);
                         return;
                     }
                 };
@@ -799,7 +807,7 @@ where
                 // Step 11. Let result be the result of creating an ArrayBuffer in realm,
                 // containing digest.
                 // Step 12. Resolve promise with result.
-                // subtle.resolve_promise_with_data(promise, digest.into());
+                subtle.resolve_promise_with_data(&promise, digest.into());
             }));
         promise
     }
