@@ -7,6 +7,7 @@
 //! script_bindings::refcounted
 
 use std::cell::RefCell;
+use std::ops::Deref;
 use std::thread::{self, ThreadId};
 
 use js::context::JSContext;
@@ -15,6 +16,7 @@ use js::jsapi::JSTracer;
 use js::rust::Trace;
 use rustc_hash::FxHashMap;
 use script_bindings::error::Error;
+use script_bindings::interfaces::ThreadTrustedPromiseHelpers;
 pub(crate) use script_bindings::refcounted::Trusted;
 use script_bindings::reflector::DomObject;
 
@@ -32,7 +34,6 @@ struct PromiseKey(*const Promise);
 
 /// # Safety
 /// PromiseKey is only ever used for comparisons between keys.
-/// Its value is never read.
 unsafe impl Send for PromiseKey {}
 
 /// The set of live, pinned DOM objects that are currently prevented
@@ -71,7 +72,7 @@ impl LivePromiseReferences {
 /// in asynchronous operations. The underlying DOM object is guaranteed to live at least
 /// as long as the last outstanding `TrustedPromise` instance. These values cannot be cloned,
 /// only created from existing `Rc<Promise>` values.
-pub struct TrustedPromise {
+pub(crate) struct TrustedPromise {
     dom_object: PromiseKey,
     owner_thread: ThreadId,
 }
@@ -124,6 +125,23 @@ impl TrustedPromise {
             debug!("Resolving promise.");
             this.root(cx).resolve_native(cx, &value);
         })
+    }
+}
+
+impl Deref for TrustedPromise {
+    type Target = Promise;
+
+    #[expect(unsafe_code)]
+    fn deref(&self) -> &Self::Target {
+        unsafe { &*self.dom_object.0 }
+    }
+}
+
+impl ThreadTrustedPromiseHelpers<crate::DomTypeHolder> for TrustedPromise {
+    type StackRoot = RootedPromise;
+
+    fn root(self, cx: &JSContext) -> RootedPromise {
+        TrustedPromise::root(self, cx)
     }
 }
 
