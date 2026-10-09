@@ -9556,6 +9556,7 @@ dependencies = [
  "p384",
  "p521",
  "pkcs8",
+ "rand 0.10.3",
  "rsa",
  "rustc-hash 2.1.3",
  "serde_core",
