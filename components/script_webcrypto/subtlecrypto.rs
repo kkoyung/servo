@@ -10,7 +10,7 @@
 // mod aes_ocb_operation;
 // mod argon2_operation;
 // mod chacha20_poly1305_operation;
-// mod cshake_operation;
+mod cshake_operation;
 // mod ec_common;
 // mod ecdh_operation;
 // mod ecdsa_operation;
@@ -19,7 +19,7 @@
 // mod hkdf_operation;
 // mod hmac_operation;
 // mod hybrid_kem_operation;
-// mod kangarootwelve_operation;
+mod kangarootwelve_operation;
 // mod kmac_operation;
 // mod ml_dsa_operation;
 // mod ml_kem_operation;
@@ -28,9 +28,9 @@
 // mod rsa_oaep_operation;
 // mod rsa_pss_operation;
 // mod rsassa_pkcs1_v1_5_operation;
-// mod sha3_operation;
+mod sha3_operation;
 mod sha_operation;
-// mod turboshake_operation;
+mod turboshake_operation;
 // mod x25519_operation;
 // mod x448_operation;
 
@@ -3621,186 +3621,186 @@ impl From<&Algorithm> for SerializableAlgorithm {
 //         })
 //     }
 // }
-//
-// /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-CShakeParams>
-// #[derive(Clone, MallocSizeOf)]
-// struct CShakeParams {
-//     /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
-//     name: CryptoAlgorithm,
-//
-//     /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-CShakeParams-outputLength>
-//     output_length: u32,
-//
-//     /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-CShakeParams-functionName>
-//     function_name: Option<Vec<u8>>,
-//
-//     /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-CShakeParams-customization>
-//     customization: Option<Vec<u8>>,
-// }
-//
-// impl<'a> TryFromWithCxAndName<HandleObject<'a>> for CShakeParams {
-//     type Error = Error;
-//
-//     fn try_from_with_cx_and_name(
-//         cx: &mut JSContext,
-//         algorithm_name: CryptoAlgorithm,
-//         object: HandleObject<'a>,
-//     ) -> Result<Self, Self::Error> {
-//         Ok(CShakeParams {
-//             name: algorithm_name,
-//             output_length: get_required_parameter(
-//                 cx,
-//                 object,
-//                 c"outputLength",
-//                 ConversionBehavior::EnforceRange,
-//             )?,
-//             function_name: get_optional_buffer_source(cx, object, c"functionName")?,
-//             customization: get_optional_buffer_source(cx, object, c"customization")?,
-//         })
-//     }
-// }
-//
-// impl TryFrom<SerializableCShakeParams> for CShakeParams {
-//     type Error = ();
-//
-//     fn try_from(value: SerializableCShakeParams) -> Result<Self, Self::Error> {
-//         Ok(CShakeParams {
-//             name: CryptoAlgorithm::from_str(&value.name).map_err(|_| ())?,
-//             output_length: value.output_length,
-//             function_name: value.function_name,
-//             customization: value.customization,
-//         })
-//     }
-// }
-//
-// impl From<&CShakeParams> for SerializableCShakeParams {
-//     fn from(value: &CShakeParams) -> Self {
-//         SerializableCShakeParams {
-//             name: value.name.as_str().into(),
-//             output_length: value.output_length,
-//             function_name: value.function_name.clone(),
-//             customization: value.customization.clone(),
-//         }
-//     }
-// }
-//
-// /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-TurboShakeParams>
-// #[derive(Clone, MallocSizeOf)]
-// struct TurboShakeParams {
-//     /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
-//     name: CryptoAlgorithm,
-//
-//     /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-TurboShakeParams-outputLength>
-//     output_length: u32,
-//
-//     /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-TurboShakeParams-domainSeparation>
-//     domain_separation: Option<u8>,
-// }
-//
-// impl<'a> TryFromWithCxAndName<HandleObject<'a>> for TurboShakeParams {
-//     type Error = Error;
-//
-//     fn try_from_with_cx_and_name(
-//         cx: &mut JSContext,
-//         algorithm_name: CryptoAlgorithm,
-//         object: HandleObject<'a>,
-//     ) -> Result<Self, Self::Error> {
-//         Ok(TurboShakeParams {
-//             name: algorithm_name,
-//             output_length: get_required_parameter(
-//                 cx,
-//                 object,
-//                 c"outputLength",
-//                 ConversionBehavior::EnforceRange,
-//             )?,
-//             domain_separation: get_property(
-//                 cx,
-//                 object,
-//                 c"domainSeparation",
-//                 ConversionBehavior::EnforceRange,
-//             )?,
-//         })
-//     }
-// }
-//
-// impl TryFrom<SerializableTurboShakeParams> for TurboShakeParams {
-//     type Error = ();
-//
-//     fn try_from(value: SerializableTurboShakeParams) -> Result<Self, Self::Error> {
-//         Ok(TurboShakeParams {
-//             name: CryptoAlgorithm::from_str(&value.name).map_err(|_| ())?,
-//             output_length: value.output_length,
-//             domain_separation: value.domain_separation,
-//         })
-//     }
-// }
-//
-// impl From<&TurboShakeParams> for SerializableTurboShakeParams {
-//     fn from(value: &TurboShakeParams) -> Self {
-//         SerializableTurboShakeParams {
-//             name: value.name.as_str().into(),
-//             output_length: value.output_length,
-//             domain_separation: value.domain_separation,
-//         }
-//     }
-// }
-//
-// /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-KangarooTwelveParams>
-// #[derive(Clone, MallocSizeOf)]
-// struct KangarooTwelveParams {
-//     /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
-//     name: CryptoAlgorithm,
-//
-//     /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-KangarooTwelveParams-outputLength>
-//     output_length: u32,
-//
-//     /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-KangarooTwelveParams-customization>
-//     customization: Option<Vec<u8>>,
-// }
-//
-// impl<'a> TryFromWithCxAndName<HandleObject<'a>> for KangarooTwelveParams {
-//     type Error = Error;
-//
-//     fn try_from_with_cx_and_name(
-//         cx: &mut JSContext,
-//         algorithm_name: CryptoAlgorithm,
-//         object: HandleObject<'a>,
-//     ) -> Result<Self, Self::Error> {
-//         Ok(KangarooTwelveParams {
-//             name: algorithm_name,
-//             output_length: get_required_parameter(
-//                 cx,
-//                 object,
-//                 c"outputLength",
-//                 ConversionBehavior::EnforceRange,
-//             )?,
-//             customization: get_optional_buffer_source(cx, object, c"customization")?,
-//         })
-//     }
-// }
-//
-// impl TryFrom<SerializableKangarooTwelveParams> for KangarooTwelveParams {
-//     type Error = ();
-//
-//     fn try_from(value: SerializableKangarooTwelveParams) -> Result<Self, Self::Error> {
-//         Ok(KangarooTwelveParams {
-//             name: CryptoAlgorithm::from_str(&value.name).map_err(|_| ())?,
-//             output_length: value.output_length,
-//             customization: value.customization,
-//         })
-//     }
-// }
-//
-// impl From<&KangarooTwelveParams> for SerializableKangarooTwelveParams {
-//     fn from(value: &KangarooTwelveParams) -> Self {
-//         SerializableKangarooTwelveParams {
-//             name: value.name.as_str().into(),
-//             output_length: value.output_length,
-//             customization: value.customization.clone(),
-//         }
-//     }
-// }
-//
+
+/// <https://wicg.github.io/webcrypto-modern-algos/#dfn-CShakeParams>
+#[derive(Clone, MallocSizeOf)]
+struct CShakeParams {
+    /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
+    name: CryptoAlgorithm,
+
+    /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-CShakeParams-outputLength>
+    output_length: u32,
+
+    /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-CShakeParams-functionName>
+    function_name: Option<Vec<u8>>,
+
+    /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-CShakeParams-customization>
+    customization: Option<Vec<u8>>,
+}
+
+impl<'a> TryFromWithCxAndName<HandleObject<'a>> for CShakeParams {
+    type Error = Error;
+
+    fn try_from_with_cx_and_name(
+        cx: &mut JSContext,
+        algorithm_name: CryptoAlgorithm,
+        object: HandleObject<'a>,
+    ) -> Result<Self, Self::Error> {
+        Ok(CShakeParams {
+            name: algorithm_name,
+            output_length: get_required_parameter(
+                cx,
+                object,
+                c"outputLength",
+                ConversionBehavior::EnforceRange,
+            )?,
+            function_name: get_optional_buffer_source(cx, object, c"functionName")?,
+            customization: get_optional_buffer_source(cx, object, c"customization")?,
+        })
+    }
+}
+
+impl TryFrom<SerializableCShakeParams> for CShakeParams {
+    type Error = ();
+
+    fn try_from(value: SerializableCShakeParams) -> Result<Self, Self::Error> {
+        Ok(CShakeParams {
+            name: CryptoAlgorithm::from_str(&value.name).map_err(|_| ())?,
+            output_length: value.output_length,
+            function_name: value.function_name,
+            customization: value.customization,
+        })
+    }
+}
+
+impl From<&CShakeParams> for SerializableCShakeParams {
+    fn from(value: &CShakeParams) -> Self {
+        SerializableCShakeParams {
+            name: value.name.as_str().into(),
+            output_length: value.output_length,
+            function_name: value.function_name.clone(),
+            customization: value.customization.clone(),
+        }
+    }
+}
+
+/// <https://wicg.github.io/webcrypto-modern-algos/#dfn-TurboShakeParams>
+#[derive(Clone, MallocSizeOf)]
+struct TurboShakeParams {
+    /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
+    name: CryptoAlgorithm,
+
+    /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-TurboShakeParams-outputLength>
+    output_length: u32,
+
+    /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-TurboShakeParams-domainSeparation>
+    domain_separation: Option<u8>,
+}
+
+impl<'a> TryFromWithCxAndName<HandleObject<'a>> for TurboShakeParams {
+    type Error = Error;
+
+    fn try_from_with_cx_and_name(
+        cx: &mut JSContext,
+        algorithm_name: CryptoAlgorithm,
+        object: HandleObject<'a>,
+    ) -> Result<Self, Self::Error> {
+        Ok(TurboShakeParams {
+            name: algorithm_name,
+            output_length: get_required_parameter(
+                cx,
+                object,
+                c"outputLength",
+                ConversionBehavior::EnforceRange,
+            )?,
+            domain_separation: get_property(
+                cx,
+                object,
+                c"domainSeparation",
+                ConversionBehavior::EnforceRange,
+            )?,
+        })
+    }
+}
+
+impl TryFrom<SerializableTurboShakeParams> for TurboShakeParams {
+    type Error = ();
+
+    fn try_from(value: SerializableTurboShakeParams) -> Result<Self, Self::Error> {
+        Ok(TurboShakeParams {
+            name: CryptoAlgorithm::from_str(&value.name).map_err(|_| ())?,
+            output_length: value.output_length,
+            domain_separation: value.domain_separation,
+        })
+    }
+}
+
+impl From<&TurboShakeParams> for SerializableTurboShakeParams {
+    fn from(value: &TurboShakeParams) -> Self {
+        SerializableTurboShakeParams {
+            name: value.name.as_str().into(),
+            output_length: value.output_length,
+            domain_separation: value.domain_separation,
+        }
+    }
+}
+
+/// <https://wicg.github.io/webcrypto-modern-algos/#dfn-KangarooTwelveParams>
+#[derive(Clone, MallocSizeOf)]
+struct KangarooTwelveParams {
+    /// <https://w3c.github.io/webcrypto/#dom-algorithm-name>
+    name: CryptoAlgorithm,
+
+    /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-KangarooTwelveParams-outputLength>
+    output_length: u32,
+
+    /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-KangarooTwelveParams-customization>
+    customization: Option<Vec<u8>>,
+}
+
+impl<'a> TryFromWithCxAndName<HandleObject<'a>> for KangarooTwelveParams {
+    type Error = Error;
+
+    fn try_from_with_cx_and_name(
+        cx: &mut JSContext,
+        algorithm_name: CryptoAlgorithm,
+        object: HandleObject<'a>,
+    ) -> Result<Self, Self::Error> {
+        Ok(KangarooTwelveParams {
+            name: algorithm_name,
+            output_length: get_required_parameter(
+                cx,
+                object,
+                c"outputLength",
+                ConversionBehavior::EnforceRange,
+            )?,
+            customization: get_optional_buffer_source(cx, object, c"customization")?,
+        })
+    }
+}
+
+impl TryFrom<SerializableKangarooTwelveParams> for KangarooTwelveParams {
+    type Error = ();
+
+    fn try_from(value: SerializableKangarooTwelveParams) -> Result<Self, Self::Error> {
+        Ok(KangarooTwelveParams {
+            name: CryptoAlgorithm::from_str(&value.name).map_err(|_| ())?,
+            output_length: value.output_length,
+            customization: value.customization,
+        })
+    }
+}
+
+impl From<&KangarooTwelveParams> for SerializableKangarooTwelveParams {
+    fn from(value: &KangarooTwelveParams) -> Self {
+        SerializableKangarooTwelveParams {
+            name: value.name.as_str().into(),
+            output_length: value.output_length,
+            customization: value.customization.clone(),
+        }
+    }
+}
+
 // /// <https://wicg.github.io/webcrypto-modern-algos/#dfn-KmacKeyGenParams>
 // #[derive(Clone, MallocSizeOf)]
 // struct KmacKeyGenParams {
@@ -5299,10 +5299,10 @@ impl Operation for DigestOperation {
 #[derive(Clone, MallocSizeOf)]
 enum DigestAlgorithm {
     Sha(Algorithm),
-    // Sha3(Algorithm),
-    // CShake(CShakeParams),
-    // TurboShake(TurboShakeParams),
-    // KangarooTwelve(KangarooTwelveParams),
+    Sha3(Algorithm),
+    CShake(CShakeParams),
+    TurboShake(TurboShakeParams),
+    KangarooTwelve(KangarooTwelveParams),
 }
 
 impl NormalizedAlgorithm for DigestAlgorithm {
@@ -5318,20 +5318,20 @@ impl NormalizedAlgorithm for DigestAlgorithm {
             CryptoAlgorithm::Sha512 => Ok(DigestAlgorithm::Sha(
                 object.try_into_with_cx_and_name(cx, algorithm_name)?,
             )),
-            // CryptoAlgorithm::Sha3_256 | CryptoAlgorithm::Sha3_384 | CryptoAlgorithm::Sha3_512 => {
-            //     Ok(DigestAlgorithm::Sha3(
-            //         object.try_into_with_cx_and_name(cx, algorithm_name)?,
-            //     ))
-            // },
-            // CryptoAlgorithm::CShake128 | CryptoAlgorithm::CShake256 => Ok(DigestAlgorithm::CShake(
-            //     object.try_into_with_cx_and_name(cx, algorithm_name)?,
-            // )),
-            // CryptoAlgorithm::TurboShake128 | CryptoAlgorithm::TurboShake256 => Ok(
-            //     DigestAlgorithm::TurboShake(object.try_into_with_cx_and_name(cx, algorithm_name)?),
-            // ),
-            // CryptoAlgorithm::Kt128 | CryptoAlgorithm::Kt256 => Ok(DigestAlgorithm::KangarooTwelve(
-            //     object.try_into_with_cx_and_name(cx, algorithm_name)?,
-            // )),
+            CryptoAlgorithm::Sha3_256 | CryptoAlgorithm::Sha3_384 | CryptoAlgorithm::Sha3_512 => {
+                Ok(DigestAlgorithm::Sha3(
+                    object.try_into_with_cx_and_name(cx, algorithm_name)?,
+                ))
+            },
+            CryptoAlgorithm::CShake128 | CryptoAlgorithm::CShake256 => Ok(DigestAlgorithm::CShake(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
+            CryptoAlgorithm::TurboShake128 | CryptoAlgorithm::TurboShake256 => Ok(
+                DigestAlgorithm::TurboShake(object.try_into_with_cx_and_name(cx, algorithm_name)?),
+            ),
+            CryptoAlgorithm::Kt128 | CryptoAlgorithm::Kt256 => Ok(DigestAlgorithm::KangarooTwelve(
+                object.try_into_with_cx_and_name(cx, algorithm_name)?,
+            )),
             _ => Err(Error::NotSupported(Some(format!(
                 "{} does not support \"digest\" operation",
                 algorithm_name.as_str()
@@ -5342,24 +5342,23 @@ impl NormalizedAlgorithm for DigestAlgorithm {
     fn name(&self) -> CryptoAlgorithm {
         match self {
             DigestAlgorithm::Sha(algorithm) => algorithm.name,
-            // DigestAlgorithm::Sha3(algorithm) => algorithm.name,
-            // DigestAlgorithm::CShake(algorithm) => algorithm.name,
-            // DigestAlgorithm::TurboShake(algorithm) => algorithm.name,
-            // DigestAlgorithm::KangarooTwelve(algorithm) => algorithm.name,
+            DigestAlgorithm::Sha3(algorithm) => algorithm.name,
+            DigestAlgorithm::CShake(algorithm) => algorithm.name,
+            DigestAlgorithm::TurboShake(algorithm) => algorithm.name,
+            DigestAlgorithm::KangarooTwelve(algorithm) => algorithm.name,
         }
     }
 
     fn determine_support_from_operation_steps(&self, _length: Option<u32>) -> bool {
         match self {
-            DigestAlgorithm::Sha(_) => true,
-            // DigestAlgorithm::Sha(_) |
-            // DigestAlgorithm::Sha3(_) |
-            // DigestAlgorithm::CShake(_) |
-            // DigestAlgorithm::TurboShake(_) => true,
-            // DigestAlgorithm::KangarooTwelve(normalized_algorithm) => {
-            //     normalized_algorithm.output_length != 0 &&
-            //         normalized_algorithm.output_length.is_multiple_of(8)
-            // },
+            DigestAlgorithm::Sha(_) |
+            DigestAlgorithm::Sha3(_) |
+            DigestAlgorithm::CShake(_) |
+            DigestAlgorithm::TurboShake(_) => true,
+            DigestAlgorithm::KangarooTwelve(normalized_algorithm) => {
+                normalized_algorithm.output_length != 0 &&
+                    normalized_algorithm.output_length.is_multiple_of(8)
+            },
         }
     }
 }
@@ -5368,60 +5367,60 @@ impl DigestAlgorithm {
     fn digest(&self, message: &[u8]) -> Result<Vec<u8>, Error> {
         match self {
             DigestAlgorithm::Sha(algorithm) => sha_operation::digest(algorithm, message),
-            // DigestAlgorithm::Sha3(algorithm) => sha3_operation::digest(algorithm, message),
-            // DigestAlgorithm::CShake(algorithm) => cshake_operation::digest(algorithm, message),
-            // DigestAlgorithm::TurboShake(algorithm) => {
-            //     turboshake_operation::digest(algorithm, message)
-            // },
-            // DigestAlgorithm::KangarooTwelve(algorithm) => {
-            //     kangarootwelve_operation::digest(algorithm, message)
-            // },
+            DigestAlgorithm::Sha3(algorithm) => sha3_operation::digest(algorithm, message),
+            DigestAlgorithm::CShake(algorithm) => cshake_operation::digest(algorithm, message),
+            DigestAlgorithm::TurboShake(algorithm) => {
+                turboshake_operation::digest(algorithm, message)
+            },
+            DigestAlgorithm::KangarooTwelve(algorithm) => {
+                kangarootwelve_operation::digest(algorithm, message)
+            },
         }
     }
 }
 
-// impl TryFrom<SerializableDigestAlgorithm> for DigestAlgorithm {
-//     type Error = ();
-//
-//     fn try_from(value: SerializableDigestAlgorithm) -> Result<Self, Self::Error> {
-//         match value {
-//             SerializableDigestAlgorithm::Sha(algorithm) => {
-//                 Ok(DigestAlgorithm::Sha(algorithm.try_into()?))
-//             },
-//             SerializableDigestAlgorithm::Sha3(algorithm) => {
-//                 Ok(DigestAlgorithm::Sha3(algorithm.try_into()?))
-//             },
-//             SerializableDigestAlgorithm::CShake(algorithm) => {
-//                 Ok(DigestAlgorithm::CShake(algorithm.try_into()?))
-//             },
-//             SerializableDigestAlgorithm::TurboShake(algorithm) => {
-//                 Ok(DigestAlgorithm::TurboShake(algorithm.try_into()?))
-//             },
-//             SerializableDigestAlgorithm::KangarooTwelve(algorithm) => {
-//                 Ok(DigestAlgorithm::KangarooTwelve(algorithm.try_into()?))
-//             },
-//         }
-//     }
-// }
-//
-// impl From<&DigestAlgorithm> for SerializableDigestAlgorithm {
-//     fn from(value: &DigestAlgorithm) -> Self {
-//         match value {
-//             DigestAlgorithm::Sha(algorithm) => SerializableDigestAlgorithm::Sha(algorithm.into()),
-//             DigestAlgorithm::Sha3(algorithm) => SerializableDigestAlgorithm::Sha3(algorithm.into()),
-//             DigestAlgorithm::CShake(algorithm) => {
-//                 SerializableDigestAlgorithm::CShake(algorithm.into())
-//             },
-//             DigestAlgorithm::TurboShake(algorithm) => {
-//                 SerializableDigestAlgorithm::TurboShake(algorithm.into())
-//             },
-//             DigestAlgorithm::KangarooTwelve(algorithm) => {
-//                 SerializableDigestAlgorithm::KangarooTwelve(algorithm.into())
-//             },
-//         }
-//     }
-// }
-//
+impl TryFrom<SerializableDigestAlgorithm> for DigestAlgorithm {
+    type Error = ();
+
+    fn try_from(value: SerializableDigestAlgorithm) -> Result<Self, Self::Error> {
+        match value {
+            SerializableDigestAlgorithm::Sha(algorithm) => {
+                Ok(DigestAlgorithm::Sha(algorithm.try_into()?))
+            },
+            SerializableDigestAlgorithm::Sha3(algorithm) => {
+                Ok(DigestAlgorithm::Sha3(algorithm.try_into()?))
+            },
+            SerializableDigestAlgorithm::CShake(algorithm) => {
+                Ok(DigestAlgorithm::CShake(algorithm.try_into()?))
+            },
+            SerializableDigestAlgorithm::TurboShake(algorithm) => {
+                Ok(DigestAlgorithm::TurboShake(algorithm.try_into()?))
+            },
+            SerializableDigestAlgorithm::KangarooTwelve(algorithm) => {
+                Ok(DigestAlgorithm::KangarooTwelve(algorithm.try_into()?))
+            },
+        }
+    }
+}
+
+impl From<&DigestAlgorithm> for SerializableDigestAlgorithm {
+    fn from(value: &DigestAlgorithm) -> Self {
+        match value {
+            DigestAlgorithm::Sha(algorithm) => SerializableDigestAlgorithm::Sha(algorithm.into()),
+            DigestAlgorithm::Sha3(algorithm) => SerializableDigestAlgorithm::Sha3(algorithm.into()),
+            DigestAlgorithm::CShake(algorithm) => {
+                SerializableDigestAlgorithm::CShake(algorithm.into())
+            },
+            DigestAlgorithm::TurboShake(algorithm) => {
+                SerializableDigestAlgorithm::TurboShake(algorithm.into())
+            },
+            DigestAlgorithm::KangarooTwelve(algorithm) => {
+                SerializableDigestAlgorithm::KangarooTwelve(algorithm.into())
+            },
+        }
+    }
+}
+
 // /// The value of the key "deriveBits" in the internal object supportedAlgorithms
 // struct DeriveBitsOperation {}
 //
