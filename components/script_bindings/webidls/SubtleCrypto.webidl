@@ -30,36 +30,36 @@ interface SubtleCrypto {
   Promise<any> digest(AlgorithmIdentifier algorithm,
                       BufferSource data);
 
-//   Promise<any> generateKey(AlgorithmIdentifier algorithm,
-//                           boolean extractable,
-//                           sequence<KeyUsage> keyUsages );
-//   Promise<any> deriveKey(AlgorithmIdentifier algorithm,
-//                          CryptoKey baseKey,
-//                          AlgorithmIdentifier derivedKeyType,
-//                          boolean extractable,
-//                          sequence<KeyUsage> keyUsages );
-//   Promise<ArrayBuffer> deriveBits(AlgorithmIdentifier algorithm,
-//                           CryptoKey baseKey,
-//                           optional [EnforceRange] unsigned long? length = null);
-// 
-//   Promise<CryptoKey> importKey(KeyFormat format,
-//                          (BufferSource or JsonWebKey) keyData,
-//                          AlgorithmIdentifier algorithm,
-//                          boolean extractable,
-//                          sequence<KeyUsage> keyUsages );
-//   Promise<any> exportKey(KeyFormat format, CryptoKey key);
-//
-//   Promise<any> wrapKey(KeyFormat format,
-//                        CryptoKey key,
-//                        CryptoKey wrappingKey,
-//                        AlgorithmIdentifier wrapAlgorithm);
-//   Promise<CryptoKey> unwrapKey(KeyFormat format,
-//                          BufferSource wrappedKey,
-//                          CryptoKey unwrappingKey,
-//                          AlgorithmIdentifier unwrapAlgorithm,
-//                          AlgorithmIdentifier unwrappedKeyAlgorithm,
-//                          boolean extractable,
-//                          sequence<KeyUsage> keyUsages );
+  Promise<any> generateKey(AlgorithmIdentifier algorithm,
+                          boolean extractable,
+                          sequence<KeyUsage> keyUsages );
+  Promise<any> deriveKey(AlgorithmIdentifier algorithm,
+                         CryptoKey baseKey,
+                         AlgorithmIdentifier derivedKeyType,
+                         boolean extractable,
+                         sequence<KeyUsage> keyUsages );
+  Promise<ArrayBuffer> deriveBits(AlgorithmIdentifier algorithm,
+                          CryptoKey baseKey,
+                          optional [EnforceRange] unsigned long? length = null);
+
+  Promise<CryptoKey> importKey(KeyFormat format,
+                         (BufferSource or JsonWebKey) keyData,
+                         AlgorithmIdentifier algorithm,
+                         boolean extractable,
+                         sequence<KeyUsage> keyUsages );
+  Promise<any> exportKey(KeyFormat format, CryptoKey key);
+
+  Promise<any> wrapKey(KeyFormat format,
+                       CryptoKey key,
+                       CryptoKey wrappingKey,
+                       AlgorithmIdentifier wrapAlgorithm);
+  Promise<CryptoKey> unwrapKey(KeyFormat format,
+                         BufferSource wrappedKey,
+                         CryptoKey unwrappingKey,
+                         AlgorithmIdentifier unwrapAlgorithm,
+                         AlgorithmIdentifier unwrappedKeyAlgorithm,
+                         boolean extractable,
+                         sequence<KeyUsage> keyUsages );
 };
 
 // https://w3c.github.io/webcrypto/#big-integer
