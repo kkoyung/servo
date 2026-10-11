@@ -7,6 +7,8 @@
 #![cfg_attr(crown, register_tool(crown))]
 
 pub mod crypto;
+pub mod cryptokey;
+pub mod subtlecrypto;
 pub mod traits;
 
 pub(crate) use js::gc::Traceable as JSTraceable;
@@ -35,10 +37,20 @@ pub(crate) mod codegen {
         use script_bindings::utils::DOMClass;
 
         use crate::crypto::Crypto;
+        use crate::cryptokey::CryptoKey;
+        use crate::subtlecrypto::SubtleCrypto;
         use crate::traits::Equivalence;
         include!(concat!(
             env!("OUT_DIR"),
             "/ConcreteBindings/CryptoBinding.rs"
+        ));
+        include!(concat!(
+            env!("OUT_DIR"),
+            "/ConcreteBindings/CryptoKeyBinding.rs"
+        ));
+        include!(concat!(
+            env!("OUT_DIR"),
+            "/ConcreteBindings/SubtleCryptoBinding.rs"
         ));
     }
 }

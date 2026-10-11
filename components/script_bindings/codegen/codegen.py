@@ -8143,8 +8143,6 @@ class CGConcreteBindingRoot(CGThing):
                 f"{originalBinding}::{c.identifier.name}<crate::DomTypeHolder>;"
             ) for c in mainCallbacks]
 
-        cgthings += [CGGeneric(f"pub(crate) use {originalBinding} as GenericBindings;")]
-
 
         for d in descriptors:
             ifaceName: str = d.interface.identifier.name
