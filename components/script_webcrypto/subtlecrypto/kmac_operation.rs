@@ -19,7 +19,7 @@ use zeroize::Zeroizing;
 use crate::cryptokey::{CryptoKey, Handle, KeyUsageSliceHelper};
 use crate::subtlecrypto::{
     CryptoAlgorithm, ExportedKey, JsonWebKeyExt, JwkStringField, KeyAlgorithmAndDerivatives,
-    KmacImportParams, KmacKeyAlgorithm, KmacKeyGenParams, KmacParams,
+    KmacImportParams, KmacKeyAlgorithm, KmacKeyGenParams, KmacParams, truncate_keccak_bit_string,
 };
 use crate::traits::Equivalence;
 
@@ -42,13 +42,13 @@ pub(crate) fn sign<D: Equivalence>(
     //     [NIST-SP800-185] using the raw bits of the key represented by the [[handle]] internal
     //     slot of key as the K input parameter, the Keccak decoding of message as the X input
     //     parameter, the outputLength member of normalizedAlgorithm as the L input parameter, and
-    //     customization as the S input parameter. 
+    //     customization as the S input parameter.
     // If the name member of normalizedAlgorithm is a case-sensitive string match for "KMAC256":
     //     Let mac be the result of performing the KMAC256 function defined in Section 4 of
     //     [NIST-SP800-185] using the raw bits of the key represented by the [[handle]] internal
     //     slot of key as the K input parameter, the Keccak decoding of message as the X input
     //     parameter, the outputLength member of normalizedAlgorithm as the L input parameter, and
-    //     customization as the S input parameter. 
+    //     customization as the S input parameter.
     // Step 3. If performing the operation results in an error, then throw an OperationError.
     let Handle::KmacKey(kmac_key) = key.handle() else {
         return Err(Error::Operation(Some(
@@ -107,13 +107,13 @@ pub(crate) fn verify<D: Equivalence>(
     //     [NIST-SP800-185] using the raw bits of the key represented by the [[handle]] internal
     //     slot of key as the K input parameter, the Keccak decoding of message as the X input
     //     parameter, the outputLength member of normalizedAlgorithm as the L input parameter, and
-    //     customization as the S input parameter. 
+    //     customization as the S input parameter.
     // If the name member of normalizedAlgorithm is a case-sensitive string match for "KMAC256":
     //     Let mac be the result of performing the KMAC256 function defined in Section 4 of
     //     [NIST-SP800-185] using the raw bits of the key represented by the [[handle]] internal
     //     slot of key as the K input parameter, the Keccak decoding of message as the X input
     //     parameter, the outputLength member of normalizedAlgorithm as the L input parameter, and
-    //     customization as the S input parameter. 
+    //     customization as the S input parameter.
     let Handle::KmacKey(kmac_key) = key.handle() else {
         return Err(Error::Operation(Some(
             "[[handle]] internal slot of key is not a KMAC key".into(),
@@ -194,13 +194,7 @@ pub(crate) fn generate_key<D: Equivalence>(
     let mut bits = vec![0u8; length.div_ceil(8) as usize];
     rng.try_fill_bytes(&mut bits)
         .map_err(|_| Error::Operation(Some("Failed to generate KMAC key".into())))?;
-    if !length.is_multiple_of(8) {
-        // Clean excess bits in the last byte of result.
-        let mask = u8::MAX >> (8 - length % 8);
-        if let Some(last_byte) = bits.last_mut() {
-            *last_byte &= mask;
-        }
-    }
+    truncate_keccak_bit_string(&mut bits, length as usize);
 
     // Step 5. Let key be a new CryptoKey object representing the generated key.
     // Step 6. Set the [[type]] internal slot of key to "secret".
@@ -361,13 +355,7 @@ pub(crate) fn import_key<D: Equivalence>(
     //
     // NOTE: We store the Keccak encoding of the first length bits of data, in the key.
     // <https://wicg.github.io/webcrypto-modern-algos/#dfn-keccak-encoding>
-    if !length.is_multiple_of(8) {
-        // Clean excess bits in the last byte of result.
-        let mask = u8::MAX >> (8 - length % 8);
-        if let Some(last_byte) = data.last_mut() {
-            *last_byte &= mask;
-        }
-    }
+    truncate_keccak_bit_string(&mut data, length as usize);
     let algorithm = KmacKeyAlgorithm {
         name: normalized_algorithm.name,
         length,
@@ -576,13 +564,7 @@ fn kmac<const RATE: usize>(
     // Finalize cSHAKE.
     let mut result = vec![0u8; output_length.div_ceil(8) as usize];
     cshake.finalize_xof_into(&mut result);
-    if !output_length.is_multiple_of(8) {
-        // Clean excess bits in the last byte of result.
-        let mask = u8::MAX >> (8 - output_length % 8);
-        if let Some(last_byte) = result.last_mut() {
-            *last_byte &= mask;
-        }
-    }
+    truncate_keccak_bit_string(&mut result, output_length as usize);
 
     result
 }

@@ -6,7 +6,7 @@ use cshake::digest::{ExtendableOutput, Update};
 use cshake::{CShake128, CShake256};
 use script_bindings::error::Error;
 
-use crate::subtlecrypto::{CShakeParams, CryptoAlgorithm};
+use crate::subtlecrypto::{CShakeParams, CryptoAlgorithm, truncate_keccak_bit_string};
 
 /// <https://wicg.github.io/webcrypto-modern-algos/#cshake-operations-digest>
 pub(crate) fn digest(
@@ -55,14 +55,8 @@ pub(crate) fn digest(
             ))));
         },
     }
+    truncate_keccak_bit_string(&mut result, output_length as usize);
 
     // Step 6. Return the Keccak encoding of result.
-    if !output_length.is_multiple_of(8) {
-        // Clean excess bits in the last byte of result.
-        let mask = u8::MAX >> (8 - output_length % 8);
-        if let Some(last_byte) = result.last_mut() {
-            *last_byte &= mask;
-        }
-    }
     Ok(result)
 }
