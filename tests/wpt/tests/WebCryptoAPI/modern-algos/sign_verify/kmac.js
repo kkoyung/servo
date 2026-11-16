@@ -13,7 +13,7 @@ function run_test() {
     runMacTests({
         importFormat: "raw-secret",
         importAlgorithm: function(vector) {
-            return {name: vector.algorithm};
+            return {name: vector.algorithm, length: vector.keyLength};
         },
         operationAlgorithm: operationAlgorithm,
         wrongVerificationAlgorithm: function(vector) {

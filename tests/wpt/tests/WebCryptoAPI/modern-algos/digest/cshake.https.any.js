@@ -163,3 +163,28 @@ runDigestTests(subtle, sourceData, function (size) {
   });
   return vectors;
 });
+
+// Test cSHAKE digest algorithms with variable output lengths that are
+// not a multiple of 8.
+runDigestTests(subtle, sourceData, function (size) {
+  var vectors = [];
+  Object.keys(digestedData).forEach(function (alg) {
+    digestLengths.slice(1).forEach(function (length) {
+      var expected = new Uint8Array(digestedData[alg][length][size]);
+      expected[expected.length - 1] &= 0x0F;
+      var emptyExpected = new Uint8Array(digestedData[alg][length].empty);
+      emptyExpected[emptyExpected.length - 1] &= 0x0F;
+      var length = length - 4;
+
+      vectors.push({
+        algorithm: {name: alg, outputLength: length},
+        expected: expected,
+        emptyExpected: emptyExpected,
+        label: alg + ' with ' + length + ' bit output and ' +
+          size + ' source data',
+        mutations: true,
+      });
+    });
+  });
+  return vectors;
+});
